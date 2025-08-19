@@ -6,6 +6,8 @@ import { loginUser, clearMessages } from "../redux/slices/authSlice"; // Adjust 
 import { toast } from 'react-toastify';
 
 const Login = () => {
+
+    const [roleSelected, setRoleSelected] = useState("admin"); 
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
@@ -14,6 +16,20 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, user, role } = useSelector((state) => state.auth);
+
+   const setRole = (role) => {
+    setRoleSelected(role);
+    if (role === "admin") {
+      setEmail("admingautam@gmail.com");
+      setPassword("admingautam@123");
+    } else if (role === "staff") {
+      setEmail("staff@gmail.com");
+      setPassword("staff@1234");
+    } else if (role === "user") {
+      setEmail("user@gmail.com");
+      setPassword("user@1234");
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -182,6 +198,31 @@ const Login = () => {
                   Forgot Password?
                 </Link>
               </div>
+
+                  <div className="role-buttons d-flex justify-content-center gap-2 gap-md-3 mt-4 flex-wrap">
+        <button
+          type="button"
+          className={`btn border-warning  rounded mb-2  ${roleSelected === "admin" ? "selected-admin" : "outline-admin"}`}
+          onClick={() => setRole("admin")}
+        >
+          Admin
+        </button>
+        <button
+          type="button"
+          className={`btn border-success  rounded mb-2  ${roleSelected === "staff" ? "selected-user" : "outline-user"}`}
+          onClick={() => setRole("staff")}
+        >
+          Staff
+        </button>
+        <button
+          type="button"
+          className={`btn btn border-danger  rounded mb-2  ${roleSelected === "user" ? "selected-seller" : "outline-seller"}`}
+          onClick={() => setRole("user")}
+        >
+          User
+        </button>
+      
+      </div>
 
               {/* Login Button */}
               <button
