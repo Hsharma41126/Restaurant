@@ -1138,25 +1138,24 @@
 // };
 
 // export default StaffManagement;
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "react-toastify"; // optional for alerts
-
 import axios from "axios";
 import {
   Container, Row, Col, Card, Button, Form,
   Modal, Navbar, Nav, Badge, Dropdown,
-  FormControl, InputGroup, ListGroup, Alert
+  FormControl, InputGroup, ListGroup, Alert,Pagination
 } from 'react-bootstrap';
 import {
   Dash, People, Search, Plus, Pencil, Trash,
   Eye, EyeSlash, X, ChevronDown, Person, Gear
 } from 'react-bootstrap-icons';
 import { FaSearch, FaPlus } from "react-icons/fa";
+import axiosInstance from "../../../utils/axiosInstance";
 
 // Default permissions for each role
 const ROLE_PERMISSIONS = {
-  Admin: {
+  admin: {
     tablesManagement: { view: true, manage: true, status: true },
     orderProcessing: { create: true, modify: true, cancel: true },
     billingAccess: { generate: true, payments: true, reports: true },
@@ -1170,7 +1169,7 @@ const ROLE_PERMISSIONS = {
     canChangePrices: true,
     canManageStaff: true
   },
-  Manager: {
+  user: {
     tablesManagement: { view: true, manage: true, status: true },
     orderProcessing: { create: true, modify: true, cancel: true },
     billingAccess: { generate: true, payments: true, reports: true },
@@ -1184,7 +1183,7 @@ const ROLE_PERMISSIONS = {
     canChangePrices: true,
     canManageStaff: false
   },
-  Staff: {
+  staff: {
     tablesManagement: { view: true, manage: false, status: true },
     orderProcessing: { create: true, modify: false, cancel: false },
     billingAccess: { generate: false, payments: false, reports: false },
@@ -1211,23 +1210,58 @@ const StaffManagement = () => {
     confirmPassword: ''
   });
   const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
+   const token = localStorage.getItem("token");
 const [newStaff, setNewStaff] = useState({
   name: "",
   username: "",
   email: "",
   password: "",
   phone: "",
-  role: "Staff",
+  role: "staff",
 });
 //const [passwordVisible, setPasswordVisible] = useState(false);
 // const [showAddModal, setShowAddModal] = useState(false);
 
   const [permissions, setPermissions] = useState({});
-  const [staffMembers, setStaffMembers] = useState([
-    { id: 'sarah', name: 'Sarah Johnson', phone: '+1 (555) 123-4567', role: 'Admin', color: 'primary', ...ROLE_PERMISSIONS.Admin },
-    { id: 'michael', name: 'Michael Chen', phone: '+1 (555) 234-5678', role: 'Staff', color: 'success', ...ROLE_PERMISSIONS.Staff },
-    { id: 'emily', name: 'Emily Rodriguez', phone: '+1 (555) 345-6789', role: 'Manager', color: 'info', ...ROLE_PERMISSIONS.Manager }
-  ]);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(6); // show 6 per page
+  const [totalPages, setTotalPages] = useState(1);
+
+
+
+// it fetches staff list
+const fetchStaffList = async (pageNumber = 1) => {
+  try {
+    const res = await axiosInstance.get(
+      `/users?page=${pageNumber}&limit=${limit}&role=staff`
+    );
+
+    if (res.data.success) {
+      setStaffMembers(res.data.data.users);
+      setTotalPages(res.data.data.totalPages);
+      setPage(res.data.data.page);
+    }
+  } catch (error) {
+    console.error("Error fetching staff:", error);
+  }
+};
+
+  useEffect(() => {
+    fetchStaffList(page);
+  }, [page]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
+
+  // const [staffMembers, setStaffMembers] = useState([
+  //   { id: 'sarah', name: 'Sarah Johnson', phone: '+1 (555) 123-4567', role: 'Admin', color: 'primary', ...ROLE_PERMISSIONS.Admin },
+  //   { id: 'michael', name: 'Michael Chen', phone: '+1 (555) 234-5678', role: 'Staff', color: 'success', ...ROLE_PERMISSIONS.Staff },
+  //   { id: 'emily', name: 'Emily Rodriguez', phone: '+1 (555) 345-6789', role: 'Manager', color: 'info', ...ROLE_PERMISSIONS.Manager }
+  // ]);
 
   // Load permissions when staff is selected
   useEffect(() => {
@@ -1277,7 +1311,7 @@ const handleChange = (e) => {
 
   const handleAddStaff = async () => {
   try {
-    const token = localStorage.getItem("authToken");
+   
     console.log("Token being sent:", token);
 
     if (!token) {
@@ -1286,7 +1320,7 @@ const handleChange = (e) => {
     }
 
     const res = await axios.post(
-      "/api/users",
+      "https://restaurant-backend-production-a63a.up.railway.app/api/users",
       newStaff,
       {
         headers: {
@@ -1309,10 +1343,25 @@ const handleChange = (e) => {
 };
 
 
+// ✅ Delete Staff Handler
+const handleDeleteStaff = async (id) => {
+  try {
+    // Ask confirmation before delete
+    const confirmDelete = window.confirm("Are you sure you want to delete this staff member?");
+    if (!confirmDelete) return; // exit if user cancels
 
-  const handleDeleteStaff = (id) => {
-    setStaffMembers(staffMembers.filter(staff => staff.id !== id));
-  };
+    // API Call to delete staff
+    await axiosInstance.delete(`/users/${id}`);
+
+    // Update state after successful delete
+    setStaffMembers((prevStaff) => prevStaff.filter((staff) => staff.id !== id));
+
+    console.log(`Staff with id ${id} deleted successfully`);
+  } catch (error) {
+    console.error("Error deleting staff:", error);
+  }
+};
+
 
 const togglePasswordVisibility = () => {
   setPasswordVisible((prev) => !prev);
@@ -1337,20 +1386,41 @@ const togglePasswordVisibility = () => {
     setShowResetPasswordModal(true);
   };
 
-  const submitResetPassword = () => {
-    if (resetPassword.newPassword !== resetPassword.confirmPassword) {
-      alert("Passwords don't match!");
-      return;
-    }
+const submitResetPassword = async () => {
+  if (!resetPassword.newPassword || !resetPassword.confirmPassword) {
+    alert("Please fill in both password fields!");
+    return;
+  }
 
-    // Here you would typically call an API to update the password
+  if (resetPassword.newPassword !== resetPassword.confirmPassword) {
+    alert("Passwords don't match!");
+    return;
+  }
+
+  if (resetPassword.newPassword.length < 6) {
+    alert("Password should be at least 6 characters long!");
+    return;
+  }
+
+  try {
+    // ✅ include userId or email depending on your backend
+    await axiosInstance.put(`/auth/change-password`, {
+      userId: selectedStaff,  
+      password: resetPassword.newPassword,
+    });
+
     alert(`Password for ${selectedStaff} has been reset successfully!`);
+
     setShowResetPasswordModal(false);
     setResetPassword({
-      newPassword: '',
-      confirmPassword: ''
+      newPassword: "",
+      confirmPassword: "",
     });
-  };
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    alert("Failed to reset password. Please try again.");
+  }
+};
 
   const renderPermissionControls = () => {
     if (!selectedStaff) return (
@@ -1359,12 +1429,33 @@ const togglePasswordVisibility = () => {
       </Alert>
     );
 
-    const staff = staffMembers.find(s => s.id === selectedStaff);
-    const isAdmin = staff.role === 'Admin';
-    const isManager = staff.role === 'Manager';
+    const staff = staffMembers.find(s => s.id == selectedStaff);
+    const isAdmin = staff.role == 'admin';
+    const isManager = staff.role == 'Manager';
 
     return (
       <Row className="g-4 mb-4">
+        {/* Staff Info Card */}
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <h6 className="mb-3">Staff Information</h6>
+          <Row>
+            <Col md={6}>
+              <p><strong>Name:</strong> {staff.name}</p>
+              <p><strong>Email:</strong> {staff.email}</p>
+              <p><strong>Phone:</strong> {staff.phone}</p>
+            </Col>
+            <Col md={6}>
+              <p><strong>Role:</strong> {staff.role}</p>
+              <p><strong>Status:</strong> {staff.status}</p>
+              <p>
+                <strong>Discount:</strong> {staff.discount_percentage || "0"}%
+              </p>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
         {/* Tables Management */}
         <Col xs={12} md={6} lg={4}>
           <Card className="bg-light">
@@ -1573,26 +1664,27 @@ const togglePasswordVisibility = () => {
         </Col>
 
         {/* Role-specific information */}
-        <Col xs={12}>
-          <Card className="bg-primary-subtle">
-            <Card.Body>
-              <h6 className="mb-2">Current Access Summary for {staff.name}</h6>
-              <p className="mb-0">
-                <strong>Role:</strong> {staff.role} - {staff.role === 'Admin' ?
-                  'Full system access including staff management' :
-                  staff.role === 'Manager' ?
-                    'Can manage orders, tables, and apply discounts (up to 15%)' :
-                    'Basic staff access for order creation and table viewing'}
+       {/* Role-specific Summary */}
+      <Col xs={12}>
+        <Card className="bg-primary-subtle">
+          <Card.Body>
+            <h6 className="mb-2">Current Access Summary for {staff.name}</h6>
+            <p className="mb-0">
+              <strong>Role:</strong> {staff.role} - {staff.role === 'Admin'
+                ? 'Full system access including staff management'
+                : staff.role === 'Manager'
+                  ? 'Can manage orders, tables, and apply discounts (up to 15%)'
+                  : 'Basic staff access for order creation and table viewing'}
+            </p>
+            {staff.role === 'Manager' && (
+              <p className="mb-0 mt-2">
+                <strong>Manager Privileges:</strong> Can add menu items, change prices,
+                and apply discounts (up to {permissions.specialPermissions?.discounts?.maxDiscount || 0}%)
               </p>
-              {staff.role === 'Manager' && (
-                <p className="mb-0 mt-2">
-                  <strong>Manager Privileges:</strong> Can add menu items, change prices,
-                  and apply discounts (up to {permissions.specialPermissions?.discounts?.maxDiscount || 0}%)
-                </p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
+            )}
+          </Card.Body>
+        </Card>
+      </Col>
       </Row>
     );
   };
@@ -1640,8 +1732,8 @@ const togglePasswordVisibility = () => {
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-start mb-3">
                   <div className="d-flex align-items-center">
-                    <div className={`bg-${staff.color}-subtle rounded-circle p-3 me-3`}>
-                      <Person className={`text-${staff.color}`} size={20} />
+                    <div className="bg-light rounded-circle p-3 me-3">
+                      <Person className="text-primary" size={20} />
                     </div>
                     <div>
                       <h6 className="mb-0">{staff.name}</h6>
@@ -1652,17 +1744,18 @@ const togglePasswordVisibility = () => {
                 </div>
                 <div className="d-flex">
                   <Button
-                    variant="light"
-                    className="me-2 flex-grow-1 text-dark"
-                    onClick={() => handleEditClick(staff)}
-                  >
-                    <Gear className="me-1" />
-                    Manage Permissions
-                  </Button>
+  variant="light"
+  className="me-2 flex-grow-1 text-dark"
+  onClick={() => handleEditClick(staff)} // pass whole staff
+>
+  <Gear className="me-1" />
+  Manage Permissions
+</Button>
+
                   <Button
                     variant="outline-danger"
                     onClick={() => handleDeleteStaff(staff.id)}
-                    disabled={staff.role === 'Admin'}
+                    disabled={staff.role.toLowerCase() === "admin"}
                   >
                     <Trash />
                   </Button>
@@ -1670,8 +1763,8 @@ const togglePasswordVisibility = () => {
                 <div className="mt-2">
                   <Button
                     variant="outline-info"
-                    onClick={() => handleResetPasswordClick(staff.id)}
-                    disabled={staff.role === 'Admin'}
+                    onClick={() =>  handleResetPasswordClick(staff.id)}
+                    disabled={staff.role.toLowerCase() === "admin"}
                     className="w-100"
                   >
                     Reset Password
@@ -1682,6 +1775,29 @@ const togglePasswordVisibility = () => {
           </Col>
         ))}
       </Row>
+
+      {/* Pagination */}
+      <div className="d-flex justify-content-center">
+        <Pagination>
+          <Pagination.Prev
+            disabled={page === 1}
+            onClick={() => handlePageChange(page - 1)}
+          />
+          {[...Array(totalPages)].map((_, index) => (
+            <Pagination.Item
+              key={index + 1}
+              active={index + 1 === page}
+              onClick={() => handlePageChange(index + 1)}
+            >
+              {index + 1}
+            </Pagination.Item>
+          ))}
+          <Pagination.Next
+            disabled={page === totalPages}
+            onClick={() => handlePageChange(page + 1)}
+          />
+        </Pagination>
+      </div>
 
       {/* Access Management Section */}
       <Card className="mb-4">
@@ -1798,8 +1914,8 @@ const togglePasswordVisibility = () => {
                 onChange={handleChange}
                 required
               >
-                <option value="Staff">Staff</option>
-                <option value="Manager">Manager</option>
+                <option value="Staff">staff</option>
+                <option value="Manager">user</option>
               </Form.Select>
               <Form.Text className="text-muted">
                 Note: Admin roles can only be created by existing admins
@@ -1827,22 +1943,25 @@ const togglePasswordVisibility = () => {
       </Modal>
 
       {/* Edit Permissions Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Manage Permissions</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedStaff && renderPermissionControls()}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
+<Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+  <Modal.Header closeButton>
+    <Modal.Title>
+      Manage Permissions – {selectedStaff?.name}
+    </Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {selectedStaff && renderPermissionControls(selectedStaff)} 
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowModal(false)}>
+      Close
+    </Button>
+    <Button variant="primary" onClick={handleSave}>
+      Save Changes
+    </Button>
+  </Modal.Footer>
+</Modal>
+
 
       {/* Reset Password Modal */}
       <Modal show={showResetPasswordModal} onHide={() => setShowResetPasswordModal(false)} centered>
