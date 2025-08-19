@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import Calendar from './Calendar'; // ✅ Adjust the path if needed
 
 import {
@@ -27,10 +28,16 @@ const BookTable = () => {
   const [selectedDate, setSelectedDate] = useState("January 19, 2025");
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState(""); // Added email field
+  const [partySize, setPartySize] = useState(1); // Added party size
+  const [specialRequests, setSpecialRequests] = useState(""); // Added special requests
   const [smsNotification, setSmsNotification] = useState(true);
   const [emailNotification, setEmailNotification] = useState(true);
   const [nameError, setNameError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [bookingError, setBookingError] = useState(""); // Added error state
+  const [reservationData, setReservationData] = useState(null);
 
   const tableTypes = [
     {
@@ -40,6 +47,7 @@ const BookTable = () => {
       price: "$15/hour",
       icon: <RiBilliardsLine />,
       color: "success",
+      tableNumber: "SN01" // Added table number mapping
     },
     {
       id: "pool",
@@ -48,6 +56,7 @@ const BookTable = () => {
       price: "$12/hour",
       icon: <RiBasketballLine />,
       color: "primary",
+      tableNumber: "PL01"
     },
     {
       id: "playstation",
@@ -56,6 +65,7 @@ const BookTable = () => {
       price: "$20/hour",
       icon: <RiGamepadLine />,
       color: "info",
+      tableNumber: "PS01"
     },
     {
       id: "dining",
@@ -64,6 +74,7 @@ const BookTable = () => {
       price: "$8/hour",
       icon: <RiRestaurantLine />,
       color: "warning",
+      tableNumber: "DT01"
     },
   ];
 
@@ -142,10 +153,107 @@ const BookTable = () => {
     return nameValid && phoneValid;
   };
 
-  const handleConfirm = () => {
-    alert(
-      "Booking confirmed! You will receive a confirmation message shortly."
-    );
+  // Use actual available table IDs from your backend for each type
+  const tableTypeToId = {
+    snooker: 9,      // ✅ Replace 9 with the ACTUAL available snooker table_id from your backend!
+    pool: 10,        // Example: 10 for Pool Table 3
+    playstation: 7,  // Example: 7 for PlayStation 1
+    dining: 12       // Replace with actual dining table_id
+  };
+
+  // Function to convert time format from "9:00 AM" to "18:00"
+  const convertTimeTo24HourFormat = (timeStr) => {
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+
+    if (modifier === 'PM' && hours !== '12') {
+      hours = parseInt(hours, 10) + 12;
+    } else if (modifier === 'AM' && hours === '12') {
+      hours = '00';
+    }
+
+    // Return in "HH:MM" format (not "HH:MM:00")
+    return `${String(hours).padStart(2, '0')}:${minutes}`;
+  };
+
+  // Function to convert date format from "January 19, 2025" to "2025-01-19"
+  const convertDateFormat = (dateStr) => {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Function to handle booking confirmation
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    setBookingError("");
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setBookingError("You are not logged in. Please log in to confirm your booking.");
+        setIsLoading(false);
+        return;
+      }
+      // Make sure selectedType is valid and mapped to a real table_id
+      const table_id = tableTypeToId[selectedType];
+      if (!table_id) {
+        setBookingError("Please select a valid table type.");
+        setIsLoading(false);
+        return;
+      }
+      const reservationData = {
+        table_id,
+        customer_name: fullName,
+        customer_phone: phoneNumber,
+        customer_email: email,
+        reservation_date: convertDateFormat(selectedDate),
+        reservation_time: convertTimeTo24HourFormat(selectedTime),
+        duration_hours: 2,
+        party_size: partySize,
+        special_requests: specialRequests,
+      };
+
+      const response = await axios.post(
+        'https://restaurant-backend-production-a63a.up.railway.app/api/reservations',
+        reservationData,
+        {
+          headers: {
+            Authorization: `Bearer ${token.replace(/^"(.*)"$/, '$1')}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      setReservationData(response.data);
+      alert("Booking confirmed! You will receive a confirmation message shortly.");
+    } catch (error) {
+      if (
+        error.response &&
+        (error.response.data?.message === "Access denied. No token provided." ||
+          error.response.data?.message === "Invalid token." ||
+          error.response.data?.message === "jwt expired" ||
+          error.response.data?.message === "jwt malformed")
+      ) {
+        setBookingError("Session expired or invalid. Please log in again.");
+      } else if (
+        error.response &&
+        error.response.data?.errors &&
+        Array.isArray(error.response.data.errors)
+      ) {
+        setBookingError(error.response.data.errors.map(e => e.msg).join(", "));
+      } else if (
+        error.response &&
+        error.response.data?.message === "Table not found or not available"
+      ) {
+        setBookingError("Selected table is not available. Please choose another table or time.");
+      } else {
+        setBookingError("Failed to make reservation. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getTypeInfo = (type) => {
@@ -396,6 +504,39 @@ const BookTable = () => {
                     </div>
                   )}
                 </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Email Address</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Party Size</label>
+                  <select 
+                    className="form-control"
+                    value={partySize}
+                    onChange={(e) => setPartySize(parseInt(e.target.value))}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                      <option key={num} value={num}>{num} {num === 1 ? 'person' : 'people'}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Special Requests (Optional)</label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    value={specialRequests}
+                    onChange={(e) => setSpecialRequests(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -427,6 +568,12 @@ const BookTable = () => {
                 Please review your booking details before confirming
               </p>
             </div>
+
+            {bookingError && (
+              <div className="alert alert-danger" role="alert">
+                {bookingError}
+              </div>
+            )}
 
             <div className="card" style={{ maxWidth: "600px" }}>
               <div className="card-body">
@@ -473,6 +620,20 @@ const BookTable = () => {
                     <span className="text-muted">Phone:</span>
                     <span className="fw-medium">{phoneNumber}</span>
                   </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Email:</span>
+                    <span className="fw-medium">{email}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Party Size:</span>
+                    <span className="fw-medium">{partySize} {partySize === 1 ? 'person' : 'people'}</span>
+                  </div>
+                  {specialRequests && (
+                    <div className="d-flex justify-content-between mb-2">
+                      <span className="text-muted">Special Requests:</span>
+                      <span className="fw-medium">{specialRequests}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-3 border-top">
@@ -517,14 +678,23 @@ const BookTable = () => {
               <button
                 className="btn btn-light text-dark px-4 py-2 fw-semibold"
                 onClick={handleBackStep}
+                disabled={isLoading}
               >
                 Back to Details
               </button>
               <button
                 className="btn btn-success text-white px-4 py-2 fw-semibold"
                 onClick={handleConfirm}
+                disabled={isLoading}
               >
-                Confirm Booking
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Processing...
+                  </>
+                ) : (
+                  "Confirm Booking"
+                )}
               </button>
             </div>
           </div>
