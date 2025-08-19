@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axiosInstance from '../utils/axiosInstance';
+import { apiUrl } from '../utils/config';
+import { toast } from 'react-toastify';
 
 
 const Profile = () => {
+
+
+
+
+
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    address: '',
+    phone: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -14,23 +23,87 @@ const Profile = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
 
-  const handleProfileUpdate = (e) => {
+  };
+   
+
+  useEffect(() => {
+    // Fetch user data and populate form
+    const fetchUserData = async () => {
+      const userData = await axiosInstance.get(`${apiUrl}/auth/profile`); // Replace with your data fetching logic
+     console.log(userData);
+
+      setFormData(
+        {
+          name: userData.data.data.user.name,
+          email: userData.data.data.user.email,
+          // address: userData.data.data.user.address,
+          phone: userData.data.data.user.phone,
+          currentPassword: '' ,
+          newPassword: '',
+          confirmPassword: ''
+        }
+      );
+    };
+    fetchUserData();
+  }, []);
+
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
     // Handle update logic
-    alert('Profile updated!');
+    
+     const payload = {
+       phone: formData.phone,
+       name: formData.name,
+     }
+
+     try{
+       const response = await axiosInstance.put(`${apiUrl}/auth/profile`, payload);
+       if (response.data.success) {
+      toast.success(response.data.message || "Profile updated successfully!");
+       
+        console.log(response);
+       }
+
+     } catch (error) {
+       console.error('Error updating profile:', error);
+        toast.error(error.response?.data?.message || "Failed to update profile.");
+     }
   };
 
-  const handlePasswordUpdate = (e) => {
-    e.preventDefault();
-    if (formData.newPassword !== formData.confirmPassword) {
-      alert("New passwords do not match!");
-      return;
-    }
-    // Handle password update logic
-    alert("Password updated!");
+  const handlePasswordUpdate = async (e) => {
+  e.preventDefault();
+
+  if (formData.newPassword !== formData.confirmPassword) {
+    alert("New passwords do not match!");
+    return;
+  }
+
+  const payload = {
+    currentPassword: formData.currentPassword,
+    newPassword: formData.newPassword,
   };
+
+  try {
+    const response = await axiosInstance.put(`${apiUrl}/auth/change-password`, payload);
+
+    if (response.data.success) {
+      toast.success(response.data.message || "Password updated successfully!");
+      setFormData({
+        ...formData,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } else {
+      toast.error(response.data.message || "Failed to update password.");
+    }
+  } catch (error) {
+    console.error("Error updating password:", error);
+    toast.error(error.response?.data?.message || "Failed to update password.");
+  }
+};
+
 
   return (
     <div className="p-4">
@@ -60,9 +133,22 @@ const Profile = () => {
             onChange={handleChange}
             placeholder="Enter your email address"
             required
+            readOnly
           />
         </div>
-        <div className="mb-3">
+
+            <div className="mb-3">
+          <label className="form-label">Phone</label>
+          <input
+                  type="number"
+                  className="form-control "
+                  placeholder="Phone Number"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                />
+        </div>
+        {/* <div className="mb-3">
           <label className="form-label">Address</label>
           <textarea
             className="form-control"
@@ -73,7 +159,7 @@ const Profile = () => {
             rows={3}
             required
           />
-        </div>
+        </div> */}
         <button type="submit" className="btn btn-warning text-white">Update Profile</button>
       </form>
 

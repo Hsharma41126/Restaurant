@@ -113,7 +113,7 @@ export const logoutUser = createAsyncThunk(
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('role');
-      localStorage.removeItem('rememberedEmail'); // Clear remembered email too
+      // localStorage.removeItem('rememberedEmail'); // Clear remembered email too
       
       return true;
     } catch (err) {
