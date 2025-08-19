@@ -1,6 +1,9 @@
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Card, Row, Col, Table, Modal } from 'react-bootstrap';
+import { Form, Button, Card, Row, Col, Table, Modal, Spinner, Alert } from 'react-bootstrap';
 import { PlusCircle, Save, Pencil, Trash, Eye, Plus, ChevronDown, ChevronUp } from 'react-bootstrap-icons';
+
+const API_BASE_URL = 'https://restaurant-backend-production-a63a.up.railway.app/api';
 
 const AddItemPage = () => {
   // Form states
@@ -11,6 +14,7 @@ const AddItemPage = () => {
   const [types, setTypes] = useState([]);
   const [printer, setPrinter] = useState('');
   const [editIndex, setEditIndex] = useState(null);
+  const [editingItemId, setEditingItemId] = useState(null);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -18,73 +22,145 @@ const AddItemPage = () => {
   const [viewItem, setViewItem] = useState(null);
   const [expandedCategories, setExpandedCategories] = useState({});
 
-  // Items table state with dummy data
-  const [items, setItems] = useState([
-    {
-      category: 'Food',
-      subcategory: 'Pizza',
-      types: [
-        { name: 'Cheese Pizza', price: '250' },
-        { name: 'Veg Pizza', price: '200' }
-      ],
-      printer: 'Kitchen Printer'
-    },
-    {
-      category: 'Food',
-      subcategory: 'Burger',
-      types: [
-        { name: 'Aloo Tikki', price: '80' },
-        { name: 'Chicken Burger', price: '150' }
-      ],
-      printer: 'Kitchen Printer'
-    },
-    {
-      category: 'Drink',
-      subcategory: 'Cold Drink',
-      types: [
-        { name: 'Pepsi', price: '40' },
-        { name: 'Coke', price: '40' }
-      ],
-      printer: 'Bar Printer'
-    },
-    {
-      category: 'Games',
-      subcategory: 'Pool',
-      types: [
-        { name: '8 Ball', price: '100' },
-        { name: '9 Ball', price: '120' }
-      ],
-      printer: 'Game Zone Printer'
-    }
-  ]);
+  // API states
+  const [categories, setCategories] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
+  const [printers, setPrinters] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const categories = ['Food', 'Drink', 'Games'];
-  const subcategories = {
-    Food: ['Pizza', 'Burger', 'Pasta', 'Sandwich'],
-    Drink: ['Cold Drink', 'Juice', 'Coffee', 'Tea'],
-    Games: ['Pool', 'Carrom', 'Chess', 'Cards']
+  // Fetch all categories on component mount
+  useEffect(() => {
+    fetchCategories();
+    fetchMenuItems();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`https://restaurant-backend-production-a63a.up.railway.app/api/menu/categories`);
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response;
+      setCategories(data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
   };
 
-  const printers = ['Kitchen Printer', 'Bar Printer', 'Main Printer', 'Game Zone Printer'];
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/menu/items?status=available`);
+      if (!response.ok) throw new Error('Failed to fetch menu items');
+      const data = await response.json();
+      setMenuItems(data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
 
-  const defaultTypes = {
-    Pizza: [
-      { name: 'Cheese Pizza', price: '250' },
-      { name: 'Veg Pizza', price: '200' },
-      { name: 'Paneer Pizza', price: '300' }
-    ],
-    Burger: [
-      { name: 'Aloo Tikki', price: '80' },
-      { name: 'Chicken Burger', price: '150' }
-    ],
-    'Cold Drink': [
-      { name: 'Pepsi', price: '40' },
-      { name: 'Coke', price: '40' }
-    ],
-    Pool: [
-      { name: '8 Ball', price: '100' },
-      { name: '9 Ball', price: '120' }
-    ]
+  const fetchItemsByCategory = async (categoryId) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/menu/categories/${categoryId}/items`);
+      if (!response.ok) throw new Error('Failed to fetch items by category');
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createCategory = async (categoryData) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/menu/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData),
+      });
+      if (!response.ok) throw new Error('Failed to create category');
+      const data = await response.json();
+      setCategories([...categories, data]);
+      return data.id; // Return the new category ID
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createMenuItem = async (menuItemData) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/menu/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(menuItemData),
+      });
+      if (!response.ok) throw new Error('Failed to create menu item');
+      const data = await response.json();
+      setMenuItems([...menuItems, data]);
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateMenuItem = async (itemId, menuItemData) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/menu/items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(menuItemData),
+      });
+      if (!response.ok) throw new Error('Failed to update menu item');
+      const data = await response.json();
+      // Update the menu items list
+      setMenuItems(menuItems.map(item => item.id === itemId ? data : item));
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteMenuItem = async (itemId) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/menu/items/${itemId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete menu item');
+      // Remove the item from the menu items list
+      setMenuItems(menuItems.filter(item => item.id !== itemId));
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddType = () => {
@@ -103,27 +179,6 @@ const AddItemPage = () => {
     setTypes(updatedTypes);
   };
 
-  useEffect(() => {
-    if (subcategory && subcategory !== 'new') {
-      const existingTypes = defaultTypes[subcategory] || [{ name: '', price: '' }];
-      setTypes(existingTypes);
-      
-      if (['Pizza', 'Burger', 'Pasta'].includes(subcategory)) {
-        setPrinter('Kitchen Printer');
-      } else if (['Cold Drink', 'Juice'].includes(subcategory)) {
-        setPrinter('Bar Printer');
-      } else if (['Pool', 'Carrom'].includes(subcategory)) {
-        setPrinter('Game Zone Printer');
-      } else {
-        setPrinter('Main Printer');
-      }
-    }
-    if (subcategory === 'new') {
-      setTypes([{ name: '', price: '' }]);
-      setPrinter('Main Printer');
-    }
-  }, [subcategory]);
-
   const resetForm = () => {
     setCategory('');
     setNewCategory('');
@@ -132,70 +187,94 @@ const AddItemPage = () => {
     setTypes([]);
     setPrinter('');
     setEditIndex(null);
+    setEditingItemId(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const finalCategory = category === 'new' ? newCategory : category;
-    const finalSubcategory = subcategory === 'new' ? newSubcategory : subcategory;
     
-    const newItem = {
-      category: finalCategory,
-      subcategory: finalSubcategory,
-      types: [...types],
-      printer
-    };
+    try {
+      let finalCategoryId = category;
+      if (category === 'new') {
+        const newCategoryData = {
+          name: newCategory,
+          description: `Category for ${newCategory}`
+        };
+        const createdCategory = await createCategory(newCategoryData);
+        if (!createdCategory) return;
+        finalCategoryId = createdCategory.id;
+      }
 
-    if (editIndex !== null) {
-      // Update existing item
-      const updatedItems = [...items];
-      updatedItems[editIndex] = newItem;
-      setItems(updatedItems);
-    } else {
-      // Add new item
-      setItems([...items, newItem]);
+      const menuItemData = {
+        name: types[0].name, // Using first type as the main name
+        description: types.map(t => t.name).join(', '),
+        category_id: finalCategoryId,
+        price: parseFloat(types[0].price),
+        cost_price: parseFloat(types[0].price) * 0.5, // Assuming 50% cost price
+        printer_id: printer,
+        status: 'available',
+        image_url: 'https://example.com/default-image.jpg'
+      };
+
+      if (editingItemId) {
+        // Update existing item
+        await updateMenuItem(editingItemId, menuItemData);
+      } else {
+        // Create new item
+        await createMenuItem(menuItemData);
+      }
+
+      resetForm();
+      setShowModal(false);
+    } catch (err) {
+      setError(err.message || 'Failed to save item');
     }
-
-    resetForm();
-    setShowModal(false);
   };
 
-  const handleEdit = (index) => {
-    const item = items[index];
-    setCategory(item.category);
-    setSubcategory(item.subcategory);
-    setTypes(item.types);
-    setPrinter(item.printer);
-    setEditIndex(index);
+  const handleEdit = (item) => {
+    setCategory(item.category_id.toString());
+    setTypes([{ name: item.name, price: item.price.toString() }]);
+    setPrinter(item.printer_id);
+    setEditingItemId(item.id);
     setShowModal(true);
   };
 
-  const handleDelete = (index) => {
+  const handleDelete = async (itemId) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      const updatedItems = [...items];
-      updatedItems.splice(index, 1);
-      setItems(updatedItems);
+      await deleteMenuItem(itemId);
     }
   };
 
-  const handleView = (index) => {
-    setViewItem(items[index]);
+  const handleView = (item) => {
+    setViewItem(item);
     setShowViewModal(true);
   };
 
-  const toggleCategory = (category) => {
+  const toggleCategory = async (categoryId) => {
     setExpandedCategories(prev => ({
       ...prev,
-      [category]: !prev[category]
+      [categoryId]: !prev[categoryId]
     }));
+
+    // If expanding and items not loaded yet, fetch them
+    if (!expandedCategories[categoryId] && !menuItems.some(item => item.category_id === categoryId)) {
+      const items = await fetchItemsByCategory(categoryId);
+      setMenuItems([...menuItems, ...items]);
+    }
   };
 
   // Group items by category
-  const groupedItems = items.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
+  const groupedItems = menuItems.reduce((acc, item) => {
+    const category = categories.find(c => c.id === item.category_id);
+    const categoryName = category ? category.name : `Category ${item.category_id}`;
+    
+    if (!acc[categoryName]) {
+      acc[categoryName] = {
+        id: item.category_id,
+        items: []
+      };
     }
-    acc[item.category].push(item);
+    acc[categoryName].items.push(item);
     return acc;
   }, {});
 
@@ -208,10 +287,22 @@ const AddItemPage = () => {
         </Button>
       </div>
 
+      {error && (
+        <Alert variant="danger" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
+
       {/* Items Table */}
       <Card className="shadow-sm">
         <Card.Body className="p-0">
-          {items.length === 0 ? (
+          {loading && menuItems.length === 0 ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
+            </div>
+          ) : menuItems.length === 0 ? (
             <div className="text-center py-4 text-muted">
               No items added yet. Click "Add New Item" to get started.
             </div>
@@ -220,67 +311,58 @@ const AddItemPage = () => {
               <thead>
                 <tr>
                   <th>Category</th>
-                  <th>Subcategories</th>
                   <th>Items Count</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(groupedItems).map(([category, categoryItems], catIndex) => (
-                  <React.Fragment key={category}>
+                {Object.entries(groupedItems).map(([categoryName, categoryData]) => (
+                  <React.Fragment key={categoryData.id}>
                     <tr>
                       <td>
                         <div className="d-flex align-items-center">
                           <Button 
                             variant="link" 
                             size="sm" 
-                            onClick={() => toggleCategory(category)}
+                            onClick={() => toggleCategory(categoryData.id)}
                             className="p-0 me-2"
                           >
-                            {expandedCategories[category] ? <ChevronUp /> : <ChevronDown />}
+                            {expandedCategories[categoryData.id] ? <ChevronUp /> : <ChevronDown />}
                           </Button>
-                          {category}
+                          {categoryName}
                         </div>
                       </td>
-                      <td>{categoryItems.length} subcategories</td>
                       <td>
-                        {categoryItems.reduce((sum, item) => sum + item.types.length, 0)} items
+                        {categoryData.items.length} items
                       </td>
                       <td>
                         <Button 
                           variant="outline-info" 
                           size="sm" 
                           className="py-0"
-                          onClick={() => toggleCategory(category)}
+                          onClick={() => toggleCategory(categoryData.id)}
                         >
-                          {expandedCategories[category] ? 'Hide' : 'View'} Details
+                          {expandedCategories[categoryData.id] ? 'Hide' : 'View'} Details
                         </Button>
                       </td>
                     </tr>
-                    {expandedCategories[category] && categoryItems.map((item, index) => {
-                      const globalIndex = items.findIndex(i => 
-                        i.category === item.category && 
-                        i.subcategory === item.subcategory
-                      );
-                      return (
-                        <tr key={`${catIndex}-${index}`} className="bg-light">
-                          <td></td>
-                          <td>{item.subcategory}</td>
-                          <td>{item.types.length} items</td>
-                          <td>
-                            <Button variant="outline-info" size="sm" className="me-1 py-0" onClick={() => handleView(globalIndex)}>
-                              <Eye size={14} />
-                            </Button>
-                            <Button variant="outline-primary" size="sm" className="me-1 py-0" onClick={() => handleEdit(globalIndex)}>
-                              <Pencil size={14} />
-                            </Button>
-                            <Button variant="outline-danger" size="sm" className="py-0" onClick={() => handleDelete(globalIndex)}>
-                              <Trash size={14} />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {expandedCategories[categoryData.id] && categoryData.items.map((item) => (
+                      <tr key={item.id} className="bg-light">
+                        <td></td>
+                        <td>{item.name} - ₹{item.price}</td>
+                        <td>
+                          <Button variant="outline-info" size="sm" className="me-1 py-0" onClick={() => handleView(item)}>
+                            <Eye size={14} />
+                          </Button>
+                          <Button variant="outline-primary" size="sm" className="me-1 py-0" onClick={() => handleEdit(item)}>
+                            <Pencil size={14} />
+                          </Button>
+                          <Button variant="outline-danger" size="sm" className="py-0" onClick={() => handleDelete(item.id)}>
+                            <Trash size={14} />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
                   </React.Fragment>
                 ))}
               </tbody>
@@ -292,7 +374,7 @@ const AddItemPage = () => {
       {/* Add/Edit Modal */}
       <Modal show={showModal} onHide={() => { setShowModal(false); resetForm(); }} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>{editIndex !== null ? 'Edit Item' : 'Add New Item'}</Modal.Title>
+          <Modal.Title>{editingItemId ? 'Edit Item' : 'Add New Item'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
@@ -314,7 +396,7 @@ const AddItemPage = () => {
                   >
                     <option value="">-- Select Category --</option>
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat.id} value={cat.id.toString()}>{cat.name}</option>
                     ))}
                     <option value="new">+ Add New Category</option>
                   </Form.Select>
@@ -336,48 +418,8 @@ const AddItemPage = () => {
               </Card.Body>
             </Card>
 
-            {/* Subcategory Section */}
-            {category && (
-              <Card className="mb-3">
-                <Card.Header className="bg-light p-2">
-                  <h6 className="mb-0">Subcategory Information</h6>
-                </Card.Header>
-                <Card.Body className="p-2">
-                  <Form.Group className="mb-2">
-                    <Form.Label className="small">Select Subcategory</Form.Label>
-                    <Form.Select
-                      value={subcategory}
-                      onChange={(e) => setSubcategory(e.target.value)}
-                      size="sm"
-                      disabled={!category}
-                    >
-                      <option value="">-- Select Subcategory --</option>
-                      {(subcategories[category] || []).map((sub) => (
-                        <option key={sub} value={sub}>{sub}</option>
-                      ))}
-                      <option value="new">+ Add New Subcategory</option>
-                    </Form.Select>
-                  </Form.Group>
-
-                  {subcategory === 'new' && (
-                    <Form.Group className="mb-2">
-                      <Form.Label className="small">New Subcategory Name</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={newSubcategory}
-                        onChange={(e) => setNewSubcategory(e.target.value)}
-                        placeholder="Enter new subcategory name"
-                        size="sm"
-                        required
-                      />
-                    </Form.Group>
-                  )}
-                </Card.Body>
-              </Card>
-            )}
-
             {/* Printer Selection Section */}
-            {subcategory && (
+            {category && (
               <Card className="mb-3">
                 <Card.Header className="bg-light p-2">
                   <h6 className="mb-0">Printer Selection</h6>
@@ -385,35 +427,35 @@ const AddItemPage = () => {
                 <Card.Body className="p-2">
                   <Form.Group className="mb-2">
                     <Form.Label className="small">Select Printer</Form.Label>
-                    <Form.Select
+                    <Form.Control
+                      as="select"
                       value={printer}
                       onChange={(e) => setPrinter(e.target.value)}
                       size="sm"
                       required
                     >
                       <option value="">-- Select Printer --</option>
-                      {printers.map((printerOption) => (
-                        <option key={printerOption} value={printerOption}>
-                          {printerOption}
-                        </option>
-                      ))}
-                    </Form.Select>
+                      <option value="KITCHEN_01">Kitchen Printer</option>
+                      <option value="BAR_01">Bar Printer</option>
+                      <option value="MAIN_01">Main Printer</option>
+                    </Form.Control>
                   </Form.Group>
                 </Card.Body>
               </Card>
             )}
 
             {/* Types and Prices Section */}
-            {subcategory && (
+            {category && (
               <Card className="mb-3">
                 <Card.Header className="bg-light p-2">
                   <div className="d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0">Item Types and Prices</h6>
+                    <h6 className="mb-0">Item Details</h6>
                     <Button
                       variant="outline-warning"
                       size="sm"
                       onClick={handleAddType}
                       className="py-0"
+                      disabled={types.length >= 1} // Limiting to 1 item per API structure
                     >
                       <PlusCircle size={14} className="me-1" /> Add
                     </Button>
@@ -422,7 +464,7 @@ const AddItemPage = () => {
                 <Card.Body className="p-2">
                   {types.length === 0 ? (
                     <div className="text-center py-2 text-muted small">
-                      No types added yet. Click "Add" to get started.
+                      No item details added yet. Click "Add" to get started.
                     </div>
                   ) : (
                     types.map((type, index) => (
@@ -453,6 +495,7 @@ const AddItemPage = () => {
                             size="sm"
                             onClick={() => handleRemoveType(index)}
                             className="w-100 py-0"
+                            disabled={types.length <= 1} // Must have at least one item
                           >
                             Remove
                           </Button>
@@ -470,16 +513,23 @@ const AddItemPage = () => {
                 variant="warning"
                 type="submit"
                 size="sm"
-                disabled={!category || !subcategory || types.length === 0 || !printer}
+                disabled={!category || types.length === 0 || !printer || loading}
                 className="px-4 me-2"
               >
-                <Save size={14} className="me-1" /> {editIndex !== null ? 'Update' : 'Save'}
+                {loading ? (
+                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                ) : (
+                  <>
+                    <Save size={14} className="me-1" /> {editingItemId ? 'Update' : 'Save'}
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline-secondary"
                 size="sm"
                 onClick={() => { setShowModal(false); resetForm(); }}
                 className="px-4"
+                disabled={loading}
               >
                 Cancel
               </Button>
@@ -496,27 +546,13 @@ const AddItemPage = () => {
         <Modal.Body>
           {viewItem && (
             <div>
-              <p><strong>Category:</strong> {viewItem.category}</p>
-              <p><strong>Subcategory:</strong> {viewItem.subcategory}</p>
-              <p><strong>Printer:</strong> {viewItem.printer}</p>
-              
-              <h6 className="mt-3">Items:</h6>
-              <Table striped bordered size="sm">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Price (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {viewItem.types.map((type, index) => (
-                    <tr key={index}>
-                      <td>{type.name}</td>
-                      <td>{type.price}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+              <p><strong>Category:</strong> {categories.find(c => c.id === viewItem.category_id)?.name || 'Unknown'}</p>
+              <p><strong>Name:</strong> {viewItem.name}</p>
+              <p><strong>Description:</strong> {viewItem.description}</p>
+              <p><strong>Price:</strong> ₹{viewItem.price}</p>
+              <p><strong>Cost Price:</strong> ₹{viewItem.cost_price}</p>
+              <p><strong>Printer:</strong> {viewItem.printer_id}</p>
+              <p><strong>Status:</strong> {viewItem.status}</p>
             </div>
           )}
         </Modal.Body>
