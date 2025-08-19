@@ -285,6 +285,8 @@ const AddItemPage = () => {
     return acc;
   }, {});
 
+  const subcategories = [];
+
   return (
     <div className="p-3">
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -424,6 +426,46 @@ const AddItemPage = () => {
                 )}
               </Card.Body>
             </Card>
+
+            {/* Subcategory Section */}
+            {category && category !== 'new' && (
+              <Card className="mb-3">
+                <Card.Header className="bg-light p-2">
+                  <h6 className="mb-0">Subcategory Information</h6>
+                </Card.Header>
+                <Card.Body className="p-2">
+                  <Form.Group className="mb-2">
+                    <Form.Label className="small">Select Subcategory</Form.Label>
+                    <Form.Select
+                      value={subcategory}
+                      onChange={(e) => setSubcategory(e.target.value)}
+                      size="sm"
+                      disabled={!category}
+                    >
+                      <option value="">-- Select Subcategory --</option>
+                      {subcategories[category]?.map((sub) => (
+                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                      ))}
+                      <option value="new">+ Add New Subcategory</option>
+                    </Form.Select>
+                  </Form.Group>
+
+                  {subcategory === 'new' && (
+                    <Form.Group className="mb-2">
+                      <Form.Label className="small">New Subcategory Name</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={newSubcategory}
+                        onChange={(e) => setNewSubcategory(e.target.value)}
+                        placeholder="Enter new subcategory name"
+                        size="sm"
+                        required
+                      />
+                    </Form.Group>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
 
             {/* Printer Selection Section */}
             {category && (
