@@ -2,6 +2,8 @@ import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Card, Row, Col, Table, Modal, Spinner, Alert } from 'react-bootstrap';
 import { PlusCircle, Save, Pencil, Trash, Eye, Plus, ChevronDown, ChevronUp } from 'react-bootstrap-icons';
+import { apiUrl } from '../../../utils/config';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const API_BASE_URL = 'https://restaurant-backend-production-a63a.up.railway.app/api';
 
@@ -38,10 +40,11 @@ const AddItemPage = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`https://restaurant-backend-production-a63a.up.railway.app/api/menu/categories`);
+      const response = await await fetch(`${apiUrl}/menu/categories`);
       if (!response.ok) throw new Error('Failed to fetch categories');
-      const data = await response;
-      setCategories(data);
+      const data = await response.json();
+      console.log("category", data)
+      setCategories(data.data.categories);
       setLoading(false);
     } catch (err) {
       setError(err.message);
@@ -53,9 +56,11 @@ const AddItemPage = () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/menu/items?status=available`);
+
       if (!response.ok) throw new Error('Failed to fetch menu items');
       const data = await response.json();
-      setMenuItems(data);
+      console.log("menu items", data)
+      setMenuItems(data.data.items);
       setLoading(false);
     } catch (err) {
       setError(err.message);
@@ -103,15 +108,14 @@ const AddItemPage = () => {
   const createMenuItem = async (menuItemData) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/menu/items`, {
-        method: 'POST',
+      const response = await axiosInstance.post(`${apiUrl}/menu/items`, JSON.stringify(menuItemData), {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(menuItemData),
+
       });
       if (!response.ok) throw new Error('Failed to create menu item');
-      const data = await response.json();
+      const data = await response;
       setMenuItems([...menuItems, data]);
       return data;
     } catch (err) {
@@ -125,15 +129,16 @@ const AddItemPage = () => {
   const updateMenuItem = async (itemId, menuItemData) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/menu/items/${itemId}`, {
-        method: 'PUT',
+      const response = await axiosInstance.put(`${API_BASE_URL}/menu/items/${itemId}`, JSON.stringify(menuItemData), {
+
         headers: {
           'Content-Type': 'application/json',
+
         },
-        body: JSON.stringify(menuItemData),
+
       });
       if (!response.ok) throw new Error('Failed to update menu item');
-      const data = await response.json();
+      const data = await response;
       // Update the menu items list
       setMenuItems(menuItems.map(item => item.id === itemId ? data : item));
       return data;
@@ -192,7 +197,7 @@ const AddItemPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       let finalCategoryId = category;
       if (category === 'new') {
@@ -263,11 +268,13 @@ const AddItemPage = () => {
     }
   };
 
+  console.log("menuitems", menuItems);
   // Group items by category
   const groupedItems = menuItems.reduce((acc, item) => {
+
     const category = categories.find(c => c.id === item.category_id);
     const categoryName = category ? category.name : `Category ${item.category_id}`;
-    
+    console.log(category)
     if (!acc[categoryName]) {
       acc[categoryName] = {
         id: item.category_id,
@@ -317,13 +324,13 @@ const AddItemPage = () => {
               </thead>
               <tbody>
                 {Object.entries(groupedItems).map(([categoryName, categoryData]) => (
-                  <React.Fragment key={categoryData.id}>
+                  <React.Fragment>
                     <tr>
                       <td>
                         <div className="d-flex align-items-center">
-                          <Button 
-                            variant="link" 
-                            size="sm" 
+                          <Button
+                            variant="link"
+                            size="sm"
                             onClick={() => toggleCategory(categoryData.id)}
                             className="p-0 me-2"
                           >
@@ -336,9 +343,9 @@ const AddItemPage = () => {
                         {categoryData.items.length} items
                       </td>
                       <td>
-                        <Button 
-                          variant="outline-info" 
-                          size="sm" 
+                        <Button
+                          variant="outline-info"
+                          size="sm"
                           className="py-0"
                           onClick={() => toggleCategory(categoryData.id)}
                         >
