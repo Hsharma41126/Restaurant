@@ -1140,6 +1140,9 @@
 // export default StaffManagement;
 
 import React, { useState, useEffect } from 'react';
+import { toast } from "react-toastify"; // optional for alerts
+
+import axios from "axios";
 import {
   Container, Row, Col, Card, Button, Form,
   Modal, Navbar, Nav, Badge, Dropdown,
@@ -1208,14 +1211,17 @@ const StaffManagement = () => {
     confirmPassword: ''
   });
   const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
-  const [newStaff, setNewStaff] = useState({
-    name: '',
-    username: '',
-    email: '',
-    password: '',
-    phone: '',
-    role: 'Staff'
-  });
+const [newStaff, setNewStaff] = useState({
+  name: "",
+  username: "",
+  email: "",
+  password: "",
+  phone: "",
+  role: "Staff",
+});
+//const [passwordVisible, setPasswordVisible] = useState(false);
+// const [showAddModal, setShowAddModal] = useState(false);
+
   const [permissions, setPermissions] = useState({});
   const [staffMembers, setStaffMembers] = useState([
     { id: 'sarah', name: 'Sarah Johnson', phone: '+1 (555) 123-4567', role: 'Admin', color: 'primary', ...ROLE_PERMISSIONS.Admin },
@@ -1237,11 +1243,11 @@ const StaffManagement = () => {
     setSelectedStaff(staff.id);
     setShowModal(true);
   };
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  setNewStaff((prev) => ({ ...prev, [name]: value }));
+};
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNewStaff(prev => ({ ...prev, [name]: value }));
-  };
 
   const handleResetPasswordChange = (e) => {
     const { name, value } = e.target;
@@ -1267,34 +1273,51 @@ const StaffManagement = () => {
     setShowModal(false);
   };
 
-  const handleAddStaff = () => {
-    const newStaffMember = {
-      id: newStaff.username.toLowerCase(),
-      name: newStaff.name,
-      phone: newStaff.phone,
-      role: newStaff.role,
-      color: newStaff.role === 'Admin' ? 'primary' : newStaff.role === 'Manager' ? 'info' : 'success',
-      ...ROLE_PERMISSIONS[newStaff.role]
-    };
-    setStaffMembers([...staffMembers, newStaffMember]);
-    setShowAddModal(false);
-    setNewStaff({
-      name: '',
-      username: '',
-      email: '',
-      password: '',
-      phone: '',
-      role: 'Staff'
-    });
-  };
+
+
+  const handleAddStaff = async () => {
+  try {
+    const token = localStorage.getItem("authToken");
+    console.log("Token being sent:", token);
+
+    if (!token) {
+      toast.error("Unauthorized! Please login as admin.");
+      return;
+    }
+
+    const res = await axios.post(
+      "/api/users",
+      newStaff,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,  // adjust if backend doesn’t want Bearer
+        },
+      }
+    );
+
+    if (res.data.success) {
+      toast.success(res.data.message || "Staff added successfully!");
+      setShowAddModal(false);
+      setNewStaff({ name: "", username: "", email: "", password: "", phone: "", role: "Staff" });
+    } else {
+      toast.error(res.data.message || "Failed to add staff");
+    }
+  } catch (error) {
+    console.error("Error adding staff:", error);
+    toast.error(error.response?.data?.message || "Something went wrong!");
+  }
+};
+
+
 
   const handleDeleteStaff = (id) => {
     setStaffMembers(staffMembers.filter(staff => staff.id !== id));
   };
 
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
+const togglePasswordVisibility = () => {
+  setPasswordVisible((prev) => !prev);
+};
+
 
   const toggleResetPasswordVisibility = () => {
     setResetPasswordVisible(!resetPasswordVisible);
