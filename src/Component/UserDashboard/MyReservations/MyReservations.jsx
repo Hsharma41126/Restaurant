@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     RiTimeLine, RiBilliardsLine, RiGamepadLine,
     RiRestaurantLine, RiErrorWarningLine,
@@ -12,61 +13,27 @@ const MyReservations = () => {
     const [currentBookingId, setCurrentBookingId] = useState('');
     const [selectedDate, setSelectedDate] = useState('20');
     const [selectedTime, setSelectedTime] = useState('2:00 PM');
+    const [reservations, setReservations] = useState([]);
 
-    const reservations = [
-        {
-            id: 'SN2024001',
-            title: 'Snooker Table',
-            status: 'Confirmed',
-            statusClass: 'bg-success text-white',
-            date: 'Today, January 20, 2025',
-            time: '2:00 PM - 4:00 PM',
-            location: 'Table 3, Floor 2',
-            icon: <RiBilliardsLine className="text-green-600 fs-4" />,
-            iconBg: 'bg-green-100',
-            borderClass: 'border-primary border-2',
-            highlight: true
-        },
-        {
-            id: 'PS2024002',
-            title: 'PlayStation Station',
-            status: 'Pending',
-            statusClass: 'bg-secondary text-white',
-            date: 'January 22, 2025',
-            time: '6:00 PM - 8:00 PM',
-            location: 'Station 5, Gaming Area',
-            icon: <RiGamepadLine className="text-blue-600 fs-4" />,
-            iconBg: 'bg-blue-100',
-            borderClass: 'border',
-            highlight: false
-        },
-        {
-            id: 'DT2024003',
-            title: 'Dining Table',
-            status: 'Arrived',
-            statusClass: 'bg-primary text-white',
-            date: 'January 25, 2025',
-            time: '7:30 PM - 9:30 PM',
-            location: 'Table 12, Restaurant',
-            icon: <RiRestaurantLine className="text-purple-600 fs-4" />,
-            iconBg: 'bg-purple-100',
-            borderClass: 'border',
-            highlight: false
-        },
-        {
-            id: 'PL2024004',
-            title: 'Pool Table',
-            status: 'Confirmed',
-            statusClass: 'bg-success text-white',
-            date: 'January 28, 2025',
-            time: '4:00 PM - 6:00 PM',
-            location: 'Table 7, Pool Area',
-            icon: <RiBilliardsLine className="text-orange-600 fs-4" />,
-            iconBg: 'bg-orange-100',
-            borderClass: 'border',
-            highlight: false
-        }
-    ];
+    useEffect(() => {
+        const fetchReservations = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(
+                    'https://restaurant-backend-production-a63a.up.railway.app/api/reservations/my-reservations',
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                setReservations(res.data.data.reservations || []);
+            } catch (error) {
+                setReservations([]);
+            }
+        };
+        fetchReservations();
+    }, []);
 
     const timeSlots = ['10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM', '6:00 PM', '8:00 PM'];
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -107,25 +74,24 @@ const MyReservations = () => {
             {/* Reservations Grid */}
             <div className="row g-3">
                 {reservations.map((reservation) => (
-                    <div key={reservation.id} className={`col-12 col-lg-6 ${reservation.highlight ? 'reservation-highlight' : ''}`}>
+                    <div key={reservation.id} className={`col-12 col-lg-6`}>
                         <div className={`card shadow-sm h-100 position-relative overflow-hidden`}>
-                            {reservation.highlight && (
-                                <div className="position-absolute top-0 end-0 bg-warning bg-opacity-10 rounded-circle"
-                                    style={{ width: '80px', height: '80px', transform: 'translate(40px, -40px)' }}></div>
-                            )}
-
                             <div className="card-body">
                                 <div className="d-flex justify-content-between align-items-start mb-3">
                                     <div className="d-flex align-items-center gap-3">
-                                        <div className={`${reservation.iconBg} rounded p-2 d-flex align-items-center justify-content-center`} style={{ width: '48px', height: '48px' }}>
-                                            {reservation.icon}
+                                        <div className={`bg-light rounded p-2 d-flex align-items-center justify-content-center`} style={{ width: '48px', height: '48px' }}>
+                                            {/* Icon based on table_type */}
+                                            {reservation.table_type === 'snooker' && <RiBilliardsLine className="text-success fs-4" />}
+                                            {reservation.table_type === 'pool' && <RiBilliardsLine className="text-warning fs-4" />}
+                                            {reservation.table_type === 'playstation' && <RiGamepadLine className="text-info fs-4" />}
+                                            {reservation.table_type === 'restaurant' && <RiRestaurantLine className="text-primary fs-4" />}
                                         </div>
                                         <div>
-                                            <h3 className="card-title fs-5 fw-semibold text-dark mb-0">{reservation.title}</h3>
-                                            <p className="text-muted small mb-0">Booking ID: #{reservation.id}</p>
+                                            <h3 className="card-title fs-5 fw-semibold text-dark mb-0">{reservation.table_name}</h3>
+                                            <p className="text-muted small mb-0">Booking ID: #{reservation.reservation_id}</p>
                                         </div>
                                     </div>
-                                    <span className={`badge rounded-pill ${reservation.statusClass} px-3 py-1`}>
+                                    <span className={`badge rounded-pill bg-secondary px-3 py-1 text-capitalize`}>
                                         {reservation.status}
                                     </span>
                                 </div>
@@ -133,15 +99,21 @@ const MyReservations = () => {
                                 <div className="mb-4">
                                     <div className="d-flex align-items-center gap-2 mb-1">
                                         <RiCalendarLine className="text-muted" />
-                                        <span className="text-dark small">{reservation.date}</span>
+                                        <span className="text-dark small">
+                                            {new Date(reservation.reservation_date).toLocaleDateString()}
+                                        </span>
                                     </div>
                                     <div className="d-flex align-items-center gap-2 mb-1">
                                         <RiTimeLine className="text-muted" />
-                                        <span className="text-dark small">{reservation.time}</span>
+                                        <span className="text-dark small">
+                                            {reservation.reservation_time?.slice(0, 5)} {/* HH:MM */}
+                                        </span>
                                     </div>
                                     <div className="d-flex align-items-center gap-2">
                                         <RiMapPinLine className="text-muted" />
-                                        <span className="text-dark small">{reservation.location}</span>
+                                        <span className="text-dark small">
+                                            {reservation.table_number}, {reservation.table_name}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -189,9 +161,33 @@ const MyReservations = () => {
                                     </button>
                                     <button
                                         className="btn btn-danger flex-grow-1 rounded-pill"
-                                        onClick={() => {
-                                            console.log('Cancelling booking:', currentBookingId);
-                                            setShowCancelModal(false);
+                                        onClick={async () => {
+                                            try {
+                                                const token = localStorage.getItem('token');
+                                                await axios.patch(
+                                                    `https://restaurant-backend-production-a63a.up.railway.app/api/reservations/${currentBookingId}/cancel`,
+                                                    {},
+                                                    {
+                                                        headers: {
+                                                            Authorization: `Bearer ${token}`,
+                                                        },
+                                                    }
+                                                );
+                                                setShowCancelModal(false);
+                                                // Refresh reservations after cancel
+                                                const res = await axios.get(
+                                                    'https://restaurant-backend-production-a63a.up.railway.app/api/reservations/my-reservations',
+                                                    {
+                                                        headers: {
+                                                            Authorization: `Bearer ${token}`,
+                                                        },
+                                                    }
+                                                );
+                                                setReservations(res.data.data.reservations || []);
+                                            } catch (error) {
+                                                alert('Failed to cancel booking!');
+                                                setShowCancelModal(false);
+                                            }
                                         }}
                                     >
                                         Yes, Cancel
@@ -264,9 +260,70 @@ const MyReservations = () => {
                                     </button>
                                     <button
                                         className="btn btn-warning flex-grow-1 rounded-pill"
-                                        onClick={() => {
-                                            console.log('Rescheduling booking:', currentBookingId, 'to', selectedDate, selectedTime);
-                                            setShowRescheduleModal(false);
+                                        onClick={async () => {
+                                            try {
+                                                const token = localStorage.getItem('token');
+                                                // Find the reservation object to get all required fields
+                                                const reservation = reservations.find(r => r.id === currentBookingId || r.id === Number(currentBookingId));
+                                                if (!reservation) {
+                                                    alert('Reservation not found!');
+                                                    return;
+                                                }
+
+                                                // Prepare updated data (update only date/time, keep other fields same)
+                                                const today = new Date();
+                                                const year = today.getFullYear();
+                                                const month = String(today.getMonth() + 1).padStart(2, '0');
+                                                const day = String(selectedDate).padStart(2, '0');
+                                                const reservation_date = `${year}-${month}-${day}`;
+
+                                                // Convert time to "HH:MM" 24hr format
+                                                const [time, modifier] = selectedTime.split(' ');
+                                                let [hours, minutes] = time.split(':');
+                                                if (modifier === 'PM' && hours !== '12') {
+                                                    hours = String(parseInt(hours, 10) + 12);
+                                                } else if (modifier === 'AM' && hours === '12') {
+                                                    hours = '00';
+                                                }
+                                                const reservation_time = `${hours}:${minutes}`;
+
+                                                // Prepare payload with all required fields
+                                                const payload = {
+                                                    table_id: reservation.table_id,
+                                                    customer_name: reservation.customer_name,
+                                                    customer_phone: reservation.customer_phone,
+                                                    customer_email: reservation.customer_email,
+                                                    reservation_date,
+                                                    reservation_time,
+                                                    duration_hours: reservation.duration_hours,
+                                                    party_size: reservation.party_size,
+                                                    special_requests: reservation.special_requests
+                                                };
+
+                                                await axios.put(
+                                                    `https://restaurant-backend-production-a63a.up.railway.app/api/reservations/${currentBookingId}`,
+                                                    payload,
+                                                    {
+                                                        headers: {
+                                                            Authorization: `Bearer ${token}`,
+                                                        },
+                                                    }
+                                                );
+                                                setShowRescheduleModal(false);
+                                                // Refresh reservations after update
+                                                const res = await axios.get(
+                                                    'https://restaurant-backend-production-a63a.up.railway.app/api/reservations/my-reservations',
+                                                    {
+                                                        headers: {
+                                                            Authorization: `Bearer ${token}`,
+                                                        },
+                                                    }
+                                                );
+                                                setReservations(res.data.data.reservations || []);
+                                            } catch (error) {
+                                                alert('Failed to reschedule booking!');
+                                                setShowRescheduleModal(false);
+                                            }
                                         }}
                                     >
                                         Confirm Reschedule
@@ -277,9 +334,6 @@ const MyReservations = () => {
                     </div>
                 </div>
             )}
-
-            {/* Custom CSS */}
-
         </div>
     );
 };
