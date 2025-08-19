@@ -21,6 +21,8 @@ export const loginUser = createAsyncThunk(
         headers: { 'Content-Type': 'application/json' },
       });
 
+      console.log(response);
+
       // Check if the response is successful
       if (response.status !== 200 || !response.data.success) {
         return rejectWithValue(response.data.message || 'Login failed');
