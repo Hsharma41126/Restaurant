@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Table, Dropdown, Badge } from 'react-bootstrap';
+import axiosInstance from "../../../utils/axiosInstance";
 // import 'bootstrap/dist/css/bootstrap.min.css';
 import {
   Calendar,
@@ -195,39 +196,43 @@ const ReservationsManagement = () => {
                       </Form.Group>
                     </Col>
 
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label>Table Type</Form.Label>
-                        <Dropdown
-                          show={showTableTypeDropdown}
-                          onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
-                        >
-                          <Dropdown.Toggle
-                            className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
-                            style={{ fontSize: "1rem", height: "38px", borderRadius: "6px", border: "1px solid #dee2e6", backgroundColor: "white" }}
-                          >
-                            {formData.tableType || "Select table type"}
-                          </Dropdown.Toggle>
+                     <Col md={6}>
+      <Form.Group>
+        <Form.Label>Table Type</Form.Label>
+        <Dropdown
+          show={showTableTypeDropdown}
+          onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
+        >
+          <Dropdown.Toggle
+            className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
+            style={{
+              fontSize: "1rem",
+              height: "38px",
+              borderRadius: "6px",
+              border: "1px solid #dee2e6",
+              backgroundColor: "white",
+            }}
+          >
+            {formData.tableName || "Select table"}
+          </Dropdown.Toggle>
 
-                          <Dropdown.Menu className="w-100">
-                            <Dropdown.Item onClick={() => handleTableTypeSelect('snooker', 'Snooker Table')}>
-                              Snooker Table
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleTableTypeSelect('pool', 'Pool Table')}>
-                              Pool Table
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleTableTypeSelect('playstation', 'PlayStation Station')}>
-                              PlayStation Station
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleTableTypeSelect('restaurant', 'Restaurant Table')}>
-                              Restaurant Table
-                            </Dropdown.Item>
-                          </Dropdown.Menu>
-                        </Dropdown>
-
-                      </Form.Group>
-                    </Col>
-
+          <Dropdown.Menu className="w-100">
+            {tables.length > 0 ? (
+              tables.map((table) => (
+                <Dropdown.Item
+                  key={table.id}
+                  onClick={() => handleTableSelect(table)}
+                >
+                  {table.table_name} ({table.table_number})
+                </Dropdown.Item>
+              ))
+            ) : (
+              <Dropdown.Item disabled>No tables available</Dropdown.Item>
+            )}
+          </Dropdown.Menu>
+        </Dropdown>
+      </Form.Group>
+    </Col>
                     <Col md={6}>
                       <Form.Group>
                         <Form.Label>Date</Form.Label>
