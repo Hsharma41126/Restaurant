@@ -1,95 +1,115 @@
-import React, { useState } from "react";
-// import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-// import 'react-toastify/dist/ReactToastify.css';
 import { Link } from "react-router-dom";
-
+import { loginUser, clearMessages } from "../redux/slices/authSlice"; // Adjust path as needed
+import { toast } from 'react-toastify';
 
 const Login = () => {
+
+    const [roleSelected, setRoleSelected] = useState("admin"); 
   const [showPassword, setShowPassword] = useState(false);
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { loading, error, user, role } = useSelector((state) => state.auth);
 
-  const roles = ["Admin", "Staff", "User"];
-
-  const handleRoleSelect = (role) => {
-    setSelectedRole(role);
-    setShowRoleDropdown(false);
+   const setRole = (role) => {
+    setRoleSelected(role);
+    if (role === "admin") {
+      setEmail("admingautam@gmail.com");
+      setPassword("admingautam@123");
+    } else if (role === "staff") {
+      setEmail("staff@gmail.com");
+      setPassword("staff@1234");
+    } else if (role === "user") {
+      setEmail("user@gmail.com");
+      setPassword("user@1234");
+    }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call with timeout
+    
+    // Clear any previous error messages
+    dispatch(clearMessages());
+    
     try {
-      // In a real app, you would make an API call here
-      // const response = await authApi.login({ email, password, role: selectedRole });
-
-      // Mock users data - replace with actual API call in production
-      const users = [
-        { email: "admin@example.com", password: "123", role: "Admin" },
-        { email: "staff@example.com", password: "123", role: "Staff" },
-        { email: "user@example.com", password: "123", role: "User" },
-      ];
-
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const user = users.find(
-        (u) => u.email === email && u.password === password && u.role === selectedRole
-      );
-
-      if (user) {
-        // Store user data in localStorage
-        localStorage.setItem("role", user.role);
-        localStorage.setItem("isAuthenticated", "true");
-
-        if (rememberMe) {
-          localStorage.setItem("rememberedEmail", email);
-        } else {
-          localStorage.removeItem("rememberedEmail");
-        }
-
-        // Redirect based on role
-        setTimeout(() => {
-          switch (user.role) {
-            case "Admin":
-              navigate("/admin/dashboard");
-              break;
-            case "Staff":
-              navigate("/staff/tablesmanagement");
-              break;
-            case "User":
-              navigate("/user/booktable");
-              break;
-            default:
-              navigate("/");
-          }
-        }, 1500);
+      const credentials = { email, password };
+      const result = await dispatch(loginUser(credentials)).unwrap();
+      
+      // Handle remember me functionality
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
       } else {
-        throw new Error("Invalid credentials or role");
+        localStorage.removeItem("rememberedEmail");
       }
+      
+      // Success toast
+      toast.success("Login successful!");
+      
+      // Navigate based on role after a short delay to show success message
+      setTimeout(() => {
+        const userRole = result.user.role.toLowerCase();
+        switch (userRole) {
+          case "admin":
+            navigate("/admin/dashboard");
+            break;
+          case "staff":
+            navigate("/staff/tablesmanagement");
+            break;
+          case "user":
+            navigate("/user/booktable");
+            break;
+          default:
+            navigate("/");
+        }
+      }, 1000);
+      
     } catch (error) {
-      //   toast.error(error.message || "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      // Error toast
+      toast .error(error || "Login failed. Please try again.");
     }
   };
 
   // Load remembered email if exists
-  React.useEffect(() => {
+  useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedEmail");
     if (rememberedEmail) {
       setEmail(rememberedEmail);
       setRememberMe(true);
     }
   }, []);
+
+  // Clear error messages on component unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearMessages());
+    };
+  }, [dispatch]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user && role) {
+      const userRole = role.toLowerCase();
+      switch (userRole) {
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        case "staff":
+          navigate("/staff/tablesmanagement");
+          break;
+        case "user":
+          navigate("/user/booktable");
+          break;
+        default:
+          navigate("/");
+      }
+    }
+  }, [user, role, navigate]);
 
   return (
     <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light p-4">
@@ -102,17 +122,22 @@ const Login = () => {
           <div className="col-12 col-md-6 p-5 text-center">
             <div className="d-flex justify-content-center align-items-center mb-4">
               <img
-                src="https://i.postimg.cc/mZHz3k1Q/Whats-App-Image-2025-07-23-at-12-38-03-add5b5dd-removebg-preview-1.png" // Update with your logo path
+                src="https://i.postimg.cc/mZHz3k1Q/Whats-App-Image-2025-07-23-at-12-38-03-add5b5dd-removebg-preview-1.png"
                 alt="logo"
                 className="navbar-logo m-2"
                 style={{ height: "50px" }}
               />
-
-
             </div>
 
             <h2 className="h5 text-secondary mt-3">Welcome Back!</h2>
             <p className="text-muted mb-4">Login to access your dashboard</p>
+
+            {/* Display error message if any */}
+            {error && (
+              <div className="alert alert-danger mb-3" role="alert">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleLogin}>
               {/* Email */}
@@ -125,6 +150,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -139,6 +165,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength="3"
+                  disabled={loading}
                 />
                 <i
                   className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"
@@ -146,36 +173,6 @@ const Login = () => {
                   role="button"
                   onClick={() => setShowPassword(!showPassword)}
                 ></i>
-              </div>
-
-              {/* Role Dropdown */}
-              <div className="mb-3 position-relative">
-                <div
-                  className="form-control d-flex justify-content-between align-items-center"
-                  onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-                  role="button"
-                >
-                  <span className={selectedRole ? "" : "text-muted"}>
-                    {selectedRole || "Select Role"}
-                  </span>
-                  <i
-                    className={`bi bi-chevron-down ${showRoleDropdown ? "rotate-180" : ""
-                      }`}
-                  ></i>
-                </div>
-                {showRoleDropdown && (
-                  <div className="position-absolute w-100 border rounded bg-white mt-1 shadow-sm z-1">
-                    {roles.map((role) => (
-                      <div
-                        key={role}
-                        className="px-3 py-2 hover-bg-light cursor-pointer"
-                        onClick={() => handleRoleSelect(role)}
-                      >
-                        {role}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Remember / Forgot */}
@@ -187,23 +184,53 @@ const Login = () => {
                     id="rememberMe"
                     checked={rememberMe}
                     onChange={() => setRememberMe(!rememberMe)}
+                    disabled={loading}
                   />
                   <label className="form-check-label" htmlFor="rememberMe">
                     Remember Me
                   </label>
                 </div>
-                <Link to="/forgot-password" className=" text-decoration-none" style={{ color: "#1f2937" }}>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-decoration-none" 
+                  style={{ color: "#1f2937" }}
+                >
                   Forgot Password?
                 </Link>
               </div>
+
+                  <div className="role-buttons d-flex justify-content-center gap-2 gap-md-3 mt-4 flex-wrap">
+        <button
+          type="button"
+          className={`btn border-warning  rounded mb-2  ${roleSelected === "admin" ? "selected-admin" : "outline-admin"}`}
+          onClick={() => setRole("admin")}
+        >
+          Admin
+        </button>
+        <button
+          type="button"
+          className={`btn border-success  rounded mb-2  ${roleSelected === "staff" ? "selected-user" : "outline-user"}`}
+          onClick={() => setRole("staff")}
+        >
+          Staff
+        </button>
+        <button
+          type="button"
+          className={`btn btn border-danger  rounded mb-2  ${roleSelected === "user" ? "selected-seller" : "outline-seller"}`}
+          onClick={() => setRole("user")}
+        >
+          User
+        </button>
+      
+      </div>
 
               {/* Login Button */}
               <button
                 type="submit"
                 className="btn btn-warning w-100 text-white fw-semibold mb-3"
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? (
+                {loading ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                     Logging in...
@@ -215,7 +242,11 @@ const Login = () => {
 
               <div className="text-center">
                 <span className="text-muted">Don't have an account? </span>
-                <Link to="/signup" className=" text-decoration-none fw-semibold" style={{ color: "#1f2937" }}>
+                <Link 
+                  to="/signup" 
+                  className="text-decoration-none fw-semibold" 
+                  style={{ color: "#1f2937" }}
+                >
                   Sign Up
                 </Link>
               </div>
@@ -225,24 +256,19 @@ const Login = () => {
           {/* Right: Image */}
           <div className="col-md-6 d-none d-md-block">
             <div className="h-100 position-relative">
-
-              {/* https://i.postimg.cc/GpVFJDn8/create-image-for-resturant-and-game-zone-pool-for-login-page-right-side-image-do-not-write-anything.jpg */}
-
               <img
                 src="https://i.postimg.cc/GpVFJDn8/create-image-for-resturant-and-game-zone-pool-for-login-page-right-side-image-do-not-write-anything.jpg"
-                alt="Childcare Illustration"
+                alt="Restaurant Illustration"
                 className="img-fluid h-100 w-100 object-fit-cover"
                 style={{
                   borderTopRightRadius: "2rem",
                   borderBottomRightRadius: "2rem",
                 }}
               />
-
             </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 };

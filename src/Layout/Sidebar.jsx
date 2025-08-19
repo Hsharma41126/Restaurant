@@ -58,11 +58,11 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     // Get menu items based on role
     const getMenuItems = () => {
         switch (role) {
-            case "Admin":
+            case "admin":
                 return adminMenuItems;
-            case "Staff":
+            case "staff":
                 return staffMenuItems;
-            case "User":
+            case "user":
                 return userMenuItems;
             default:
                 return [];

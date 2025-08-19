@@ -1,14 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Card, Row, Col } from 'react-bootstrap';
-import { PlusCircle, Save } from 'react-bootstrap-icons';
+import { Form, Button, Card, Row, Col, Table, Modal } from 'react-bootstrap';
+import { PlusCircle, Save, Pencil, Trash, Eye, Plus, ChevronDown, ChevronUp } from 'react-bootstrap-icons';
 
 const AddItemPage = () => {
+  // Form states
   const [category, setCategory] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   const [newSubcategory, setNewSubcategory] = useState('');
   const [types, setTypes] = useState([]);
   const [printer, setPrinter] = useState('');
+  const [editIndex, setEditIndex] = useState(null);
+
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewItem, setViewItem] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  // Items table state with dummy data
+  const [items, setItems] = useState([
+    {
+      category: 'Food',
+      subcategory: 'Pizza',
+      types: [
+        { name: 'Cheese Pizza', price: '250' },
+        { name: 'Veg Pizza', price: '200' }
+      ],
+      printer: 'Kitchen Printer'
+    },
+    {
+      category: 'Food',
+      subcategory: 'Burger',
+      types: [
+        { name: 'Aloo Tikki', price: '80' },
+        { name: 'Chicken Burger', price: '150' }
+      ],
+      printer: 'Kitchen Printer'
+    },
+    {
+      category: 'Drink',
+      subcategory: 'Cold Drink',
+      types: [
+        { name: 'Pepsi', price: '40' },
+        { name: 'Coke', price: '40' }
+      ],
+      printer: 'Bar Printer'
+    },
+    {
+      category: 'Games',
+      subcategory: 'Pool',
+      types: [
+        { name: '8 Ball', price: '100' },
+        { name: '9 Ball', price: '120' }
+      ],
+      printer: 'Game Zone Printer'
+    }
+  ]);
 
   const categories = ['Food', 'Drink', 'Games'];
   const subcategories = {
@@ -76,27 +124,177 @@ const AddItemPage = () => {
     }
   }, [subcategory]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const finalCategory = category === 'new' ? newCategory : category;
-    const finalSubcategory = subcategory === 'new' ? newSubcategory : subcategory;
-    console.log({ finalCategory, finalSubcategory, types, printer });
-    alert('Item saved successfully!');
+  const resetForm = () => {
     setCategory('');
     setNewCategory('');
     setSubcategory('');
     setNewSubcategory('');
     setTypes([]);
     setPrinter('');
+    setEditIndex(null);
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const finalCategory = category === 'new' ? newCategory : category;
+    const finalSubcategory = subcategory === 'new' ? newSubcategory : subcategory;
+    
+    const newItem = {
+      category: finalCategory,
+      subcategory: finalSubcategory,
+      types: [...types],
+      printer
+    };
+
+    if (editIndex !== null) {
+      // Update existing item
+      const updatedItems = [...items];
+      updatedItems[editIndex] = newItem;
+      setItems(updatedItems);
+    } else {
+      // Add new item
+      setItems([...items, newItem]);
+    }
+
+    resetForm();
+    setShowModal(false);
+  };
+
+  const handleEdit = (index) => {
+    const item = items[index];
+    setCategory(item.category);
+    setSubcategory(item.subcategory);
+    setTypes(item.types);
+    setPrinter(item.printer);
+    setEditIndex(index);
+    setShowModal(true);
+  };
+
+  const handleDelete = (index) => {
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      const updatedItems = [...items];
+      updatedItems.splice(index, 1);
+      setItems(updatedItems);
+    }
+  };
+
+  const handleView = (index) => {
+    setViewItem(items[index]);
+    setShowViewModal(true);
+  };
+
+  const toggleCategory = (category) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  // Group items by category
+  const groupedItems = items.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {});
+
   return (
-    <div className="p-2">
-      <div className="mb-3">
-        <h5 className="mb-0">Add New Menu Item</h5>
+    <div className="p-3">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5>Menu Items Management</h5>
+        <Button variant="warning" size="sm" onClick={() => setShowModal(true)}>
+          <Plus size={14} className="me-1" /> Add New Item
+        </Button>
       </div>
+
+      {/* Items Table */}
       <Card className="shadow-sm">
-        <Card.Body className="p-3">
+        <Card.Body className="p-0">
+          {items.length === 0 ? (
+            <div className="text-center py-4 text-muted">
+              No items added yet. Click "Add New Item" to get started.
+            </div>
+          ) : (
+            <Table striped bordered hover className="mb-0">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Subcategories</th>
+                  <th>Items Count</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(groupedItems).map(([category, categoryItems], catIndex) => (
+                  <React.Fragment key={category}>
+                    <tr>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            onClick={() => toggleCategory(category)}
+                            className="p-0 me-2"
+                          >
+                            {expandedCategories[category] ? <ChevronUp /> : <ChevronDown />}
+                          </Button>
+                          {category}
+                        </div>
+                      </td>
+                      <td>{categoryItems.length} subcategories</td>
+                      <td>
+                        {categoryItems.reduce((sum, item) => sum + item.types.length, 0)} items
+                      </td>
+                      <td>
+                        <Button 
+                          variant="outline-info" 
+                          size="sm" 
+                          className="py-0"
+                          onClick={() => toggleCategory(category)}
+                        >
+                          {expandedCategories[category] ? 'Hide' : 'View'} Details
+                        </Button>
+                      </td>
+                    </tr>
+                    {expandedCategories[category] && categoryItems.map((item, index) => {
+                      const globalIndex = items.findIndex(i => 
+                        i.category === item.category && 
+                        i.subcategory === item.subcategory
+                      );
+                      return (
+                        <tr key={`${catIndex}-${index}`} className="bg-light">
+                          <td></td>
+                          <td>{item.subcategory}</td>
+                          <td>{item.types.length} items</td>
+                          <td>
+                            <Button variant="outline-info" size="sm" className="me-1 py-0" onClick={() => handleView(globalIndex)}>
+                              <Eye size={14} />
+                            </Button>
+                            <Button variant="outline-primary" size="sm" className="me-1 py-0" onClick={() => handleEdit(globalIndex)}>
+                              <Pencil size={14} />
+                            </Button>
+                            <Button variant="outline-danger" size="sm" className="py-0" onClick={() => handleDelete(globalIndex)}>
+                              <Trash size={14} />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Add/Edit Modal */}
+      <Modal show={showModal} onHide={() => { setShowModal(false); resetForm(); }} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editIndex !== null ? 'Edit Item' : 'Add New Item'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
           <Form onSubmit={handleSubmit}>
             {/* Category Section */}
             <Card className="mb-3">
@@ -273,14 +471,61 @@ const AddItemPage = () => {
                 type="submit"
                 size="sm"
                 disabled={!category || !subcategory || types.length === 0 || !printer}
+                className="px-4 me-2"
+              >
+                <Save size={14} className="me-1" /> {editIndex !== null ? 'Update' : 'Save'}
+              </Button>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => { setShowModal(false); resetForm(); }}
                 className="px-4"
               >
-                <Save size={14} className="me-1" /> Save Item
+                Cancel
               </Button>
             </div>
           </Form>
-        </Card.Body>
-      </Card>
+        </Modal.Body>
+      </Modal>
+
+      {/* View Item Modal */}
+      <Modal show={showViewModal} onHide={() => setShowViewModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Item Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {viewItem && (
+            <div>
+              <p><strong>Category:</strong> {viewItem.category}</p>
+              <p><strong>Subcategory:</strong> {viewItem.subcategory}</p>
+              <p><strong>Printer:</strong> {viewItem.printer}</p>
+              
+              <h6 className="mt-3">Items:</h6>
+              <Table striped bordered size="sm">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Price (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewItem.types.map((type, index) => (
+                    <tr key={index}>
+                      <td>{type.name}</td>
+                      <td>{type.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowViewModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
