@@ -2,8 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import './Navbar.css';
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { logoutUser } from "../redux/slices/authSlice";
 
 const Navbar = ({ toggleSidebar }) => {
+  const dispatch = useDispatch();
   const [currentTime, setCurrentTime] = useState(
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   );
@@ -37,6 +41,15 @@ const Navbar = ({ toggleSidebar }) => {
     setDropdownOpen(!dropdownOpen);
   };
 
+
+  const handleLogout = async () => {
+    // Handle logout logic here
+      await dispatch(logoutUser()).unwrap();
+      toast.success('Logged out successfully');
+      //  setDropdownOpen(false);
+  
+
+  };
   const closeDropdown = () => {
     setDropdownOpen(false);
   };
@@ -82,7 +95,7 @@ const Navbar = ({ toggleSidebar }) => {
                 My Profile
               </Link>
               <div className="dropdown-divider"></div>
-              <Link to="/" className="dropdown-item" onClick={closeDropdown}>
+              <Link to="/" className="dropdown-item" onClick={handleLogout}>
                 Logout
               </Link>
             </div>
