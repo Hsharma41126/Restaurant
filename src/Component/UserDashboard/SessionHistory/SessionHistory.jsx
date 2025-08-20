@@ -141,7 +141,7 @@ const SessionHistory = () => {
           </div>
 
           {/* Table Type Dropdown */}
-          <div className="col-12 col-sm-6 col-lg-2 position-relative">
+          {/* <div className="col-12 col-sm-6 col-lg-2 position-relative">
             <button
               className="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -153,7 +153,7 @@ const SessionHistory = () => {
             </button>
 
             {isDropdownOpen && (
-              <div className="position-absolute top-100 start-0 end-0 mt-1 bg-white border rounded shadow-sm z-3">
+              <div className="position-absolute top-100 start-0 end-0 mt-1 bg-white border rounded shadow-sm" style={{zIndex: '1000'}}>
                 {[
                   "All Table Types",
                   "Snooker Table",
@@ -171,7 +171,7 @@ const SessionHistory = () => {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Clear Filters Button */}
           <div className="col-12 col-sm-6 col-lg-2">
