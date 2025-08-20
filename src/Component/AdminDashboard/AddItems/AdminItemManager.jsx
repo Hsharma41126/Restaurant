@@ -33,6 +33,7 @@ const SAddCategories = () => {
   // Get current parent category from stack
   const currentParent = categoryStack.length > 0 ? categoryStack[categoryStack.length - 1] : null;
 
+  // Fetch all data on mount
   useEffect(() => {
     let filtered = [];
     if (currentParent) {
