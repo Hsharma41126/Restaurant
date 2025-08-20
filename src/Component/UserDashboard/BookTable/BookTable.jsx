@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Calendar from './Calendar'; // ✅ Adjust the path if needed
 
@@ -23,7 +23,6 @@ import {
 
 const BookTable = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedType, setSelectedType] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedDate, setSelectedDate] = useState("January 19, 2025");
   const [fullName, setFullName] = useState("");
@@ -38,6 +37,7 @@ const BookTable = () => {
   const [isLoading, setIsLoading] = useState(false); // Added loading state
   const [bookingError, setBookingError] = useState(""); // Added error state
   const [reservationData, setReservationData] = useState(null);
+  const token = localStorage.getItem("token");
 
   const tableTypes = [
     {
@@ -196,15 +196,13 @@ const BookTable = () => {
         setIsLoading(false);
         return;
       }
-      // Make sure selectedType is valid and mapped to a real table_id
-      const table_id = tableTypeToId[selectedType];
-      if (!table_id) {
-        setBookingError("Please select a valid table type.");
+      if (!selectedTableId) {
+        setBookingError("Please select a table.");
         setIsLoading(false);
         return;
       }
       const reservationData = {
-        table_id,
+        table_id: selectedTableId,
         customer_name: fullName,
         customer_phone: phoneNumber,
         customer_email: email,
@@ -259,6 +257,56 @@ const BookTable = () => {
   const getTypeInfo = (type) => {
     return tableTypes.find((t) => t.id === type) || tableTypes[0];
   };
+
+
+
+
+
+   const [tables, setTables] = useState([]);
+  const [selectedTableId, setSelectedTableId] = useState(null); // <-- Add this
+  const [selectedType, setSelectedType] = useState(null); // Keep for UI highlight
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTables = async () => {
+      try {
+        const response = await axios.get(
+          "https://ssknf82q-6100.inc1.devtunnels.ms/api/tables/available?type=restaurant&date=2025-01-20&time=14:00",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const mappedData = response.data.data.tables.map((table) => ({
+            id: table.id,
+            name: table.table_name,
+            description: `${table.group_name} • Capacity: ${table.capacity} • ${table.location}`,
+            price: table.hourly_rate
+              ? `$${table.hourly_rate}/hour`
+              : "Rate not set",
+            icon: <RiRestaurantLine />,
+            color: "warning",
+            tableNumber: table.table_number || table.table_name,
+          }));
+
+          setTables(mappedData);
+        }
+      } catch (error) {
+        console.error("Error fetching tables:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTables();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center my-5">Loading available tables...</p>;
+  }
 
   return (
     <div className="p-3">
@@ -331,41 +379,51 @@ const BookTable = () => {
               </p>
             </div>
 
-            <div className="row g-4">
-              {tableTypes.map((type) => (
-                <div key={type.id} className="col-md-6 col-lg-3">
-                  <div
-                    className={`card h-100 cursor-pointer ${selectedType === type.id
-                      ? "border-warning bg-warning bg-opacity-10"
-                      : ""
-                      }`}
-                    onClick={() => setSelectedType(type.id)}
-                  >
-                    <div
-                      className={`card-body text-center bg-${type.color}-100 rounded-3 p-4 mx-auto my-3`}
-                      style={{ width: "64px", height: "64px" }}
-                    >
-                      {React.cloneElement(type.icon, {
-                        className: `text-${type.color} fs-4`,
-                      })}
-                    </div>
-                    <div className="card-body text-center">
-                      <h5 className="card-title">{type.name}</h5>
-                      <p className="card-text text-muted small">
-                        {type.description}
-                      </p>
-                      <p className="text-warning fw-semibold">{type.price}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+           <div className="row g-4">
+      {tables.map((table) => (
+        <div key={table.id} className="col-md-6 col-lg-3">
+          <div
+            className={`card h-100 cursor-pointer ${
+              selectedTableId === table.id
+                ? "border-warning bg-warning bg-opacity-10"
+                : ""
+            }`}
+            onClick={() => {
+              setSelectedTableId(table.id);
+              setSelectedType(table.id); // For highlight, optional
+            }}
+          >
+            <div
+              className={`card-body text-center bg-${table.color}-100 rounded-3 p-4 mx-auto my-3`}
+              style={{ width: "64px", height: "64px" }}
+            >
+              {React.cloneElement(table.icon, {
+                className: `text-${table.color} fs-4`,
+              })}
             </div>
+            <div className="card-body text-center">
+              <h5 className="card-title">{table.name}</h5>
+              <p className="card-text text-muted small">
+                {table.description}
+              </p>
+              <p className="text-warning fw-semibold">{table.price}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {tables.length === 0 && (
+        <div className="col-12">
+          <p className="text-center text-muted">No tables available.</p>
+        </div>
+      )}
+    </div>
 
             <div className="mt-4 d-flex justify-content-end">
               <button
                 className="btn btn-warning text-dark px-4 py-2 fw-semibold"
                 onClick={handleNextStep}
-                disabled={!selectedType}
+                disabled={!selectedTableId}
               >
                 Continue to Time Selection
               </button>
