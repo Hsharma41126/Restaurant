@@ -23,8 +23,8 @@ const Login = () => {
       setEmail("admingautam@gmail.com");
       setPassword("admingautam@123");
     } else if (role === "staff") {
-      setEmail("staff@gmail.com");
-      setPassword("staff@1234");
+      setEmail("dinesh@gmail.com");
+      setPassword("dinesh@123");
     } else if (role === "user") {
       setEmail("user@gmail.com");
       setPassword("user@1234");

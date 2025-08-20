@@ -2,13 +2,110 @@ import React, { useEffect, useState, useRef } from 'react';
 import * as echarts from 'echarts';
 import { FaDollarSign, FaUtensils, FaTable, FaTags, FaFileExport } from "react-icons/fa";
 import { FaUsers, FaClock, FaFire } from "react-icons/fa";
+import axiosInstance from '../../../utils/axiosInstance';
+import { apiUrl } from '../../../utils/config';
 
 const Dashboard = () => {
 
     // Refs for chart containers
-    const categoryChartRef = useRef(null);
-    const shareChartRef = useRef(null);
-    const timelineChartRef = useRef(null);
+     const categoryChartRef = useRef(null);
+  const shareChartRef = useRef(null);
+  const timelineChartRef = useRef(null);
+
+  const [dashboardData, setDashboardData] = useState(null);
+
+  console.log("Dashboard data:", dashboardData);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await axiosInstance.get(
+          `${apiUrl}/reports/dashboard?date=2025-01-20`
+        );
+
+        if (data.success) {
+
+            console.log("Dashboard data fetched:", data.data);
+          setDashboardData(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+
+//   console.log("Dashboard data2343254:", dashboardData.overview);
+//   console.log("Dashboard tabl343254:", dashboardData.tables);
+  // Dynamic KPIs
+//   const kpis = [
+//     {
+//       title: "Total Sessions",
+//       value: dashboardData.overview.total_sessions || 0,
+//       trend: "", // API doesn’t give trend, so you can calculate if you store yesterday’s data
+//       trendColor: "text-success",
+//       icon: <FaUsers />,
+//       bg: "bg-primary-subtle",
+//       iconColor: "text-primary",
+//     },
+//     {
+//       title: "Average Duration",
+//       value: dashboardData.overview.avg_session_duration
+//         ? `${dashboardData.overview.avg_session_duration}h`
+//         : "N/A",
+//       trend: "",
+//       trendColor: "text-success",
+//       icon: <FaClock />,
+//       bg: "bg-success-subtle",
+//       iconColor: "text-success",
+//     },
+//     {
+//       title: "Occupied Tables",
+//       value: dashboardData.tables.occupied_tables ?? 0,
+//       trend: "",
+//       trendColor: "text-warning",
+//       icon: <FaFire />,
+//       bg: "bg-warning-subtle",
+//       iconColor: "text-warning",
+//     },
+//   ];
+
+// //   // Dynamic Cards
+//   const cards = [
+//     {
+//       title: "Total Revenue",
+//       value: `$${dashboardData.overview.total_revenue ?? 0}`,
+//       icon: <FaDollarSign />,
+//       bg: "bg-success-subtle",
+//       iconColor: "text-success",
+//     },
+//     {
+//       title: "Total Tables",
+//       value: dashboardData.tables.total_tables ?? 0,
+//       icon: <FaTable />,
+//       bg: "bg-primary-subtle",
+//       iconColor: "text-primary",
+//     },
+//     {
+//       title: "Total Orders",
+//       value: dashboardData.overview.total_orders ?? 0,
+//       icon: <FaUtensils />,
+//       bg: "bg-warning-subtle",
+//       iconColor: "text-warning",
+//     },
+//     {
+//       title: "Reserved Tables",
+//       value: dashboardData.tables.reserved_tables ?? 0,
+//       icon: <FaTags />,
+//       bg: "bg-danger-subtle",
+//       iconColor: "text-danger",
+//     },
+//   ];
 
 
     // KPI and Card data
@@ -75,6 +172,8 @@ const Dashboard = () => {
 
     // Initialize charts
     useEffect(() => {
+
+
         const initCharts = () => {
             // Initialize Category Chart
             const categoryChart = echarts.init(categoryChartRef.current);
@@ -199,6 +298,9 @@ const Dashboard = () => {
         const timer = setTimeout(initCharts, 100);
         return () => clearTimeout(timer);
     }, []);
+
+     if (loading) return <p>Loading...</p>;
+  if (!dashboardData) return <p>No data available</p>;
 
 
     return (

@@ -1,618 +1,413 @@
-import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Card, Row, Col, Table, Modal, Spinner, Alert } from 'react-bootstrap';
-import { PlusCircle, Save, Pencil, Trash, Eye, Plus, ChevronDown, ChevronUp } from 'react-bootstrap-icons';
-import { apiUrl } from '../../../utils/config';
-import axiosInstance from '../../../utils/axiosInstance';
+import { FaEdit, FaTrash, FaTable, FaTh, FaEye, FaArrowLeft, FaPlus } from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE_URL = 'https://restaurant-backend-production-a63a.up.railway.app/api';
+const SAddCategories = () => {
+  const [categories, setCategories] = useState([
+    { id: 1, name: "Electronics", sellerId: 101, image: [], parentId: null },
+    { id: 2, name: "Fashion", sellerId: 102, image: [], parentId: null },
+    { id: 3, name: "Mobiles", sellerId: 101, image: [], parentId: 1 },
+  ]);
 
-const AddItemPage = () => {
-  // Form states
-  const [category, setCategory] = useState('');
-  const [newCategory, setNewCategory] = useState('');
-  const [subcategory, setSubcategory] = useState('');
-  const [newSubcategory, setNewSubcategory] = useState('');
-  const [types, setTypes] = useState([]);
-  const [printer, setPrinter] = useState('');
-  const [editIndex, setEditIndex] = useState(null);
-  const [editingItemId, setEditingItemId] = useState(null);
+  const [products, setProducts] = useState([
+    { id: 1, name: "iPhone 14", sku: "IP14", price: 80000, stockQuantity: 5, categoryId: 3, image: [] },
+    { id: 2, name: "T-Shirt", sku: "TS101", price: 500, stockQuantity: 20, categoryId: 2, image: [] },
+  ]);
 
-  // Modal states
+  const [filteredCategories, setFilteredCategories] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryImage, setCategoryImage] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [viewItem, setViewItem] = useState(null);
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [categoryStack, setCategoryStack] = useState([]);
+  const [addingFromWithin, setAddingFromWithin] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState('table');
 
-  // API states
-  const [categories, setCategories] = useState([]);
-  const [menuItems, setMenuItems] = useState([]);
-  const [printers, setPrinters] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const pageSize = 5;
 
-  // Fetch all categories on component mount
+  // Get current parent category from stack
+  const currentParent = categoryStack.length > 0 ? categoryStack[categoryStack.length - 1] : null;
+
+  // Fetch all data on mount
   useEffect(() => {
-    fetchCategories();
-    fetchMenuItems();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const response = await await fetch(`${apiUrl}/menu/categories`);
-      if (!response.ok) throw new Error('Failed to fetch categories');
-      const data = await response.json();
-      console.log("category", data)
-      setCategories(data.data.categories);
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
+    let filtered = [];
+    if (currentParent) {
+      filtered = categories.filter(
+        cat =>
+          String(cat.parentId) === String(currentParent.id) &&
+          cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    } else {
+      filtered = categories.filter(
+        cat =>
+          !cat.parentId &&
+          cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  };
-
-  const fetchMenuItems = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/menu/items?status=available`);
-
-      if (!response.ok) throw new Error('Failed to fetch menu items');
-      const data = await response.json();
-      console.log("menu items", data)
-      setMenuItems(data.data.items);
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
-  const fetchItemsByCategory = async (categoryId) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/menu/categories/${categoryId}/items`);
-      if (!response.ok) throw new Error('Failed to fetch items by category');
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      setError(err.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createCategory = async (categoryData) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/menu/categories`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData),
-      });
-      if (!response.ok) throw new Error('Failed to create category');
-      const data = await response.json();
-      setCategories([...categories, data]);
-      return data.id; // Return the new category ID
-    } catch (err) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createMenuItem = async (menuItemData) => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.post(`${apiUrl}/menu/items`, JSON.stringify(menuItemData), {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-
-      });
-      if (!response.ok) throw new Error('Failed to create menu item');
-      const data = await response;
-      setMenuItems([...menuItems, data]);
-      return data;
-    } catch (err) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateMenuItem = async (itemId, menuItemData) => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.put(`${API_BASE_URL}/menu/items/${itemId}`, JSON.stringify(menuItemData), {
-
-        headers: {
-          'Content-Type': 'application/json',
-
-        },
-
-      });
-      if (!response.ok) throw new Error('Failed to update menu item');
-      const data = await response;
-      // Update the menu items list
-      setMenuItems(menuItems.map(item => item.id === itemId ? data : item));
-      return data;
-    } catch (err) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteMenuItem = async (itemId) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/menu/items/${itemId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete menu item');
-      // Remove the item from the menu items list
-      setMenuItems(menuItems.filter(item => item.id !== itemId));
-      return true;
-    } catch (err) {
-      setError(err.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddType = () => {
-    setTypes([...types, { name: '', price: '' }]);
-  };
-
-  const handleRemoveType = (index) => {
-    const updatedTypes = [...types];
-    updatedTypes.splice(index, 1);
-    setTypes(updatedTypes);
-  };
-
-  const handleTypeChange = (index, field, value) => {
-    const updatedTypes = [...types];
-    updatedTypes[index][field] = value;
-    setTypes(updatedTypes);
-  };
+    setFilteredCategories(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, categories, currentParent]);
 
   const resetForm = () => {
-    setCategory('');
-    setNewCategory('');
-    setSubcategory('');
-    setNewSubcategory('');
-    setTypes([]);
-    setPrinter('');
-    setEditIndex(null);
-    setEditingItemId(null);
+    setCategoryName('');
+    setCategoryImage(null);
+    setEditingCategory(null);
+    setAddingFromWithin(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleAddOrUpdate = (e) => {
     e.preventDefault();
-
-    try {
-      let finalCategoryId = category;
-      if (category === 'new') {
-        const newCategoryData = {
-          name: newCategory,
-          description: `Category for ${newCategory}`
-        };
-        const createdCategory = await createCategory(newCategoryData);
-        if (!createdCategory) return;
-        finalCategoryId = createdCategory.id;
-      }
-
-      const menuItemData = {
-        name: types[0].name, // Using first type as the main name
-        description: types.map(t => t.name).join(', '),
-        category_id: finalCategoryId,
-        price: parseFloat(types[0].price),
-        cost_price: parseFloat(types[0].price) * 0.5, // Assuming 50% cost price
-        printer_id: printer,
-        status: 'available',
-        image_url: 'https://example.com/default-image.jpg'
-      };
-
-      if (editingItemId) {
-        // Update existing item
-        await updateMenuItem(editingItemId, menuItemData);
-      } else {
-        // Create new item
-        await createMenuItem(menuItemData);
-      }
-
-      resetForm();
-      setShowModal(false);
-    } catch (err) {
-      setError(err.message || 'Failed to save item');
+    if (!categoryName) {
+      toast.error("Please enter category name");
+      return;
     }
+
+    if (editingCategory) {
+      setCategories(prev =>
+        prev.map(c =>
+          c.id === editingCategory.id ? { ...c, name: categoryName } : c
+        )
+      );
+      toast.success("Category updated successfully!");
+    } else {
+      const newCategory = {
+        id: Date.now(),
+        name: categoryName,
+        image: categoryImage ? [URL.createObjectURL(categoryImage)] : [],
+        sellerId: 999,
+        parentId: currentParent ? currentParent.id : null
+      };
+      setCategories(prev => [...prev, newCategory]);
+      toast.success("Category added successfully!");
+    }
+    setShowModal(false);
+    resetForm();
   };
 
-  const handleEdit = (item) => {
-    setCategory(item.category_id.toString());
-    setTypes([{ name: item.name, price: item.price.toString() }]);
-    setPrinter(item.printer_id);
-    setEditingItemId(item.id);
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    setCategoryName(category.name);
     setShowModal(true);
   };
 
-  const handleDelete = async (itemId) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      await deleteMenuItem(itemId);
+  const handleDelete = (id) => {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
+    setCategories(prev => prev.filter(cat => cat.id !== id));
+    toast.success("Category deleted successfully!");
+  };
+
+  const handleViewSubcategories = (category) => {
+    setCategoryStack([...categoryStack, category]);
+  };
+
+  const handleGoBack = () => {
+    if (categoryStack.length > 0) {
+      const newStack = [...categoryStack];
+      newStack.pop();
+      setCategoryStack(newStack);
     }
   };
 
-  const handleView = (item) => {
-    setViewItem(item);
-    setShowViewModal(true);
+  const getBreadcrumbPath = () => {
+    if (categoryStack.length === 0) return "Categories";
+    return ["Categories", ...categoryStack.map(cat => cat.name)].join(" > ");
   };
 
-  const toggleCategory = async (categoryId) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
-
-    // If expanding and items not loaded yet, fetch them
-    if (!expandedCategories[categoryId] && !menuItems.some(item => item.category_id === categoryId)) {
-      const items = await fetchItemsByCategory(categoryId);
-      setMenuItems([...menuItems, ...items]);
-    }
+  const getImageUrl = (images) => {
+    return images && images.length > 0 ? images[0] : "";
   };
 
-  console.log("menuitems", menuItems);
-  // Group items by category
-  const groupedItems = menuItems.reduce((acc, item) => {
+  const totalPages = Math.ceil(filteredCategories.length / pageSize);
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
-    const category = categories.find(c => c.id === item.category_id);
-    const categoryName = category ? category.name : `Category ${item.category_id}`;
-    console.log(category)
-    if (!acc[categoryName]) {
-      acc[categoryName] = {
-        id: item.category_id,
-        items: []
-      };
-    }
-    acc[categoryName].items.push(item);
-    return acc;
-  }, {});
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
-  const subcategories = [];
+  const handleAddClick = (fromWithin = false) => {
+    setAddingFromWithin(fromWithin);
+    setShowModal(true);
+    resetForm();
+  };
+
+  const handleSeePriceList = (category) => {
+    const filteredProducts = products.filter(
+      p => String(p.categoryId) === String(category.id)
+    );
+    setProducts(filteredProducts);
+    setSelectedCategory(category);
+    setShowProductModal(true);
+  };
 
   return (
-    <div className="p-3">
+    <div className="container py-4">
+      <ToastContainer />
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5>Menu Items Management</h5>
-        <Button variant="warning" size="sm" onClick={() => setShowModal(true)}>
-          <Plus size={14} className="me-1" /> Add New Item
-        </Button>
+        <h3 className="fw-bold">{getBreadcrumbPath()}</h3>
+        <div className="d-flex">
+          {categoryStack.length > 0 && (
+            <button className="btn btn-secondary me-2 d-flex" onClick={handleGoBack}>
+              <FaArrowLeft className="me-1" />
+              <span>Back</span>
+            </button>
+          )}
+          <button
+            className={`btn ${viewMode === "table" ? "btn-primary" : "btn-outline-primary"} me-2`}
+            onClick={() => setViewMode("table")}
+          >
+            <FaTable />
+          </button>
+          <button
+            className={`btn ${viewMode === "kanban" ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setViewMode("kanban")}
+          >
+            <FaTh />
+          </button>
+          <button className="btn btn-primary ms-3 d-flex" onClick={() => handleAddClick(false)}>
+            <FaPlus className="me-1" />
+            <span>{currentParent ? "Add Subcategory" : "Add Category"}</span>
+          </button>
+        </div>
       </div>
 
-      {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible>
-          {error}
-        </Alert>
-      )}
+      {/* Search */}
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder={`Search ${currentParent ? "subcategories" : "categories"}...`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
-      {/* Items Table */}
-      <Card className="shadow-sm">
-        <Card.Body className="p-0">
-          {loading && menuItems.length === 0 ? (
-            <div className="text-center py-4">
-              <Spinner animation="border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </Spinner>
-            </div>
-          ) : menuItems.length === 0 ? (
-            <div className="text-center py-4 text-muted">
-              No items added yet. Click "Add New Item" to get started.
-            </div>
-          ) : (
-            <Table striped bordered hover className="mb-0">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Items Count</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(groupedItems).map(([categoryName, categoryData]) => (
-                  <React.Fragment>
+      {viewMode === "table" ? (
+        <div className="card shadow-sm border-0">
+          <div className="card-body">
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover align-middle text-nowrap mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Seller</th>
+                    <th>Image</th>
+                    <th>Price List</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedCategories.length === 0 ? (
                     <tr>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => toggleCategory(categoryData.id)}
-                            className="p-0 me-2"
-                          >
-                            {expandedCategories[categoryData.id] ? <ChevronUp /> : <ChevronDown />}
-                          </Button>
-                          {categoryName}
-                        </div>
-                      </td>
-                      <td>
-                        {categoryData.items.length} items
-                      </td>
-                      <td>
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          className="py-0"
-                          onClick={() => toggleCategory(categoryData.id)}
-                        >
-                          {expandedCategories[categoryData.id] ? 'Hide' : 'View'} Details
-                        </Button>
+                      <td colSpan="6" className="text-center text-muted py-4">
+                        {currentParent ? "No Subcategories Found" : "No Categories Found"}
                       </td>
                     </tr>
-                    {expandedCategories[categoryData.id] && categoryData.items.map((item) => (
-                      <tr key={item.id} className="bg-light">
-                        <td></td>
-                        <td>{item.name} - ₹{item.price}</td>
+                  ) : (
+                    paginatedCategories.map((cat, index) => (
+                      <tr
+                        key={cat.id}
+                        onClick={(e) => {
+                          if (!e.target.closest("button, .no-row-click")) {
+                            handleViewSubcategories(cat);
+                          }
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                        <td>{cat.name}</td>
+                        <td>{cat.sellerId ? `Seller ${cat.sellerId}` : "System"}</td>
                         <td>
-                          <Button variant="outline-info" size="sm" className="me-1 py-0" onClick={() => handleView(item)}>
-                            <Eye size={14} />
-                          </Button>
-                          <Button variant="outline-primary" size="sm" className="me-1 py-0" onClick={() => handleEdit(item)}>
-                            <Pencil size={14} />
-                          </Button>
-                          <Button variant="outline-danger" size="sm" className="py-0" onClick={() => handleDelete(item.id)}>
-                            <Trash size={14} />
-                          </Button>
+                          {getImageUrl(cat.image) ? (
+                            <img src={getImageUrl(cat.image)} style={{ width: "60px", height: "60px" }} />
+                          ) : (
+                            <img src="/src/assets/Category_Default_Image.jpeg" style={{ width: "60px", height: "60px" }} />
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="no-row-click"
+                            style={{ color: "blue", cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSeePriceList(cat);
+                            }}
+                          >
+                            See Price List
+                          </button>
+                        </td>
+                        <td className="no-row-click">
+                          <div className="d-flex gap-2">
+                            <button className="btn btn-sm btn-outline-primary" onClick={(e) => { e.stopPropagation(); handleEdit(cat); }}>
+                              <FaEdit size={14} />
+                            </button>
+                            <button className="btn btn-sm btn-outline-danger" onClick={(e) => { e.stopPropagation(); handleDelete(cat.id); }}>
+                              <FaTrash size={14} />
+                            </button>
+                            <button className="btn btn-sm btn-outline-success" onClick={(e) => { e.stopPropagation(); setCategoryStack([...categoryStack, cat]); handleAddClick(true); }}>
+                              <FaPlus size={14} />
+                            </button>
+                            <button className="btn btn-sm btn-outline-info" onClick={(e) => { e.stopPropagation(); handleViewSubcategories(cat); }}>
+                              <FaEye size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </Table>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* Add/Edit Modal */}
-      <Modal show={showModal} onHide={() => { setShowModal(false); resetForm(); }} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>{editingItemId ? 'Edit Item' : 'Add New Item'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            {/* Category Section */}
-            <Card className="mb-3">
-              <Card.Header className="bg-light p-2">
-                <h6 className="mb-0">Category Information</h6>
-              </Card.Header>
-              <Card.Body className="p-2">
-                <Form.Group className="mb-2">
-                  <Form.Label className="small">Select Category</Form.Label>
-                  <Form.Select
-                    value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      setSubcategory('');
-                    }}
-                    size="sm"
-                  >
-                    <option value="">-- Select Category --</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id.toString()}>{cat.name}</option>
-                    ))}
-                    <option value="new">+ Add New Category</option>
-                  </Form.Select>
-                </Form.Group>
-
-                {category === 'new' && (
-                  <Form.Group className="mb-2">
-                    <Form.Label className="small">New Category Name</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="Enter new category name"
-                      size="sm"
-                      required
-                    />
-                  </Form.Group>
-                )}
-              </Card.Body>
-            </Card>
-
-            {/* Subcategory Section */}
-            {category && category !== 'new' && (
-              <Card className="mb-3">
-                <Card.Header className="bg-light p-2">
-                  <h6 className="mb-0">Subcategory Information</h6>
-                </Card.Header>
-                <Card.Body className="p-2">
-                  <Form.Group className="mb-2">
-                    <Form.Label className="small">Select Subcategory</Form.Label>
-                    <Form.Select
-                      value={subcategory}
-                      onChange={(e) => setSubcategory(e.target.value)}
-                      size="sm"
-                      disabled={!category}
-                    >
-                      <option value="">-- Select Subcategory --</option>
-                      {subcategories[category]?.map((sub) => (
-                        <option key={sub.id} value={sub.id}>{sub.name}</option>
-                      ))}
-                      <option value="new">+ Add New Subcategory</option>
-                    </Form.Select>
-                  </Form.Group>
-
-                  {subcategory === 'new' && (
-                    <Form.Group className="mb-2">
-                      <Form.Label className="small">New Subcategory Name</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={newSubcategory}
-                        onChange={(e) => setNewSubcategory(e.target.value)}
-                        placeholder="Enter new subcategory name"
-                        size="sm"
-                        required
-                      />
-                    </Form.Group>
-                  )}
-                </Card.Body>
-              </Card>
-            )}
-
-            {/* Printer Selection Section */}
-            {category && (
-              <Card className="mb-3">
-                <Card.Header className="bg-light p-2">
-                  <h6 className="mb-0">Printer Selection</h6>
-                </Card.Header>
-                <Card.Body className="p-2">
-                  <Form.Group className="mb-2">
-                    <Form.Label className="small">Select Printer</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={printer}
-                      onChange={(e) => setPrinter(e.target.value)}
-                      size="sm"
-                      required
-                    >
-                      <option value="">-- Select Printer --</option>
-                      <option value="KITCHEN_01">Kitchen Printer</option>
-                      <option value="BAR_01">Bar Printer</option>
-                      <option value="MAIN_01">Main Printer</option>
-                    </Form.Control>
-                  </Form.Group>
-                </Card.Body>
-              </Card>
-            )}
-
-            {/* Types and Prices Section */}
-            {category && (
-              <Card className="mb-3">
-                <Card.Header className="bg-light p-2">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0">Item Details</h6>
-                    <Button
-                      variant="outline-warning"
-                      size="sm"
-                      onClick={handleAddType}
-                      className="py-0"
-                      disabled={types.length >= 1} // Limiting to 1 item per API structure
-                    >
-                      <PlusCircle size={14} className="me-1" /> Add
-                    </Button>
-                  </div>
-                </Card.Header>
-                <Card.Body className="p-2">
-                  {types.length === 0 ? (
-                    <div className="text-center py-2 text-muted small">
-                      No item details added yet. Click "Add" to get started.
-                    </div>
-                  ) : (
-                    types.map((type, index) => (
-                      <Row key={index} className="mb-2 g-2 align-items-center">
-                        <Col md={6}>
-                          <Form.Control
-                            type="text"
-                            value={type.name}
-                            placeholder="Item name"
-                            onChange={(e) => handleTypeChange(index, 'name', e.target.value)}
-                            size="sm"
-                            required
-                          />
-                        </Col>
-                        <Col md={4}>
-                          <Form.Control
-                            type="number"
-                            value={type.price}
-                            placeholder="Price (₹)"
-                            onChange={(e) => handleTypeChange(index, 'price', e.target.value)}
-                            size="sm"
-                            required
-                          />
-                        </Col>
-                        <Col md={2}>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleRemoveType(index)}
-                            className="w-100 py-0"
-                            disabled={types.length <= 1} // Must have at least one item
-                          >
-                            Remove
-                          </Button>
-                        </Col>
-                      </Row>
                     ))
                   )}
-                </Card.Body>
-              </Card>
-            )}
-
-            {/* Submit Button */}
-            <div className="text-center mt-3">
-              <Button
-                variant="warning"
-                type="submit"
-                size="sm"
-                disabled={!category || types.length === 0 || !printer || loading}
-                className="px-4 me-2"
-              >
-                {loading ? (
-                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
-                ) : (
-                  <>
-                    <Save size={14} className="me-1" /> {editingItemId ? 'Update' : 'Save'}
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={() => { setShowModal(false); resetForm(); }}
-                className="px-4"
-                disabled={loading}
-              >
-                Cancel
-              </Button>
+                </tbody>
+              </table>
             </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
 
-      {/* View Item Modal */}
-      <Modal show={showViewModal} onHide={() => setShowViewModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Item Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {viewItem && (
-            <div>
-              <p><strong>Category:</strong> {categories.find(c => c.id === viewItem.category_id)?.name || 'Unknown'}</p>
-              <p><strong>Name:</strong> {viewItem.name}</p>
-              <p><strong>Description:</strong> {viewItem.description}</p>
-              <p><strong>Price:</strong> ₹{viewItem.price}</p>
-              <p><strong>Cost Price:</strong> ₹{viewItem.cost_price}</p>
-              <p><strong>Printer:</strong> {viewItem.printer_id}</p>
-              <p><strong>Status:</strong> {viewItem.status}</p>
+            {/* Pagination */}
+            <div className="d-flex justify-content-between align-items-center mt-3 small text-muted">
+              <div>
+                Showing {filteredCategories.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
+                {Math.min(currentPage * pageSize, filteredCategories.length)} of {filteredCategories.length} results
+              </div>
+              <div>
+                <nav>
+                  <ul className="pagination pagination-sm mb-0">
+                    <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                      <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>Previous</button>
+                    </li>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                        <button className="page-link" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
+                      </li>
+                    ))}
+                    <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                      <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>Next</button>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
             </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowViewModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          </div>
+        </div>
+      ) : (
+        /* Kanban View */
+        <div className="row">
+          {filteredCategories.map((cat) => (
+            <div key={cat.id} className="col-md-3 mb-3">
+              <div className="card h-100">
+                <div className="card-header">
+                  <h6 className="mb-0">{cat.name}</h6>
+                </div>
+                <div className="card-body text-center">
+                  {getImageUrl(cat.image) ? (
+                    <img src={getImageUrl(cat.image)} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
+                  ) : (
+                    <div className="bg-light rounded mb-2" style={{ width: '100%', height: '120px' }}>
+                      <img src='/src/assets/Category_Default_Image.jpeg' style={{ width: '60px', height: '60px' }} />
+                    </div>
+                  )}
+                  <div className="d-flex justify-content-center mt-2">
+                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(cat)}><FaEdit size={14} /></button>
+                    <button className="btn btn-sm btn-outline-danger me-2" onClick={() => handleDelete(cat.id)}><FaTrash size={14} /></button>
+                    <button className="btn btn-sm btn-outline-success me-2" onClick={() => { setCategoryStack([...categoryStack, cat]); handleAddClick(true); }}><FaPlus size={14} /></button>
+                    <button className="btn btn-sm btn-outline-info" onClick={() => handleViewSubcategories(cat)}><FaEye size={14} /></button>
+                  </div>
+                </div>
+                <div className="card-footer small text-muted">
+                  {cat.sellerId ? `Seller: ${cat.sellerId}` : 'System Category'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Category Modal */}
+      {showModal && (
+        <>
+          <div className="modal show fade d-block">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <form onSubmit={handleAddOrUpdate}>
+                  <div className="modal-header">
+                    <h5 className="modal-title">{editingCategory ? "Edit Category" : addingFromWithin ? "Add Subcategory" : "Add Category"}</h5>
+                    <button type="button" className="btn-close" onClick={() => { setShowModal(false); resetForm(); }}></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Category Name*</label>
+                      <input type="text" className="form-control" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
+                    </div>
+                    {addingFromWithin && currentParent && (
+                      <div className="alert alert-info">This will be a subcategory of <strong>{currentParent.name}</strong></div>
+                    )}
+                    <div className="mb-3">
+                      <label className="form-label">Category Image</label>
+                      <input type="file" className="form-control" onChange={(e) => setCategoryImage(e.target.files[0])} />
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); resetForm(); }}>Cancel</button>
+                    <button type="submit" className="btn btn-primary">{editingCategory ? "Update" : "Add"} {addingFromWithin ? "Subcategory" : "Category"}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
+
+      {/* Products Modal */}
+      {showProductModal && (
+        <>
+          <div className="modal show fade d-block">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Products under {selectedCategory?.name}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowProductModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  {products.length === 0 ? (
+                    <p className="text-muted">No products found for this category.</p>
+                  ) : (
+                    <table className="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Name</th>
+                          <th>SKU</th>
+                          <th>Price</th>
+                          <th>Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map((p, i) => (
+                          <tr key={p.id}>
+                            <td>{i + 1}</td>
+                            <td>{p.name}</td>
+                            <td>{p.sku}</td>
+                            <td>{p.price}</td>
+                            <td>{p.stockQuantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
     </div>
   );
 };
 
-export default AddItemPage;
+export default SAddCategories;

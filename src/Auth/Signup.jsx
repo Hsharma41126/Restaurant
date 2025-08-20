@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../redux/slices/authSlice";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -7,10 +10,12 @@ const Signup = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState(""); 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [passwordMismatch, setPasswordMismatch] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -25,10 +30,23 @@ const Signup = () => {
 
     try {
       // Simulate signup delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const payload = {
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+        phone,
+        role: "user",
+      };
+      console.log("Signup payload:", payload);
+
+      await dispatch(registerUser(payload)).unwrap();
+
+toast.success("Signup successful! ");
+
 
       // Save authentication flag (demo only)
-      localStorage.setItem("isAuthenticated", "true");
+      // localStorage.setItem("isAuthenticated", "true");
 
       // Navigate to dashboard or another route
       navigate("/user/dashboard"); // Change route as needed
@@ -97,6 +115,19 @@ const Signup = () => {
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+
+               <div className="mb-3 position-relative">
+                <i className="bi bi-phone position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                <input
+                  type="number"
+                  className="form-control ps-5"
+                  placeholder="Phone Number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
