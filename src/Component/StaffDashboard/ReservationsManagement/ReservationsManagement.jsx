@@ -31,6 +31,8 @@ const ReservationsManagement = () => {
   // State for active filter
   const [activeFilter, setActiveFilter] = useState('all');
 
+  const [tables, setTables] = useState("");
+
   // State for reservations data
   const [reservations, setReservations] = useState([
     {
