@@ -33,6 +33,26 @@ const ReservationsManagement = () => {
   // State for table type dropdown
   const [showTableTypeDropdown, setShowTableTypeDropdown] = useState(false);
   const [reservations, setReservations] = useState([]); // ✅ define state
+  const [users, setUsers] = useState([]);
+const [loadingUsers, setLoadingUsers] = useState(false);
+useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const res = await axiosInstance.get("/users?page=1&limit=10&role=user");
+      if (res.data?.success) {
+        setUsers(res.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  fetchUsers();
+}, []);
+
 
   // State for active filter
   //const [activeFilter, setActiveFilter] = useState('all');
@@ -83,7 +103,6 @@ const ReservationsManagement = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(5); // how many rows per page
   const [totalPages, setTotalPages] = useState(1);
-  const today = new Date().toISOString().split("T")[0];
   const todayFormatted = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -106,10 +125,10 @@ const ReservationsManagement = () => {
         console.error("Error fetching tables:", error);
       }
     };
-
     fetchTables();
   }, []);
 
+  
   const handleTableSelect = (table) => {
     setFormData({
       ...formData,
@@ -206,13 +225,14 @@ const ReservationsManagement = () => {
 
 
   // ✅ Fetch reservations dynamically
+  // ✅ Fetch reservations dynamically
   const fetchReservations = async () => {
     try {
       const res = await axiosInstance.get(
-        `/reservations?page=${page}&limit=${limit}&status=${activeFilter !== "all" ? activeFilter : ""}`
+        `/reservations?page=${page}&limit=${limit}` // 👈 status hata diya
       );
 
-      if (res.data?.status) {
+      if (res.data?.success) {
         setReservations(res.data.data || []);
         setTotalPages(res.data.totalPages || 1);
       }
@@ -221,18 +241,28 @@ const ReservationsManagement = () => {
     }
   };
 
+
   useEffect(() => {
     fetchReservations();
   }, [page, activeFilter]);
 
 
+  // ✅ Aaj ka date nikal lo
+  const today = new Date().toISOString().split("T")[0];
+
+  // ✅ Reservation ko filter karo based on date + status
+  const filteredReservations = reservations?.filter((res) => {
+    const resDate = res.reservation_date.split("T")[0];
+
+    // status "all" ho to sab allow, warna filter
+    const statusMatch =
+      activeFilter === "all" ? true : res.status === activeFilter;
+
+    return resDate === today && statusMatch;
+  }) || [];
 
 
-// ✅ Remove extra status filter from frontend
-const filteredReservations =
-  reservations?.filter(
-    (res) => res.reservation_date.split("T")[0] === today
-  ) || [];
+
 
   // Get today's date in readable format for display
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -275,21 +305,39 @@ const filteredReservations =
                   <Row className="g-3">
 
                     {/* Customer Name */}
+                    {/* Customer Name Dropdown */}
                     <Col md={6}>
                       <Form.Group>
-                        <Form.Label>Customer Name</Form.Label>
-                        <div className="input-group">
-                          <span className="input-group-text"><Person /></span>
-                          <Form.Control
-                            type="text"
-                            name="customerName"
-                            value={formData.customerName}
-                            onChange={handleInputChange}
-                            placeholder="Enter customer name"
-                          />
-                        </div>
+                        <Form.Label>Customer</Form.Label>
+                        <Form.Select
+                          value={formData.customerId || ""}
+                          onChange={(e) => {
+                            const selectedUser = users.find(u => u.id === parseInt(e.target.value));
+                            if (selectedUser) {
+                              setFormData({
+                                ...formData,
+                                customerId: selectedUser.id,
+                                customerName: selectedUser.name,
+                                phoneNumber: selectedUser.phone,
+                                customerEmail: selectedUser.email,
+                              });
+                            }
+                          }}
+                        >
+                          <option value="">Select Customer</option>
+                          {loadingUsers ? (
+                            <option disabled>Loading...</option>
+                          ) : (
+                            users.map(user => (
+                              <option key={user.id} value={user.id}>
+                                {user.name} ({user.phone})
+                              </option>
+                            ))
+                          )}
+                        </Form.Select>
                       </Form.Group>
                     </Col>
+
 
                     {/* Phone Number */}
                     <Col md={6}>
@@ -300,9 +348,9 @@ const filteredReservations =
                           <Form.Control
                             type="tel"
                             name="phoneNumber"
-                            value={formData.phoneNumber}
-                            onChange={handleInputChange}
+                            value={formData.phoneNumber || ""}
                             placeholder="Enter phone number"
+                            readOnly // 👈 auto-filled, editable mat rakho
                           />
                         </div>
                       </Form.Group>
@@ -317,13 +365,14 @@ const filteredReservations =
                           <Form.Control
                             type="email"
                             name="customerEmail"
-                            value={formData.customerEmail}
-                            onChange={handleInputChange}
-                            placeholder="Enter email address"
+                            value={formData.customerEmail || ""}
+                            placeholder="Enter email"
+                            readOnly
                           />
                         </div>
                       </Form.Group>
                     </Col>
+
 
                     {/* Table Dropdown */}
                     <Col md={6}>
