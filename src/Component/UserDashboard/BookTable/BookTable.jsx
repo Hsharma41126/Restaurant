@@ -20,6 +20,7 @@ import {
   RiArrowRightSLine,
   RiCheckLine,
 } from "react-icons/ri";
+import { apiUrl } from "../../../utils/config";
 
 const BookTable = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -214,7 +215,7 @@ const BookTable = () => {
       };
 
       const response = await axios.post(
-        'https://restaurant-backend-production-a63a.up.railway.app/api/reservations',
+        `${apiUrl}/reservations`,
         reservationData,
         {
           headers: {
@@ -271,7 +272,7 @@ const BookTable = () => {
     const fetchTables = async () => {
       try {
         const response = await axios.get(
-          "https://ssknf82q-6100.inc1.devtunnels.ms/api/tables/available?type=restaurant&date=2025-01-20&time=14:00",
+          `${apiUrl}/tables/available?type=restaurant&date=2025-01-20&time=14:00`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
