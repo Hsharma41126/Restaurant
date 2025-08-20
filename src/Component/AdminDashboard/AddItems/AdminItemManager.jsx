@@ -11,7 +11,7 @@ const SAddCategories = () => {
   ]);
 
   const [products, setProducts] = useState([
-    { id: 1, name: "iPhone 14", sku: "IP14", price: 80000, stockQuantity: 5, categoryId: 3, image: [] },
+    { id: 1, name: "iPhone 14", price: 80000, stockQuantity: 5, categoryId: 3, image: [] },
     { id: 2, name: "T-Shirt", sku: "TS101", price: 500, stockQuantity: 20, categoryId: 2, image: [] },
   ]);
 
@@ -148,46 +148,63 @@ const SAddCategories = () => {
   };
 
   return (
-    <div className="container py-4">
+    <div className="p-3">
       <ToastContainer />
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3 className="fw-bold">{getBreadcrumbPath()}</h3>
-        <div className="d-flex">
+        <div className="d-flex align-items-center">
+          {/* Search box */}
+          <div className="me-2">
+            <input
+              type="text"
+              className="form-control"
+              placeholder={`Search ${currentParent ? "subcategories" : "categories"}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Back button (only if inside subcategory) */}
           {categoryStack.length > 0 && (
-            <button className="btn btn-secondary me-2 d-flex" onClick={handleGoBack}>
+            <button className="btn btn-secondary me-2 d-flex align-items-center" onClick={handleGoBack}>
               <FaArrowLeft className="me-1" />
               <span>Back</span>
             </button>
           )}
+
+          {/* Table view button */}
           <button
-            className={`btn ${viewMode === "table" ? "btn-primary" : "btn-outline-primary"} me-2`}
+            className={`btn ${viewMode === "table" ? "btn-warning" : "btn-outline-warning"} me-2`}
             onClick={() => setViewMode("table")}
           >
             <FaTable />
           </button>
+
+          {/* Kanban view button */}
           <button
-            className={`btn ${viewMode === "kanban" ? "btn-primary" : "btn-outline-primary"}`}
+            className={`btn ${viewMode === "kanban" ? "btn-warning" : "btn-outline-warning"} me-2`}
             onClick={() => setViewMode("kanban")}
           >
             <FaTh />
           </button>
-          <button className="btn btn-primary ms-3 d-flex" onClick={() => handleAddClick(false)}>
-            <FaPlus className="me-1" />
-            <span>{currentParent ? "Add Subcategory" : "Add Category"}</span>
+
+          {/* Add button */}
+          <button
+            className="btn btn-warning d-flex align-items-center"
+            onClick={() => handleAddClick(false)}
+          >
+            <FaPlus className="me-2" />
+            <span className="d-flex align-items-center">
+              {currentParent ? "Add Subcategory" : "Add Category"}
+            </span>
           </button>
+
         </div>
+
       </div>
 
       {/* Search */}
-      <div className="mb-3">
-        <input
-          type="text"
-          className="form-control"
-          placeholder={`Search ${currentParent ? "subcategories" : "categories"}...`}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+
 
       {viewMode === "table" ? (
         <div className="card shadow-sm border-0">
@@ -198,8 +215,8 @@ const SAddCategories = () => {
                   <tr>
                     <th>#</th>
                     <th>Name</th>
-                    <th>Seller</th>
-                    <th>Image</th>
+                    {/* <th>Seller</th> */}
+                    {/* <th>Image</th> */}
                     <th>Price List</th>
                     <th>Actions</th>
                   </tr>
@@ -224,18 +241,18 @@ const SAddCategories = () => {
                       >
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
                         <td>{cat.name}</td>
-                        <td>{cat.sellerId ? `Seller ${cat.sellerId}` : "System"}</td>
-                        <td>
+                        {/* <td>{cat.sellerId ? `Seller ${cat.sellerId}` : "System"}</td> */}
+                        {/* <td>
                           {getImageUrl(cat.image) ? (
                             <img src={getImageUrl(cat.image)} style={{ width: "60px", height: "60px" }} />
                           ) : (
                             <img src="/src/assets/Category_Default_Image.jpeg" style={{ width: "60px", height: "60px" }} />
                           )}
-                        </td>
+                        </td> */}
                         <td>
                           <button
-                            className="no-row-click"
-                            style={{ color: "blue", cursor: "pointer" }}
+                            className="btn btn-warning"
+
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSeePriceList(cat);
@@ -246,7 +263,7 @@ const SAddCategories = () => {
                         </td>
                         <td className="no-row-click">
                           <div className="d-flex gap-2">
-                            <button className="btn btn-sm btn-outline-primary" onClick={(e) => { e.stopPropagation(); handleEdit(cat); }}>
+                            <button className="btn btn-sm btn-outline-warning" onClick={(e) => { e.stopPropagation(); handleEdit(cat); }}>
                               <FaEdit size={14} />
                             </button>
                             <button className="btn btn-sm btn-outline-danger" onClick={(e) => { e.stopPropagation(); handleDelete(cat.id); }}>
@@ -281,7 +298,7 @@ const SAddCategories = () => {
                     </li>
                     {[...Array(totalPages)].map((_, i) => (
                       <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-                        <button className="page-link" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
+                        <button className="btn btn-warning btn-sm" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
                       </li>
                     ))}
                     <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
@@ -303,23 +320,17 @@ const SAddCategories = () => {
                   <h6 className="mb-0">{cat.name}</h6>
                 </div>
                 <div className="card-body text-center">
-                  {getImageUrl(cat.image) ? (
-                    <img src={getImageUrl(cat.image)} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="bg-light rounded mb-2" style={{ width: '100%', height: '120px' }}>
-                      <img src='/src/assets/Category_Default_Image.jpeg' style={{ width: '60px', height: '60px' }} />
-                    </div>
-                  )}
+
                   <div className="d-flex justify-content-center mt-2">
-                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(cat)}><FaEdit size={14} /></button>
+                    <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleEdit(cat)}><FaEdit size={14} /></button>
                     <button className="btn btn-sm btn-outline-danger me-2" onClick={() => handleDelete(cat.id)}><FaTrash size={14} /></button>
                     <button className="btn btn-sm btn-outline-success me-2" onClick={() => { setCategoryStack([...categoryStack, cat]); handleAddClick(true); }}><FaPlus size={14} /></button>
                     <button className="btn btn-sm btn-outline-info" onClick={() => handleViewSubcategories(cat)}><FaEye size={14} /></button>
                   </div>
                 </div>
-                <div className="card-footer small text-muted">
+                {/* <div className="card-footer small text-muted">
                   {cat.sellerId ? `Seller: ${cat.sellerId}` : 'System Category'}
-                </div>
+                </div> */}
               </div>
             </div>
           ))}
@@ -345,14 +356,14 @@ const SAddCategories = () => {
                     {addingFromWithin && currentParent && (
                       <div className="alert alert-info">This will be a subcategory of <strong>{currentParent.name}</strong></div>
                     )}
-                    <div className="mb-3">
+                    {/* <div className="mb-3">
                       <label className="form-label">Category Image</label>
                       <input type="file" className="form-control" onChange={(e) => setCategoryImage(e.target.files[0])} />
-                    </div>
+                    </div> */}
                   </div>
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); resetForm(); }}>Cancel</button>
-                    <button type="submit" className="btn btn-primary">{editingCategory ? "Update" : "Add"} {addingFromWithin ? "Subcategory" : "Category"}</button>
+                    <button type="submit" className="btn btn-warning">{editingCategory ? "Update" : "Add"} {addingFromWithin ? "Subcategory" : "Category"}</button>
                   </div>
                 </form>
               </div>
@@ -381,7 +392,7 @@ const SAddCategories = () => {
                         <tr>
                           <th>#</th>
                           <th>Name</th>
-                          <th>SKU</th>
+                          {/* <th>SKU</th> */}
                           <th>Price</th>
                           <th>Stock</th>
                         </tr>
@@ -391,7 +402,7 @@ const SAddCategories = () => {
                           <tr key={p.id}>
                             <td>{i + 1}</td>
                             <td>{p.name}</td>
-                            <td>{p.sku}</td>
+                            {/* <td>{p.sku}</td> */}
                             <td>{p.price}</td>
                             <td>{p.stockQuantity}</td>
                           </tr>
