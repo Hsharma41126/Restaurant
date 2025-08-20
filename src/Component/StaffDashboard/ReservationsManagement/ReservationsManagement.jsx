@@ -612,7 +612,7 @@ const ReservationsManagement = () => {
   const [reservations, setReservations] = useState([]);
   const [tables, setTables] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(5);
+  const [limit] = useState(115);
   const [totalPages, setTotalPages] = useState(1);
   const [activeFilter, setActiveFilter] = useState("all");
   const [totalCount, setTotalCount] = useState(0);
