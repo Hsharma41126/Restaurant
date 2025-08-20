@@ -79,7 +79,7 @@ function App() {
     if (!token || !role || !allowedRoles.includes(role.toLowerCase())) {
       return <Navigate to="/" replace />;
     }
-    
+
     return children;
   };
 
