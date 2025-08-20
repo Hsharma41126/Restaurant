@@ -1,24 +1,23 @@
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { apiUrl } from "../../../utils/config";
 import axios from "axios";
 import axiosInstance from "../../../utils/axiosInstance";
 
 const categoryOrder = {
-  electric: ["PlayStation", "Pool"],
-  nonElectric: ["Food", "Snooker", "Large Table"],
+  electric: ["playstation", "pool"],
+  nonElectric: ["food", "snooker", "largetable"],
 };
 
 const getCategoryIcon = (type) => {
   switch (type) {
-    case "Pool":
+    case "pool":
       return "🎱";
-    case "Snooker":
+    case "snooker":
       return "🎯";
-    case "PlayStation":
+    case "playstation":
       return "🎮";
-    case "Large Table":
+
+    case "largetable":
       return "🪑";
     default:
       return "🍽️";
@@ -27,15 +26,15 @@ const getCategoryIcon = (type) => {
 
 const getCategoryColor = (type) => {
   switch (type) {
-    case "Large Table":
+    case "largetable":
       return "#ffc107";
-    case "Food":
+    case "food":
       return "#fd7e14";
-    case "Pool":
+    case "pool":
       return "#17a2b8";
-    case "Snooker":
+    case "snooker":
       return "#28a745";
-    case "PlayStation":
+    case "playstation":
       return "#6f42c1";
     default:
       return "#adb5bd";
@@ -51,8 +50,9 @@ const statusColors = {
 
 const Tables = () => {
   // State management
-  const [quickJumpInput, setQuickJumpInput] = useState("");
 
+
+  const [tablesByCategory, setTablesByCategory] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showPanel, setShowPanel] = useState(!isMobile);
 
@@ -61,16 +61,6 @@ const Tables = () => {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [editingTable, setEditingTable] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
-
-  // Form states
-  const [tableForm, setTableForm] = useState({
-    name: "",
-    type: "Snooker",
-    plugId: "",
-    status: "active",
-    seats: 8,
-    group: "",
-  });
 
   const [groupForm, setGroupForm] = useState({
     name: "",
@@ -85,7 +75,7 @@ const Tables = () => {
     {
       id: 1,
       name: "Table 1",
-      type: "Food",
+      type: "food",
       status: "occupied",
       guests: 4,
       order: "Order #1234",
@@ -95,7 +85,7 @@ const Tables = () => {
     {
       id: 2,
       name: "Table 2",
-      type: "Food",
+      type: "food",
       status: "available",
       guests: 0,
       order: null,
@@ -105,7 +95,7 @@ const Tables = () => {
     {
       id: 3,
       name: "Table 3",
-      type: "Food",
+      type: "food",
       status: "occupied",
       guests: 2,
       order: "Order #1235",
@@ -115,7 +105,7 @@ const Tables = () => {
     {
       id: 4,
       name: "Table 4",
-      type: "Food",
+      type: "food",
       status: "available",
       guests: 0,
       order: null,
@@ -125,7 +115,7 @@ const Tables = () => {
     {
       id: 5,
       name: "Table 5",
-      type: "Food",
+      type: "food",
       status: "reserved",
       guests: 6,
       order: null,
@@ -135,7 +125,7 @@ const Tables = () => {
     {
       id: 6,
       name: "Table 6",
-      type: "Food",
+      type: "food",
       status: "occupied",
       guests: 3,
       order: "Order #1236",
@@ -144,8 +134,8 @@ const Tables = () => {
     },
     {
       id: 101,
-      name: "Pool 1",
-      type: "Pool",
+      name: "pool 1",
+      type: "pool",
       status: "occupied",
       guests: 2,
       order: "Order #P101",
@@ -154,8 +144,8 @@ const Tables = () => {
     },
     {
       id: 102,
-      name: "Pool 2",
-      type: "Pool",
+      name: "pool 2",
+      type: "pool",
       status: "available",
       guests: 0,
       order: null,
@@ -164,8 +154,8 @@ const Tables = () => {
     },
     {
       id: 103,
-      name: "Pool 3",
-      type: "Pool",
+      name: "pool 3",
+      type: "pool",
       status: "reserved",
       guests: 4,
       order: null,
@@ -174,8 +164,8 @@ const Tables = () => {
     },
     {
       id: 104,
-      name: "Pool 4",
-      type: "Pool",
+      name: "pool 4",
+      type: "pool",
       status: "reserved",
       guests: 4,
       order: null,
@@ -184,8 +174,8 @@ const Tables = () => {
     },
     {
       id: 105,
-      name: "Pool 5",
-      type: "Pool",
+      name: "pool 5",
+      type: "pool",
       status: "reserved",
       guests: 4,
       order: null,
@@ -194,8 +184,8 @@ const Tables = () => {
     },
     {
       id: 106,
-      name: "Pool 6",
-      type: "Pool",
+      name: "pool 6",
+      type: "pool",
       status: "reserved",
       guests: 4,
       order: null,
@@ -205,7 +195,7 @@ const Tables = () => {
     {
       id: 7,
       name: "Table 7",
-      type: "Food",
+      type: "food",
       status: "available",
       guests: 0,
       order: null,
@@ -215,7 +205,7 @@ const Tables = () => {
     {
       id: 8,
       name: "Table 8",
-      type: "Food",
+      type: "food",
       status: "available",
       guests: 0,
       order: null,
@@ -225,7 +215,7 @@ const Tables = () => {
     {
       id: 9,
       name: "Table 9",
-      type: "Food",
+      type: "food",
       status: "occupied",
       guests: 2,
       order: "Order #1237",
@@ -235,7 +225,7 @@ const Tables = () => {
     {
       id: 10,
       name: "Table 10",
-      type: "Food",
+      type: "food",
       status: "available",
       guests: 0,
       order: null,
@@ -245,7 +235,7 @@ const Tables = () => {
     {
       id: 11,
       name: "Table 11",
-      type: "Food",
+      type: "food",
       status: "available",
       guests: 0,
       order: null,
@@ -255,7 +245,7 @@ const Tables = () => {
     {
       id: 12,
       name: "Table 12",
-      type: "Food",
+      type: "food",
       status: "occupied",
       guests: 5,
       order: "Order #1238",
@@ -267,8 +257,8 @@ const Tables = () => {
   const [groupTables, setGroupTables] = useState([
     {
       id: 201,
-      name: "Large Table 1",
-      type: "Large Table",
+      name: "largetable 1",
+      type: "largetable",
       seats: 8,
       status: "available",
       guests: 0,
@@ -277,8 +267,8 @@ const Tables = () => {
     },
     {
       id: 202,
-      name: "Large Table 2",
-      type: "Large Table",
+      name: "largetable 2",
+      type: "largetable",
       seats: 8,
       status: "available",
       guests: 0,
@@ -287,8 +277,8 @@ const Tables = () => {
     },
     {
       id: 203,
-      name: "Large Table 3",
-      type: "Large Table",
+      name: "largetable 3",
+      type: "largetable",
       seats: 8,
       status: "available",
       guests: 0,
@@ -297,7 +287,6 @@ const Tables = () => {
     },
   ]);
 
-  const [groups, setGroups] = useState([]);
   const [selectedTable, setSelectedTable] = useState(null);
   const [showTableActions, setShowTableActions] = useState(false);
 
@@ -309,20 +298,6 @@ const Tables = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // FORM HANDLERS
-  const handleTableFormChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "type") {
-      setTableForm((prev) => ({
-        ...prev,
-        [name]: value,
-        seats: value === "Large Table" ? 8 : prev.seats,
-      }));
-    } else {
-      setTableForm((prev) => ({ ...prev, [name]: value }));
-    }
-  };
 
   const handleGroupFormChange = (e) => {
     const { name, value } = e.target;
@@ -338,79 +313,11 @@ const Tables = () => {
     }));
   };
 
-  // TABLE SUBMIT
-  const handleTableSubmit = (e) => {
-    e.preventDefault();
-    if (editingTable) {
-      // Update existing table
-      const updatedTable = {
-        ...editingTable,
-        name: tableForm.name,
-        type: tableForm.type,
-        plugId: tableForm.plugId || null,
-        status: tableForm.status === "active" ? "available" : "inactive",
-        seats:
-          tableForm.type === "Large Table"
-            ? parseInt(tableForm.seats)
-            : editingTable.seats,
-        group: tableForm.group,
-      };
-      if (tableForm.type === "Large Table") {
-        setGroupTables((prev) =>
-          prev.map((t) => (t.id === editingTable.id ? updatedTable : t))
-        );
-        setTables((prev) => prev.filter((t) => t.id !== editingTable.id));
-      } else {
-        setTables((prev) =>
-          prev.map((t) => (t.id === editingTable.id ? updatedTable : t))
-        );
-        setGroupTables((prev) => prev.filter((t) => t.id !== editingTable.id));
-      }
-    } else {
-      // Add new table
-      const newId =
-        Math.max(
-          ...tables.map((t) => t.id),
-          ...groupTables.map((t) => t.id),
-          0
-        ) + 1;
-      const newTable = {
-        id: newId,
-        name: tableForm.name,
-        type: tableForm.type,
-        status: tableForm.status === "active" ? "available" : "inactive",
-        guests: 0,
-        order: null,
-        plugId: tableForm.plugId || null,
-        seats:
-          tableForm.type === "Large Table"
-            ? parseInt(tableForm.seats)
-            : undefined,
-        group: tableForm.group,
-      };
-      if (tableForm.type === "Large Table") {
-        setGroupTables((prev) => [...prev, newTable]);
-      } else {
-        setTables((prev) => [...prev, newTable]);
-      }
-    }
-    setTableForm({
-      name: "",
-      type: "Snooker",
-      plugId: "",
-      status: "active",
-      seats: 8,
-      group: "",
-    });
-    setTableModalOpen(false);
-    setEditingTable(null);
-  };
-
   const handleEditTable = (table) => {
     setEditingTable(table);
     setTableForm({
       name: table.name,
-      type: table.type || "Food",
+      type: table.type || "food",
       plugId: table.plugId || "",
       status: table.status === "inactive" ? "inactive" : "active",
       seats: table.seats || 8,
@@ -456,35 +363,19 @@ const Tables = () => {
     }
   }, [showTableActions]);
 
-
-
   // UI HELPERS
 
   // For table display, merge normal and large tables
   const allTableData = [...tables, ...groupTables];
-  const tablesByCategory = Object.keys(categoryOrder).map((category) => ({
-    category,
-    tables: allTableData.filter((table) =>
-      categoryOrder[category].includes(table.type)
-    ),
-  }));
+  // const tablesByCategory = Object.keys(categoryOrder).map((category) => ({
+  //   category,
+  //   tables: allTableData.filter((table) =>
+  //     categoryOrder[category].includes(table.type)
+  //   ),
+  // }));
 
   // Quick jump
-  const handleJump = () => {
-    const num = parseInt(quickJumpInput, 10);
-    if (isNaN(num)) return;
-    const tableElement = document.getElementById(`table-${num}`);
-    if (tableElement) {
-      document.querySelectorAll(".table-highlight").forEach((el) => {
-        el.classList.remove("table-highlight", "animate-pulse");
-      });
-      tableElement.classList.add("table-highlight", "animate-pulse");
-      tableElement.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => {
-        tableElement.classList.remove("table-highlight", "animate-pulse");
-      }, 2000);
-    }
-  };
+
 
   // Card renderer for category
   const renderTableCard = (table) => (
@@ -521,10 +412,10 @@ const Tables = () => {
           marginBottom: "8px",
         }}
       >
-        {getCategoryIcon(table.type)}
+        {getCategoryIcon(table.table_type)}
       </div>
       <div style={{ fontWeight: "bold", color: "#333", marginBottom: "3px" }}>
-        {table.name}
+        {table.table_name}
       </div>
       <div style={{ fontSize: "14px", color: "#666" }}>
         Status: {table.status}
@@ -567,41 +458,217 @@ const Tables = () => {
       )}
     </div>
   );
-
+  // add group api call
 
   // ✅ Group Submit Function
-const handleGroupSubmit = async (e) => {
-  e.preventDefault();
+  const handleGroupSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    const payload = {
-      name: groupForm.name,
-      description: groupForm.description || "Group for selected tables", // description optional रखी
-      hourly_rate: groupForm.hourlyRate,
-      fixed_rate: groupForm.fixedRate,
-      discout: groupForm.discount, // spelling आपने ऐसा दिया था
-      selected_pool: groupForm.selectedTables.join(", "), // IDs को string में भेजा
+    try {
+      const payload = {
+        name: groupForm.name,
+        description: groupForm.description || "Group for selected tables", // description optional रखी
+        hourly_rate: groupForm.hourlyRate,
+        fixed_rate: groupForm.fixedRate,
+        discout: groupForm.discount, // spelling आपने ऐसा दिया था
+        selected_pool: groupForm.selectedTables.join(", "), // IDs को string में भेजा
+      };
+
+      const res = await axiosInstance.post(`/tables/groups`, payload);
+
+      console.log("✅ Group created:", res.data);
+      alert("Group created successfully!");
+
+      setGroupModalOpen(false);
+      setGroupForm({
+        name: "",
+        description: "",
+        hourlyRate: "",
+        fixedRate: "",
+        discount: "",
+        selectedTables: [],
+      });
+    } catch (error) {
+      console.error("❌ Error creating group:", error);
+      alert("Failed to create group!");
+    }
+  };
+
+  const [groups, setGroups] = useState([]);
+  const [tableForm, setTableForm] = useState({
+    group: "",
+  });
+
+  // ✅ Fetch Tables from API
+  // ✅ API se groups fetch
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const res = await axiosInstance.get(`tables/groups/all`);
+        console.log("Groups API Data:", res.data);
+
+        setGroups(res.data.data.groups); // API array directly set
+      } catch (error) {
+        console.error("❌ Error fetching groups:", error);
+      }
     };
 
-    const res = await axiosInstance.post(`/tables/groups`, payload);
+    fetchGroups();
+  }, []);
 
-    console.log("✅ Group created:", res.data);
-    alert("Group created successfully!");
+  // ✅ Handle Change
 
-    setGroupModalOpen(false);
-    setGroupForm({
-      name: "",
-      description: "",
-      hourlyRate: "",
-      fixedRate: "",
-      discount: "",
-      selectedTables: [],
-    });
-  } catch (error) {
-    console.error("❌ Error creating group:", error);
-    alert("Failed to create group!");
-  }
-};
+  
+  
+  // table post api function
+
+  const [plugs, setPlugs] = useState([]);
+
+  // 🔹 API call for plugs
+ 
+  // 🔹 API call for plugs
+  const fetchPlugs = async () => {
+    try {
+      const res = await axiosInstance.get("/plugs");
+      const plugsData = res.data?.data?.plugs || [];
+      setPlugs(plugsData);
+    } catch (err) {
+      console.error("❌ Error fetching plugs:", err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (tableModalOpen) {
+      fetchPlugs();
+    }
+  }, [tableModalOpen]);
+
+  const randomnumber = () => {
+    return Math.floor(Math.random() * 1000) + 1;
+  };
+
+  const handleTableFormChange = (e) => {
+    const { name, value } = e.target;
+    setTableForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTableSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const payload = {
+        table_number: randomnumber(),
+        table_name: tableForm.name,
+        table_type: tableForm.type,
+        group_id: parseInt(tableForm.group, 10),
+        capacity: tableForm.seats || 4,
+        plug_id: tableForm.plugId || null,
+        status: tableForm.status || "inactive",
+        location: "Main Hall",
+        hourly_rate: "0",
+      };
+
+      console.log("🚀 Submitting payload:", payload);
+
+      const res = await axiosInstance.post(`tables`, payload);
+
+      console.log("✅ Table Added:", res.data);
+      alert("Table added successfully!");
+
+      setTableModalOpen(false);
+      setTableForm({});
+      fetchTables();
+    } catch (err) {
+      console.error("❌ Error adding table:", err.response?.data || err.message);
+      alert("Failed to add table");
+    }
+  };
+
+  // render table data according to data api cards
+  const fetchTables = async () => {
+    try {
+      const res = await axiosInstance.get(`/tables`);
+
+      console.log("API response:", res.data);
+
+      // ✅ सही path से tables निकालना
+      const tables = res.data?.data?.tables || [];
+
+      const electricTables = tables.filter((t) => t.plug_id !== null);
+      const nonElectricTables = tables.filter((t) => t.plug_id === null);
+
+      setTablesByCategory([
+        { category: "electric", tables: electricTables },
+        { category: "non-electric", tables: nonElectricTables },
+      ]);
+    } catch (err) {
+      console.error("Error fetching tables:", err);
+    }
+  };
+
+  useEffect(() => {
+    
+    fetchTables();
+  }, []);
+
+  const getCategoryColor = (type) =>
+    type === "playstation" ? "#007bff" : "#28a745";
+
+
+// {quickJumpInput && (api call to fetch table by ID)}
+
+ const [quickJumpInput, setQuickJumpInput] = useState("");
+
+  const handleJump = async () => {
+    const num = parseInt(quickJumpInput, 10);
+    if (isNaN(num)) return;
+
+    try {
+      // API hit karo
+      const res = await axiosInstance.get(`/tables/${num}`);
+      if (res.data?.success && res.data?.data?.table) {
+        const table = res.data.data.table;
+
+        // Table element ko page me dhundho
+        const tableElement = document.getElementById(`table-${table.id}`);
+        if (tableElement) {
+          // purane highlights hatao
+          document.querySelectorAll(".table-highlight").forEach((el) => {
+            el.classList.remove("table-highlight", "animate-pulse");
+          });
+
+          // highlight add karo
+          tableElement.classList.add("table-highlight", "animate-pulse");
+
+          // smooth scroll
+          tableElement.scrollIntoView({ behavior: "smooth", block: "center" });
+
+          // 2 sec baad highlight hatao
+          setTimeout(() => {
+            tableElement.classList.remove("table-highlight", "animate-pulse");
+          }, 2000);
+        } else {
+          alert(`Table with ID ${table.id} not found in DOM.`);
+        }
+      } else {
+        alert("Table not found in API.");
+      }
+    } catch (err) {
+      console.error("Error fetching table:", err);
+      alert("Failed to fetch table. Please try again.");
+    }
+  };
+
+
+// Update Table  Api Integrate
+
+
+
+
+
+
+
+
 
   // main UI
   return (
@@ -625,46 +692,46 @@ const handleGroupSubmit = async (e) => {
             gap: "10px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              alignItems: "center",
-              flexWrap: "wrap",
-              flex: "1 1 300px",
-            }}
-          >
-            <label style={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
-              Quick Jump to Table:
-            </label>
-            <input
-              type="number"
-              value={quickJumpInput}
-              onChange={(e) => setQuickJumpInput(e.target.value)}
-              placeholder="Enter table ID"
-              style={{
-                padding: "5px 10px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                width: "150px",
-                maxWidth: "100%",
-              }}
-            />
-            <button
-              onClick={handleJump}
-              style={{
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                padding: "5px 15px",
-                borderRadius: "4px",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              Jump
-            </button>
-          </div>
+     <div
+      style={{
+        display: "flex",
+        gap: "10px",
+        alignItems: "center",
+        flexWrap: "wrap",
+        flex: "1 1 300px",
+      }}
+    >
+      <label style={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
+        Quick Jump to Table:
+      </label>
+      <input
+        type="number"
+        value={quickJumpInput}
+        onChange={(e) => setQuickJumpInput(e.target.value)}
+        placeholder="Enter table ID"
+        style={{
+          padding: "5px 10px",
+          border: "1px solid #ddd",
+          borderRadius: "4px",
+          width: "150px",
+          maxWidth: "100%",
+        }}
+      />
+      <button
+        onClick={handleJump}
+        style={{
+          backgroundColor: "#28a745",
+          color: "white",
+          border: "none",
+          padding: "5px 15px",
+          borderRadius: "4px",
+          cursor: "pointer",
+          flexShrink: 0,
+        }}
+      >
+        Jump
+      </button>
+    </div>
           <div
             style={{
               display: "flex",
@@ -725,7 +792,7 @@ const handleGroupSubmit = async (e) => {
               <h2
                 style={{
                   background: getCategoryColor(
-                    cat.category === "electric" ? "PlayStation" : "Food"
+                    cat.category === "electric" ? "playstation" : "food"
                   ),
                   color: "#fff",
                   padding: "10px 25px",
@@ -803,7 +870,7 @@ const handleGroupSubmit = async (e) => {
             </div>
             <form onSubmit={handleTableSubmit}>
               <div style={{ padding: "20px" }}>
-                {/* Select Group - DYNAMIC */}
+                {/* Select Group */}
                 <div style={{ marginBottom: "15px" }}>
                   <label
                     style={{
@@ -828,12 +895,13 @@ const handleGroupSubmit = async (e) => {
                   >
                     <option value="">-- Select Group --</option>
                     {groups.map((g) => (
-                      <option key={g.id} value={g.name}>
+                      <option key={g.id} value={g.id}>
                         {g.name}
                       </option>
                     ))}
                   </select>
                 </div>
+
                 {/* Table Name */}
                 <div style={{ marginBottom: "15px" }}>
                   <label
@@ -848,7 +916,7 @@ const handleGroupSubmit = async (e) => {
                   <input
                     type="text"
                     name="name"
-                    value={tableForm.name}
+                    value={tableForm.name || ""}
                     onChange={handleTableFormChange}
                     placeholder="Enter table name"
                     required
@@ -860,6 +928,7 @@ const handleGroupSubmit = async (e) => {
                     }}
                   />
                 </div>
+
                 {/* Select Table Type */}
                 <div style={{ marginBottom: "15px" }}>
                   <label
@@ -881,34 +950,29 @@ const handleGroupSubmit = async (e) => {
                   >
                     {[
                       {
-                        type: "Snooker",
+                        type: "snooker",
                         icon: "🎯",
                         color: "#28a745",
-                        description: "Snooker Table",
                       },
                       {
-                        type: "Pool",
+                        type: "pool",
                         icon: "🎱",
                         color: "#17a2b8",
-                        description: "Pool Table",
                       },
                       {
-                        type: "PlayStation",
+                        type: "playstation",
                         icon: "🎮",
                         color: "#6f42c1",
-                        description: "PlayStation",
                       },
                       {
-                        type: "Food",
+                        type: "food",
                         icon: "🍽️",
                         color: "#fd7e14",
-                        description: "Dining Table",
                       },
                       {
-                        type: "Large Table",
+                        type: "largetable",
                         icon: "🪑",
                         color: "#ffc107",
-                        description: "Group Table",
                       },
                     ].map((tableType) => (
                       <div
@@ -918,7 +982,7 @@ const handleGroupSubmit = async (e) => {
                             ...prev,
                             type: tableType.type,
                             seats:
-                              tableType.type === "Large Table"
+                              tableType.type === "largetable"
                                 ? prev.seats || 8
                                 : undefined,
                           }));
@@ -938,24 +1002,18 @@ const handleGroupSubmit = async (e) => {
                               ? `${tableType.color}20`
                               : "white",
                           transition: "all 0.2s",
-                          position: "relative",
                         }}
                       >
                         <div style={{ fontSize: "30px", marginBottom: "5px" }}>
                           {tableType.icon}
                         </div>
-                        {/* <div style={{
-                          fontWeight: "bold",
-                          color: tableForm.type === tableType.type
-                            ? tableType.color : "#495057"
-                        }}>
-                          {tableType.description}
-                        </div> */}
                       </div>
                     ))}
                   </div>
                 </div>
-                {tableForm.type === "Large Table" && (
+
+                {/* Seats only for largetable */}
+                {tableForm.type === "largetable" && (
                   <div style={{ marginBottom: "15px" }}>
                     <label
                       style={{
@@ -969,7 +1027,7 @@ const handleGroupSubmit = async (e) => {
                     <input
                       type="number"
                       name="seats"
-                      value={tableForm.seats}
+                      value={tableForm.seats || ""}
                       onChange={handleTableFormChange}
                       placeholder="Enter number of seats"
                       min="4"
@@ -984,33 +1042,42 @@ const handleGroupSubmit = async (e) => {
                     />
                   </div>
                 )}
-                {tableForm.type !== "Food" &&
-                  tableForm.type !== "Large Table" && (
-                    <div style={{ marginBottom: "15px" }}>
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: "5px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Smart Plug ID
-                      </label>
-                      <input
-                        type="text"
-                        name="plugId"
-                        value={tableForm.plugId}
-                        onChange={handleTableFormChange}
-                        placeholder="Enter plug ID (e.g., PLUG_001)"
-                        style={{
-                          width: "100%",
-                          padding: "10px",
-                          border: "1px solid #ddd",
-                          borderRadius: "4px",
-                        }}
-                      />
-                    </div>
-                  )}
+
+                {/* Smart Plug ID dropdown */}
+                {tableForm.type !== "food" && tableForm.type !== "largetable" && (
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Smart Plug ID
+                    </label>
+                    <select
+                      name="plugId"
+                      value={tableForm.plugId || ""}
+                      onChange={handleTableFormChange}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                        backgroundColor: "white",
+                      }}
+                    >
+                      <option value="">-- Select Plug --</option>
+                      {plugs.map((plug) => (
+                        <option key={plug.id} value={plug.plug_id}>
+                          {plug.plug_id} ({plug.name})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Status */}
                 <div style={{ marginBottom: "20px" }}>
                   <label
                     style={{
@@ -1022,14 +1089,7 @@ const handleGroupSubmit = async (e) => {
                     Status
                   </label>
                   <div style={{ display: "flex", gap: "20px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        cursor: "pointer",
-                      }}
-                    >
+                    <label style={{ display: "flex", alignItems: "center" }}>
                       <input
                         type="radio"
                         name="status"
@@ -1039,14 +1099,7 @@ const handleGroupSubmit = async (e) => {
                       />
                       <span>Active</span>
                     </label>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        cursor: "pointer",
-                      }}
-                    >
+                    <label style={{ display: "flex", alignItems: "center" }}>
                       <input
                         type="radio"
                         name="status"
@@ -1059,6 +1112,8 @@ const handleGroupSubmit = async (e) => {
                   </div>
                 </div>
               </div>
+
+              {/* Footer buttons */}
               <div
                 style={{
                   padding: "20px",
@@ -1139,7 +1194,7 @@ const handleGroupSubmit = async (e) => {
                 color: "#666",
               }}
             >
-              {selectedTable.type || "Food"} • {selectedTable.status}
+              {selectedTable.type || "food"} • {selectedTable.status}
             </div>
           </div>
           <div style={{ padding: "20px" }}>
@@ -1283,8 +1338,10 @@ const handleGroupSubmit = async (e) => {
           >
             {groups.map((group) => {
               const allTables = [...tables, ...groupTables];
+
+              // safe check (agar selectedTables undefined ya null hai toh empty array use hoga)
               const selectedTables = allTables.filter((table) =>
-                group.selectedTables.includes(table.id)
+                (group.selectedTables || []).includes(table.id)
               );
 
               return (
@@ -1323,10 +1380,10 @@ const handleGroupSubmit = async (e) => {
                           setGroupForm({
                             id: group.id,
                             name: group.name,
-                            hourlyRate: group.hourlyRate,
-                            fixedRate: group.fixedRate,
-                            discount: group.discount,
-                            selectedTables: group.selectedTables,
+                            hourlyRate: group.hourly_rate,
+                            fixedRate: group.fixed_rate,
+                            discount: group.discout,
+                            selectedTables: group.selected_pool,
                           });
                           setGroupModalOpen(true);
                         }}
@@ -1388,7 +1445,7 @@ const handleGroupSubmit = async (e) => {
                         fontWeight: "bold",
                       }}
                     >
-                      💰 ${group.hourlyRate}/hr
+                      💰 ${group.hourly_rate}/hr
                     </div>
                     <div
                       style={{
@@ -1400,7 +1457,7 @@ const handleGroupSubmit = async (e) => {
                         fontWeight: "bold",
                       }}
                     >
-                      🎯 ${group.fixedRate} fixed
+                      🎯 ${group.fixed_rate} fixed
                     </div>
                     <div
                       style={{
@@ -1412,7 +1469,7 @@ const handleGroupSubmit = async (e) => {
                         fontWeight: "bold",
                       }}
                     >
-                      📊 {selectedTables.length} tables
+                      📊 {group.selected_pool} tables
                     </div>
                     {group.discount > 0 && (
                       <div
@@ -1425,7 +1482,7 @@ const handleGroupSubmit = async (e) => {
                           fontWeight: "bold",
                         }}
                       >
-                        🎁 {group.discount}% off
+                        🎁 {group.discout}% off
                       </div>
                     )}
                   </div>
@@ -1465,13 +1522,13 @@ const handleGroupSubmit = async (e) => {
                       {selectedTables.map((table, index) => {
                         const getTableIcon = (type) => {
                           switch (type) {
-                            case "Pool":
+                            case "pool":
                               return "🎱";
-                            case "Snooker":
+                            case "snooker":
                               return "🎯";
-                            case "PlayStation":
+                            case "playstation":
                               return "🎮";
-                            case "Large Table":
+                            case "largetable":
                               return "🪑";
                             default:
                               return "🍽️";
@@ -1480,13 +1537,13 @@ const handleGroupSubmit = async (e) => {
 
                         const getTableColor = (type) => {
                           switch (type) {
-                            case "Pool":
+                            case "pool":
                               return "#4caf50";
-                            case "Snooker":
+                            case "snooker":
                               return "#2196f3";
-                            case "PlayStation":
+                            case "playstation":
                               return "#9c27b0";
-                            case "Large Table":
+                            case "largetable":
                               return "#795548";
                             default:
                               return "#ff9800";
@@ -1509,9 +1566,9 @@ const handleGroupSubmit = async (e) => {
                                 width: "40px",
                                 height: "40px",
                                 borderRadius:
-                                  table.type === "Food" ? "50%" : "8px",
+                                  table.type === "food" ? "50%" : "8px",
                                 backgroundColor: getTableColor(
-                                  table.type || "Food"
+                                  table.type || "food"
                                 ),
                                 display: "flex",
                                 alignItems: "center",
@@ -1522,7 +1579,7 @@ const handleGroupSubmit = async (e) => {
                                 position: "relative",
                               }}
                             >
-                              {getTableIcon(table.type || "Food")}
+                              {getTableIcon(table.type || "food")}
                               {table.status === "occupied" && (
                                 <div
                                   style={{
@@ -1815,7 +1872,7 @@ const handleGroupSubmit = async (e) => {
                                     htmlFor={`table-${table.id}`}
                                     style={{ cursor: "pointer" }}
                                   >
-                                    {table.name}
+                                    {table.table_name}
                                   </label>
                                 </div>
                               ))}
@@ -2048,6 +2105,3 @@ const handleGroupSubmit = async (e) => {
 };
 
 export default Tables;
-
-
-
