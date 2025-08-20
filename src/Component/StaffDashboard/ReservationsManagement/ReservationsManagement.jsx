@@ -96,7 +96,7 @@ const ReservationsManagement = () => {
 
 
   // make the table type dropdown dynamic
-  const [tables, setTables] = useState([]);
+  // const [tables, setTables] = useState([]);
 
   // Fetch available tables on mount
   useEffect(() => {
@@ -230,11 +230,11 @@ const ReservationsManagement = () => {
 
 
 
-// ✅ Remove extra status filter from frontend
-const filteredReservations =
-  reservations?.filter(
-    (res) => res.reservation_date.split("T")[0] === today
-  ) || [];
+  // ✅ Remove extra status filter from frontend
+  const filteredReservations =
+    reservations?.filter(
+      (res) => res.reservation_date.split("T")[0] === today
+    ) || [];
 
   // Get today's date in readable format for display
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
