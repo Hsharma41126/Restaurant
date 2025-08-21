@@ -614,7 +614,7 @@ const ReservationsManagement = () => {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoadingUsers(true);
@@ -727,70 +727,70 @@ const ReservationsManagement = () => {
   };
 
   // Handle form submission
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // Basic required validations
-  if (!formData.tableId) return alert("Please select a table.");
-  if (!formData.customerName.trim()) return alert("Please enter customer name.");
-  if (!formData.phoneNumber.trim()) return alert("Please enter phone number.");
-  if (!formData.date) return alert("Please select a reservation date.");
-  if (!formData.time) return alert("Please select a reservation time.");
+    // Basic required validations
+    if (!formData.tableId) return alert("Please select a table.");
+    if (!formData.customerName.trim()) return alert("Please enter customer name.");
+    if (!formData.phoneNumber.trim()) return alert("Please enter phone number.");
+    if (!formData.date) return alert("Please select a reservation date.");
+    if (!formData.time) return alert("Please select a reservation time.");
 
-  // Additional validations
-  const phoneRegex = /^[0-9]{10}$/;
-  if (!phoneRegex.test(formData.phoneNumber.trim())) {
-    return alert("Please enter a valid 10-digit phone number.");
-  }
+    // Additional validations
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(formData.phoneNumber.trim())) {
+      return alert("Please enter a valid 10-digit phone number.");
+    }
 
-  if (formData.email && !/\S+@\S+\.\S+/.test(formData.email.trim())) {
-    return alert("Please enter a valid email address.");
-  }
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email.trim())) {
+      return alert("Please enter a valid email address.");
+    }
 
-  const payload = {
-    table_id: formData.tableId,
-    customer_name: formData.customerName.trim(),
-    customer_phone: formData.phoneNumber.trim(),
-    customer_email: formData.email.trim() || null,
-    reservation_date: formData.date,
-    reservation_time: formData.time,
-    duration_hours: Number(formData.durationHours) || 1,
-    party_size: Number(formData.partySize) || 1,
-    special_requests: formData.specialRequests.trim(),
+    const payload = {
+      table_id: formData.tableId,
+      customer_name: formData.customerName.trim(),
+      customer_phone: formData.phoneNumber.trim(),
+      customer_email: formData.email.trim() || null,
+      reservation_date: formData.date,
+      reservation_time: formData.time,
+      duration_hours: Number(formData.durationHours) || 1,
+      party_size: Number(formData.partySize) || 1,
+      special_requests: formData.specialRequests.trim(),
+    };
+
+    try {
+      // Disable button while submitting
+      setIsSubmitting(true);
+
+      await axiosInstance.post("/reservations", payload);
+
+      alert("✅ Reservation created successfully!");
+
+      // Reset form
+      setFormData({
+        tableId: null,
+        tableName: "",
+        customerName: "",
+        phoneNumber: "",
+        email: "",
+        date: "",
+        time: "",
+        durationHours: 1,
+        partySize: 1,
+        specialRequests: "",
+      });
+
+      // Refresh reservations list
+      fetchReservations();
+
+    } catch (err) {
+      console.error("Error creating reservation:", err);
+      alert(err?.response?.data?.message || "❌ Failed to create reservation.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  try {
-    // Disable button while submitting
-    setIsSubmitting(true);
-
-    await axiosInstance.post("/reservations", payload);
-
-    alert("✅ Reservation created successfully!");
-
-    // Reset form
-    setFormData({
-      tableId: null,
-      tableName: "",
-      customerName: "",
-      phoneNumber: "",
-      email: "",
-      date: "",
-      time: "",
-      durationHours: 1,
-      partySize: 1,
-      specialRequests: "",
-    });
-
-    // Refresh reservations list
-    fetchReservations();
-
-  } catch (err) {
-    console.error("Error creating reservation:", err);
-    alert(err?.response?.data?.message || "❌ Failed to create reservation.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
 
   // Handle status change
@@ -814,26 +814,26 @@ const ReservationsManagement = () => {
 
   // ✅ Fetch reservations dynamically
   // ✅ Fetch reservations dynamically
-const fetchReservations = async () => {
-  try {
-    let url = `/reservations?page=${page}&limit=${limit}`;
+  const fetchReservations = async () => {
+    try {
+      let url = `/reservations?page=${page}&limit=${limit}`;
 
-    // Add status filter if not "all"
-    if (activeFilter !== "all") {
-      url += `&status=${activeFilter}`;
+      // Add status filter if not "all"
+      if (activeFilter !== "all") {
+        url += `&status=${activeFilter}`;
+      }
+
+      const res = await axiosInstance.get(url); // 👈 ab yeh dynamic url use karo
+
+      if (res.data?.success) {
+        setReservations(res.data.data || []);
+        setTotalCount(res.data.count || 0);
+        setTotalPages(Math.ceil(res.data.count / limit) || 1);
+      }
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
     }
-
-    const res = await axiosInstance.get(url); // 👈 ab yeh dynamic url use karo
-
-    if (res.data?.success) {
-      setReservations(res.data.data || []);
-      setTotalCount(res.data.count || 0);
-      setTotalPages(Math.ceil(res.data.count / limit) || 1);
-    }
-  } catch (error) {
-    console.error("Error fetching reservations:", error);
-  }
-};
+  };
 
 
 
@@ -965,6 +965,53 @@ const fetchReservations = async () => {
                         </div>
                       </Form.Group>
                     </Col>
+
+                    {/* Table Dropdown */}
+                  <Col md={6}>
+  <Form.Group>
+    <Form.Label>Table</Form.Label>
+    <Dropdown
+      show={showTableTypeDropdown}
+      onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
+    >
+      <Dropdown.Toggle
+        className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
+        style={{
+          fontSize: "1rem",
+          height: "38px",
+          borderRadius: "6px",
+          border: "1px solid #dee2e6",
+          backgroundColor: "white",
+        }}
+      >
+        {formData.tableName || "Select table"}
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu
+        className="w-100 custom-dropdown-menu"
+        style={{
+          maxHeight: "200px", // limit height
+          overflowY: "auto",  // add vertical scrollbar
+          overflowX: "hidden" // hide horizontal scrollbar
+        }}
+      >
+        {tables.length > 0 ? (
+          tables.map((table) => (
+            <Dropdown.Item
+              key={table.id}
+              onClick={() => handleTableSelect(table)}
+              className="text-dark"
+            >
+              {table.table_name} ({table.table_number})
+            </Dropdown.Item>
+          ))
+        ) : (
+          <Dropdown.Item disabled>No tables available</Dropdown.Item>
+        )}
+      </Dropdown.Menu>
+    </Dropdown>
+  </Form.Group>
+</Col>
 
                     {/* Date */}
                     <Col md={6}>
