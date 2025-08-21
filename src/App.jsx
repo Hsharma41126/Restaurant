@@ -28,6 +28,7 @@ import ForgotPassword from "./Auth/ForgotPassword";
 import Profile from "./Profile/Profile";
 import Dashboard from "./Component/AdminDashboard/Dashboard/Dashboard";
 import AdminItemManager from "./Component/AdminDashboard/AddItems/AdminItemManager";
+import ResetPassword from "./Auth/ResetPassword";
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -61,6 +62,7 @@ function App() {
   const hideLayout = location.pathname === "/" ||
     location.pathname === "/signup" ||
     location.pathname === "/forgot-password";
+    location.pathname === "/reset-password";
 
   // Protected route component
   const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -101,6 +103,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       ) : (
         <>
