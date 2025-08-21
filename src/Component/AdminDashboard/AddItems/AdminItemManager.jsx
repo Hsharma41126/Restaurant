@@ -2,107 +2,471 @@ import React, { useState, useEffect } from 'react';
 import { FaEdit, FaTrash, FaTable, FaTh, FaEye, FaArrowLeft, FaPlus } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axiosInstance from '../../../utils/axiosInstance';
 
 const SAddCategories = () => {
-  const [categories, setCategories] = useState([
-    { id: 1, name: "Electronics", sellerId: 101, image: [], parentId: null },
-    { id: 2, name: "Fashion", sellerId: 102, image: [], parentId: null },
-    { id: 3, name: "Mobiles", sellerId: 101, image: [], parentId: 1 },
-  ]);
-
-  const [products, setProducts] = useState([
-    { id: 1, name: "iPhone 14", price: 80000, stockQuantity: 5, categoryId: 3, image: [] },
-    { id: 2, name: "T-Shirt", sku: "TS101", price: 500, stockQuantity: 20, categoryId: 2, image: [] },
-  ]);
-
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [items, setItems] = useState([]);
+  const [printers, setPrinters] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [filteredSubcategories, setFilteredSubcategories] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryName, setCategoryName] = useState('');
-  const [categoryImage, setCategoryImage] = useState(null);
+  const [subcategoryName, setSubcategoryName] = useState('');
+  const [itemName, setItemName] = useState('');
+  const [selectedPrinter, setSelectedPrinter] = useState('');
   const [editingCategory, setEditingCategory] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingSubcategory, setEditingSubcategory] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [categoryStack, setCategoryStack] = useState([]);
-  const [addingFromWithin, setAddingFromWithin] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState('table');
+  const [loading, setLoading] = useState(false);
+   const [itemTypes, setItemTypes] = useState([
+    { item_name: "", price: "" }
+  ]);
+  
 
   const pageSize = 5;
 
-  // Get current parent category from stack
+  // Get current parent from stack
   const currentParent = categoryStack.length > 0 ? categoryStack[categoryStack.length - 1] : null;
+
+  // Determine current view level
+  const currentLevel = categoryStack.length === 0 ? 'categories' : 
+                      categoryStack.length === 1 ? 'subcategories' : 'items';
 
   // Fetch all data on mount
   useEffect(() => {
-    let filtered = [];
-    if (currentParent) {
-      filtered = categories.filter(
-        cat =>
-          String(cat.parentId) === String(currentParent.id) &&
-          cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    } else {
-      filtered = categories.filter(
-        cat =>
-          !cat.parentId &&
-          cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    setFilteredCategories(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, categories, currentParent]);
+    fetchCategories();
+    fetchPrinters();
+  }, []);
 
-  const resetForm = () => {
-    setCategoryName('');
-    setCategoryImage(null);
-    setEditingCategory(null);
-    setAddingFromWithin(false);
+  // Filter data based on search term and current level
+  useEffect(() => {
+    if (currentLevel === 'categories') {
+      const filtered = categories.filter(cat => 
+        cat.category_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredCategories(filtered);
+    } else if (currentLevel === 'subcategories' && selectedCategory) {
+      const filtered = subcategories.filter(sub => 
+        sub.subcategory_name?.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        sub.category_id === selectedCategory.id
+      );
+      setFilteredSubcategories(filtered);
+    } else if (currentLevel === 'items' && selectedSubcategory) {
+      const filtered = items.filter(item => 
+        item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        item.subcategory_id === selectedSubcategory.id
+      );
+      setFilteredItems(filtered);
+    }
+    setCurrentPage(1);
+  }, [searchTerm, categories, subcategories, items, currentLevel, selectedCategory, selectedSubcategory]);
+
+  // API Functions
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get(`/categories`);
+      setCategories(response.data.data);
+      console.log("Fetched Categories:", response.data);
+    } catch (error) {
+      toast.error("Failed to fetch categories");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddOrUpdate = (e) => {
+  const fetchPrinters = async () => {
+    try {
+      const response = await axiosInstance.get(`/printers`);
+      
+      setPrinters(response.data.data.printers);
+      console.log("Fetched Printers:", response.data.data);
+      
+      console.log("Fetched Printers:", response.data);
+    } catch (error) {
+      toast.error("Failed to fetch printers");
+      console.error(error);
+    }
+  };
+
+  const fetchSubcategories = async (categoryId) => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get(`/subcategories?category_id=${categoryId}`);
+      setSubcategories(response.data.data);
+      console.log("Fetched Subcategories:", response.data);
+    } catch (error) {
+      toast.error("Failed to fetch subcategories");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchItems = async (id) => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get(`/items/${id}`);
+      setItems(response.data.data);
+      console.log("Fetched Items:", response.data );
+      
+    } catch (error) {
+      toast.error("Failed to fetch items");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addCategory = async (categoryData) => {
+    try {
+      const response = await axiosInstance.post(`/categories`, categoryData);
+      
+      if (response.status === 200 || response.status === 201) {
+        const newCategory = response.data;
+        setCategories(prev => [...prev, newCategory]);
+        toast.success("Category added successfully!");
+        return newCategory;
+      } else {
+        throw new Error('Failed to add category');
+      }
+    } catch (error) {
+      toast.error("Failed to add category");
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const updateCategory = async (id, categoryData) => {
+    try {
+      const response = await axiosInstance.put(`/categories/${id}`, categoryData);
+      
+      if (response.status === 200) {
+        const updatedCategory = response.data;
+        setCategories(prev => prev.map(cat => 
+          cat.id === id ? updatedCategory : cat
+        ));
+        toast.success("Category updated successfully!");
+      } else {
+        throw new Error('Failed to update category');
+      }
+    } catch (error) {
+      toast.error("Failed to update category");
+      console.error(error);
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    try {
+      const response = await axiosInstance.delete(`/categories/${id}`);
+      
+      if (response.status === 200) {
+        setCategories(prev => prev.filter(cat => cat.id !== id));
+        toast.success("Category deleted successfully!");
+      } else {
+        throw new Error('Failed to delete category');
+      }
+    } catch (error) {
+      toast.error("Failed to delete category");
+      console.error(error);
+    }
+  };
+
+  const addSubcategory = async (subcategoryData) => {
+    try {
+      const response = await axiosInstance.post(`/subcategories`, subcategoryData);
+      
+      if (response.status === 200 || response.status === 201) {
+        const newSubcategory = response.data;
+        setSubcategories(prev => [...prev, newSubcategory]);
+        toast.success("Subcategory added successfully!");
+        return newSubcategory;
+      } else {
+        throw new Error('Failed to add subcategory');
+      }
+    } catch (error) {
+      toast.error("Failed to add subcategory");
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const updateSubcategory = async (id, subcategoryData) => {
+    try {
+      const response = await axiosInstance.put(`/subcategories/${id}`, subcategoryData);
+      
+      if (response.status === 200) {
+        const updatedSubcategory = response.data;
+        setSubcategories(prev => prev.map(sub => 
+          sub.id === id ? updatedSubcategory : sub
+        ));
+        toast.success("Subcategory updated successfully!");
+      } else {
+        throw new Error('Failed to update subcategory');
+      }
+    } catch (error) {
+      toast.error("Failed to update subcategory");
+      console.error(error);
+    }
+  };
+
+  const deleteSubcategory = async (id) => {
+    try {
+      const response = await axiosInstance.delete(`/subcategories/${id}`);
+      
+      if (response.status === 200) {
+        setSubcategories(prev => prev.filter(sub => sub.id !== id));
+        toast.success("Subcategory deleted successfully!");
+      } else {
+        throw new Error('Failed to delete subcategory');
+      }
+    } catch (error) {
+      toast.error("Failed to delete subcategory");
+      console.error(error);
+    }
+  };
+
+    const addItem = async (itemData) => {
+    try {
+      const response = await axiosInstance.post(`/items`, itemData);
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Item added successfully!");
+        return response.data;
+      } else {
+        throw new Error("Failed to add item");
+      }
+    } catch (error) {
+      toast.error("Failed to add item");
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const updateItem = async (id, itemData) => {
+    try {
+      const response = await axiosInstance.put(`/items/${id}`, itemData);
+      
+      if (response.status === 200) {
+        const updatedItem = response.data;
+        setItems(prev => prev.map(item => 
+          item.id === id ? updatedItem : item
+        ));
+        toast.success("Item updated successfully!");
+      } else {
+        throw new Error('Failed to update item');
+      }
+    } catch (error) {
+      toast.error("Failed to update item");
+      console.error(error);
+    }
+  };
+
+  const deleteItem = async (id) => {
+    try {
+      const response = await axiosInstance.delete(`/items/${id}`);
+      
+      if (response.status === 200) {
+        setItems(prev => prev.filter(item => item.id !== id));
+        toast.success("Item deleted successfully!");
+      } else {
+        throw new Error('Failed to delete item');
+      }
+    } catch (error) {
+      toast.error("Failed to delete item");
+      console.error(error);
+    }
+  };
+
+  // UI Helper Functions
+  const resetForm = () => {
+    setCategoryName('');
+    setSubcategoryName('');
+    setItemName('');
+    setSelectedPrinter('');
+    setEditingCategory(null);
+    setEditingSubcategory(null);
+    setEditingItem(null);
+     setSelectedPrinter("");
+    setEditingItem(null);
+    setItemTypes([{ item_name: "", price: "" }]);
+  
+  };
+
+  const handleAddOrUpdateCategory = async (e) => {
     e.preventDefault();
     if (!categoryName) {
       toast.error("Please enter category name");
       return;
     }
 
-    if (editingCategory) {
-      setCategories(prev =>
-        prev.map(c =>
-          c.id === editingCategory.id ? { ...c, name: categoryName } : c
-        )
-      );
-      toast.success("Category updated successfully!");
-    } else {
-      const newCategory = {
-        id: Date.now(),
-        name: categoryName,
-        image: categoryImage ? [URL.createObjectURL(categoryImage)] : [],
-        sellerId: 999,
-        parentId: currentParent ? currentParent.id : null
-      };
-      setCategories(prev => [...prev, newCategory]);
-      toast.success("Category added successfully!");
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, { category_name: categoryName });
+      } else {
+        await addCategory({ category_name: categoryName });
+      }
+      setShowCategoryModal(false);
+      resetForm();
+    } catch (error) {
+      // Error handling is done in the API functions
     }
-    setShowModal(false);
+  };
+
+  const handleAddOrUpdateSubcategory = async (e) => {
+    e.preventDefault();
+    if (!subcategoryName || !selectedCategory) {
+      toast.error("Please enter subcategory name");
+      return;
+    }
+
+    try {
+      if (editingSubcategory) {
+        await updateSubcategory(editingSubcategory.id, { 
+          subcategory_name: subcategoryName,
+          category_id: selectedCategory.id
+        });
+      } else {
+        await addSubcategory({ 
+          subcategory_name: subcategoryName,
+          category_id: selectedCategory.id
+        });
+      }
+      setShowSubcategoryModal(false);
+      resetForm();
+    } catch (error) {
+      // Error handling is done in the API functions
+    }
+  };
+
+
+   const handleAddRow = () => {
+    setItemTypes([...itemTypes, { item_name: "", price: "" }]);
+  };
+
+  // ❌ Remove row
+  const handleRemoveRow = (index) => {
+    const newTypes = [...itemTypes];
+    newTypes.splice(index, 1);
+    setItemTypes(newTypes);
+  };
+
+  // 🔄 Update field value
+  const handleChangeRow = (index, field, value) => {
+    const newTypes = [...itemTypes];
+    newTypes[index][field] = value;
+    setItemTypes(newTypes);
+  };
+
+ const handleAddOrUpdateItem = async (e) => {
+  e.preventDefault();
+
+  // Basic validations
+  if (!selectedPrinter || !selectedSubcategory || !selectedCategory) {
+    toast.error("Please fill all required fields");
+    return;
+  }
+
+  // Empty rows filter karna
+  const filteredItems = itemTypes.filter(
+    (item) => item.item_name.trim() !== "" && item.price !== ""
+  );
+
+  if (filteredItems.length === 0) {
+    toast.error("Please add at least one item with price");
+    return;
+  }
+
+  try {
+    if (editingItem) {
+      // 🔄 Edit case
+      await updateItem(editingItem.id, {
+        printer_id: parseInt(selectedPrinter),
+        subcategory_id: selectedSubcategory.id,
+        category_id: selectedCategory.id,
+        items: filteredItems.map((item) => ({
+          item_name: item.item_name,
+          price: parseFloat(item.price)
+        }))
+      });
+    } else {
+      // ➕ Add case
+      await addItem({
+        printer_id: parseInt(selectedPrinter),
+        subcategory_id: selectedSubcategory.id,
+        category_id: selectedCategory.id,
+        items: filteredItems.map((item) => ({
+          item_name: item.item_name,
+          price: parseFloat(item.price)
+        }))
+      });
+    }
+
+    setShowItemModal(false);
     resetForm();
-  };
+  } catch (error) {
+    // Error handling already in API functions
+    console.error("Error in add/update item", error);
+  }
+};
 
-  const handleEdit = (category) => {
+
+  const handleEditCategory = (category) => {
     setEditingCategory(category);
-    setCategoryName(category.name);
-    setShowModal(true);
+    setCategoryName(category.category_name);
+    setShowCategoryModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleEditSubcategory = (subcategory) => {
+    setEditingSubcategory(subcategory);
+    setSubcategoryName(subcategory.subcategory_name);
+    setShowSubcategoryModal(true);
+  };
+
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setItemName(item.item_name);
+    setSelectedPrinter(item.printer_id || '');
+    setShowItemModal(true);
+  };
+
+  const handleDeleteCategory = async (id) => {
     if (!window.confirm("Are you sure you want to delete this category?")) return;
-    setCategories(prev => prev.filter(cat => cat.id !== id));
-    toast.success("Category deleted successfully!");
+    await deleteCategory(id);
   };
 
-  const handleViewSubcategories = (category) => {
+  const handleDeleteSubcategory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this subcategory?")) return;
+    await deleteSubcategory(id);
+  };
+
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    await deleteItem(id);
+  };
+
+  const handleViewSubcategories = async (category) => {
+    setSelectedCategory(category);
     setCategoryStack([...categoryStack, category]);
+    await fetchSubcategories(category.id);
+  };
+
+  const handleViewItems = async (subcategory) => {
+    setSelectedSubcategory(subcategory);
+    setCategoryStack([...categoryStack, subcategory]);
+    await fetchItems(subcategory.id);
   };
 
   const handleGoBack = () => {
@@ -110,20 +474,48 @@ const SAddCategories = () => {
       const newStack = [...categoryStack];
       newStack.pop();
       setCategoryStack(newStack);
+      
+      if (newStack.length === 0) {
+        setSelectedCategory(null);
+        setSelectedSubcategory(null);
+      } else if (newStack.length === 1) {
+        setSelectedSubcategory(null);
+      }
     }
   };
 
   const getBreadcrumbPath = () => {
     if (categoryStack.length === 0) return "Categories";
-    return ["Categories", ...categoryStack.map(cat => cat.name)].join(" > ");
+    return ["Categories", ...categoryStack.map(item => item.category_name || item.subcategory_name || item.item_name)].join(" > ");
   };
 
-  const getImageUrl = (images) => {
-    return images && images.length > 0 ? images[0] : "";
+  const getAddButtonText = () => {
+    if (currentLevel === 'categories') return "Add Category";
+    if (currentLevel === 'subcategories') return "Add Subcategory";
+    return "Add Item";
   };
 
-  const totalPages = Math.ceil(filteredCategories.length / pageSize);
-  const paginatedCategories = filteredCategories.slice(
+  const handleAddClick = () => {
+    if (currentLevel === 'categories') {
+      setShowCategoryModal(true);
+    } else if (currentLevel === 'subcategories') {
+      setShowSubcategoryModal(true);
+    } else {
+      setShowItemModal(true);
+    }
+    resetForm();
+  };
+
+  // Pagination calculations
+  const getCurrentData = () => {
+    if (currentLevel === 'categories') return filteredCategories;
+    if (currentLevel === 'subcategories') return filteredSubcategories;
+    return filteredItems;
+  };
+
+  const currentData = getCurrentData();
+  const totalPages = Math.ceil(currentData.length / pageSize);
+  const paginatedData = currentData.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -132,20 +524,11 @@ const SAddCategories = () => {
     setCurrentPage(page);
   };
 
-  const handleAddClick = (fromWithin = false) => {
-    setAddingFromWithin(fromWithin);
-    setShowModal(true);
-    resetForm();
-  };
-
-  const handleSeePriceList = (category) => {
-    const filteredProducts = products.filter(
-      p => String(p.categoryId) === String(category.id)
-    );
-    setProducts(filteredProducts);
-    setSelectedCategory(category);
-    setShowProductModal(true);
-  };
+  // Get printer name by ID
+  // const getPrinterName = (printerId) => {
+  //   const printer = printers.find(p => p.id === printerId);
+  //   return printer ? printer.printer_name : 'Unknown Printer';
+  // };
 
   return (
     <div className="p-3">
@@ -158,13 +541,13 @@ const SAddCategories = () => {
             <input
               type="text"
               className="form-control"
-              placeholder={`Search ${currentParent ? "subcategories" : "categories"}...`}
+              placeholder={`Search ${currentLevel}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Back button (only if inside subcategory) */}
+          {/* Back button (only if inside subcategory or item) */}
           {categoryStack.length > 0 && (
             <button className="btn btn-secondary me-2 d-flex align-items-center" onClick={handleGoBack}>
               <FaArrowLeft className="me-1" />
@@ -172,41 +555,42 @@ const SAddCategories = () => {
             </button>
           )}
 
-          {/* Table view button */}
-          <button
-            className={`btn ${viewMode === "table" ? "btn-warning" : "btn-outline-warning"} me-2`}
-            onClick={() => setViewMode("table")}
-          >
-            <FaTable />
-          </button>
-
-          {/* Kanban view button */}
-          <button
-            className={`btn ${viewMode === "kanban" ? "btn-warning" : "btn-outline-warning"} me-2`}
-            onClick={() => setViewMode("kanban")}
-          >
-            <FaTh />
-          </button>
+          {/* View mode buttons (only for categories and subcategories) */}
+          {(currentLevel === 'categories' || currentLevel === 'subcategories') && (
+            <>
+              <button
+                className={`btn ${viewMode === "table" ? "btn-warning" : "btn-outline-warning"} me-2`}
+                onClick={() => setViewMode("table")}
+              >
+                <FaTable />
+              </button>
+              <button
+                className={`btn ${viewMode === "kanban" ? "btn-warning" : "btn-outline-warning"} me-2`}
+                onClick={() => setViewMode("kanban")}
+              >
+                <FaTh />
+              </button>
+            </>
+          )}
 
           {/* Add button */}
           <button
             className="btn btn-warning d-flex align-items-center"
-            onClick={() => handleAddClick(false)}
+            onClick={handleAddClick}
           >
             <FaPlus className="me-2" />
-            <span className="d-flex align-items-center">
-              {currentParent ? "Add Subcategory" : "Add Category"}
-            </span>
+            <span>{getAddButtonText()}</span>
           </button>
-
         </div>
-
       </div>
 
-      {/* Search */}
-
-
-      {viewMode === "table" ? (
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-warning" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      ) : viewMode === "table" || currentLevel === 'items' ? (
         <div className="card shadow-sm border-0">
           <div className="card-body">
             <div className="table-responsive">
@@ -215,66 +599,89 @@ const SAddCategories = () => {
                   <tr>
                     <th>#</th>
                     <th>Name</th>
-                    {/* <th>Seller</th> */}
-                    {/* <th>Image</th> */}
-                    <th>Price List</th>
+                    {currentLevel === 'items' && <th>Printer</th>}
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedCategories.length === 0 ? (
+                  {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="text-center text-muted py-4">
-                        {currentParent ? "No Subcategories Found" : "No Categories Found"}
+                      <td colSpan={currentLevel === 'items' ? "4" : "3"} className="text-center text-muted py-4">
+                        {`No ${currentLevel} Found`}
                       </td>
                     </tr>
                   ) : (
-                    paginatedCategories.map((cat, index) => (
+                    paginatedData.map((item, index) => (
                       <tr
-                        key={cat.id}
+                        key={item.id}
                         onClick={(e) => {
                           if (!e.target.closest("button, .no-row-click")) {
-                            handleViewSubcategories(cat);
+                            if (currentLevel === 'categories') {
+                              handleViewSubcategories(item);
+                            } else if (currentLevel === 'subcategories') {
+                              handleViewItems(item);
+                            }
                           }
                         }}
-                        style={{ cursor: "pointer" }}
+                        style={{ cursor: currentLevel !== 'items' ? "pointer" : "default" }}
                       >
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                        <td>{cat.name}</td>
-                        {/* <td>{cat.sellerId ? `Seller ${cat.sellerId}` : "System"}</td> */}
-                        {/* <td>
-                          {getImageUrl(cat.image) ? (
-                            <img src={getImageUrl(cat.image)} style={{ width: "60px", height: "60px" }} />
-                          ) : (
-                            <img src="/src/assets/Category_Default_Image.jpeg" style={{ width: "60px", height: "60px" }} />
-                          )}
-                        </td> */}
-                        <td>
-                          <button
-                            className="btn btn-warning"
-
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSeePriceList(cat);
-                            }}
-                          >
-                            See Price List
-                          </button>
-                        </td>
+                        <td>{item.category_name || item.subcategory_name || item.item_name}</td>
+                        {currentLevel === 'items' && <td>{item.printer_name
+}</td>}
                         <td className="no-row-click">
                           <div className="d-flex gap-2">
-                            <button className="btn btn-sm btn-outline-warning" onClick={(e) => { e.stopPropagation(); handleEdit(cat); }}>
+                            <button 
+                              className="btn btn-sm btn-outline-warning" 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (currentLevel === 'categories') handleEditCategory(item);
+                                else if (currentLevel === 'subcategories') handleEditSubcategory(item);
+                                else handleEditItem(item);
+                              }}
+                            >
                               <FaEdit size={14} />
                             </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={(e) => { e.stopPropagation(); handleDelete(cat.id); }}>
+                            <button 
+                              className="btn btn-sm btn-outline-danger" 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (currentLevel === 'categories') handleDeleteCategory(item.id);
+                                else if (currentLevel === 'subcategories') handleDeleteSubcategory(item.id);
+                                else handleDeleteItem(item.id);
+                              }}
+                            >
                               <FaTrash size={14} />
                             </button>
-                            <button className="btn btn-sm btn-outline-success" onClick={(e) => { e.stopPropagation(); setCategoryStack([...categoryStack, cat]); handleAddClick(true); }}>
-                              <FaPlus size={14} />
-                            </button>
-                            <button className="btn btn-sm btn-outline-info" onClick={(e) => { e.stopPropagation(); handleViewSubcategories(cat); }}>
-                              <FaEye size={14} />
-                            </button>
+                            {currentLevel !== 'items' && (
+                              <button 
+                                className="btn btn-sm btn-outline-success" 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (currentLevel === 'categories') {
+                                    setSelectedCategory(item);
+                                    setShowSubcategoryModal(true);
+                                  } else if (currentLevel === 'subcategories') {
+                                    setSelectedSubcategory(item);
+                                    setShowItemModal(true);
+                                  }
+                                }}
+                              >
+                                <FaPlus size={14} />
+                              </button>
+                            )}
+                            {currentLevel !== 'items' && (
+                              <button 
+                                className="btn btn-sm btn-outline-info" 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (currentLevel === 'categories') handleViewSubcategories(item);
+                                  else if (currentLevel === 'subcategories') handleViewItems(item);
+                                }}
+                              >
+                                <FaEye size={14} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -287,8 +694,8 @@ const SAddCategories = () => {
             {/* Pagination */}
             <div className="d-flex justify-content-between align-items-center mt-3 small text-muted">
               <div>
-                Showing {filteredCategories.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
-                {Math.min(currentPage * pageSize, filteredCategories.length)} of {filteredCategories.length} results
+                Showing {currentData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
+                {Math.min(currentPage * pageSize, currentData.length)} of {currentData.length} results
               </div>
               <div>
                 <nav>
@@ -298,7 +705,7 @@ const SAddCategories = () => {
                     </li>
                     {[...Array(totalPages)].map((_, i) => (
                       <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-                        <button className="btn btn-warning btn-sm" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
+                        <button className="page-link" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
                       </li>
                     ))}
                     <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
@@ -311,26 +718,59 @@ const SAddCategories = () => {
           </div>
         </div>
       ) : (
-        /* Kanban View */
+        /* Kanban View for Categories and Subcategories */
         <div className="row">
-          {filteredCategories.map((cat) => (
-            <div key={cat.id} className="col-md-3 mb-3">
+          {currentData.map((item) => (
+            <div key={item.id} className="col-md-3 mb-3">
               <div className="card h-100">
                 <div className="card-header">
-                  <h6 className="mb-0">{cat.name}</h6>
+                  <h6 className="mb-0">{item.category_name || item.subcategory_name}</h6>
                 </div>
                 <div className="card-body text-center">
-
                   <div className="d-flex justify-content-center mt-2">
-                    <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleEdit(cat)}><FaEdit size={14} /></button>
-                    <button className="btn btn-sm btn-outline-danger me-2" onClick={() => handleDelete(cat.id)}><FaTrash size={14} /></button>
-                    <button className="btn btn-sm btn-outline-success me-2" onClick={() => { setCategoryStack([...categoryStack, cat]); handleAddClick(true); }}><FaPlus size={14} /></button>
-                    <button className="btn btn-sm btn-outline-info" onClick={() => handleViewSubcategories(cat)}><FaEye size={14} /></button>
+                    <button 
+                      className="btn btn-sm btn-outline-warning me-2" 
+                      onClick={() => {
+                        if (currentLevel === 'categories') handleEditCategory(item);
+                        else handleEditSubcategory(item);
+                      }}
+                    >
+                      <FaEdit size={14} />
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-outline-danger me-2" 
+                      onClick={() => {
+                        if (currentLevel === 'categories') handleDeleteCategory(item.id);
+                        else handleDeleteSubcategory(item.id);
+                      }}
+                    >
+                      <FaTrash size={14} />
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-outline-success me-2" 
+                      onClick={() => {
+                        if (currentLevel === 'categories') {
+                          setSelectedCategory(item);
+                          setShowSubcategoryModal(true);
+                        } else {
+                          setSelectedSubcategory(item);
+                          setShowItemModal(true);
+                        }
+                      }}
+                    >
+                      <FaPlus size={14} />
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-outline-info" 
+                      onClick={() => {
+                        if (currentLevel === 'categories') handleViewSubcategories(item);
+                        else handleViewItems(item);
+                      }}
+                    >
+                      <FaEye size={14} />
+                    </button>
                   </div>
                 </div>
-                {/* <div className="card-footer small text-muted">
-                  {cat.sellerId ? `Seller: ${cat.sellerId}` : 'System Category'}
-                </div> */}
               </div>
             </div>
           ))}
@@ -338,32 +778,25 @@ const SAddCategories = () => {
       )}
 
       {/* Category Modal */}
-      {showModal && (
+      {showCategoryModal && (
         <>
           <div className="modal show fade d-block">
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
-                <form onSubmit={handleAddOrUpdate}>
+                <form onSubmit={handleAddOrUpdateCategory}>
                   <div className="modal-header">
-                    <h5 className="modal-title">{editingCategory ? "Edit Category" : addingFromWithin ? "Add Subcategory" : "Add Category"}</h5>
-                    <button type="button" className="btn-close" onClick={() => { setShowModal(false); resetForm(); }}></button>
+                    <h5 className="modal-title">{editingCategory ? "Edit Category" : "Add Category"}</h5>
+                    <button type="button" className="btn-close" onClick={() => { setShowCategoryModal(false); resetForm(); }}></button>
                   </div>
                   <div className="modal-body">
                     <div className="mb-3">
                       <label className="form-label">Category Name*</label>
                       <input type="text" className="form-control" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
                     </div>
-                    {addingFromWithin && currentParent && (
-                      <div className="alert alert-info">This will be a subcategory of <strong>{currentParent.name}</strong></div>
-                    )}
-                    {/* <div className="mb-3">
-                      <label className="form-label">Category Image</label>
-                      <input type="file" className="form-control" onChange={(e) => setCategoryImage(e.target.files[0])} />
-                    </div> */}
                   </div>
                   <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); resetForm(); }}>Cancel</button>
-                    <button type="submit" className="btn btn-warning">{editingCategory ? "Update" : "Add"} {addingFromWithin ? "Subcategory" : "Category"}</button>
+                    <button type="button" className="btn btn-secondary" onClick={() => { setShowCategoryModal(false); resetForm(); }}>Cancel</button>
+                    <button type="submit" className="btn btn-warning">{editingCategory ? "Update" : "Add"} Category</button>
                   </div>
                 </form>
               </div>
@@ -373,47 +806,154 @@ const SAddCategories = () => {
         </>
       )}
 
-      {/* Products Modal */}
-      {showProductModal && (
+      {/* Subcategory Modal */}
+      {showSubcategoryModal && (
         <>
           <div className="modal show fade d-block">
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Products under {selectedCategory?.name}</h5>
-                  <button type="button" className="btn-close" onClick={() => setShowProductModal(false)}></button>
-                </div>
-                <div className="modal-body">
-                  {products.length === 0 ? (
-                    <p className="text-muted">No products found for this category.</p>
-                  ) : (
-                    <table className="table table-bordered">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Name</th>
-                          {/* <th>SKU</th> */}
-                          <th>Price</th>
-                          <th>Stock</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {products.map((p, i) => (
-                          <tr key={p.id}>
-                            <td>{i + 1}</td>
-                            <td>{p.name}</td>
-                            {/* <td>{p.sku}</td> */}
-                            <td>{p.price}</td>
-                            <td>{p.stockQuantity}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                <form onSubmit={handleAddOrUpdateSubcategory}>
+                  <div className="modal-header">
+                    <h5 className="modal-title">{editingSubcategory ? "Edit Subcategory" : "Add Subcategory"}</h5>
+                    <button type="button" className="btn-close" onClick={() => { setShowSubcategoryModal(false); resetForm(); }}></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Subcategory Name*</label>
+                      <input type="text" className="form-control" value={subcategoryName} onChange={(e) => setSubcategoryName(e.target.value)} />
+                    </div>
+                    {selectedCategory && (
+                      <div className="alert alert-info">This will be a subcategory of <strong>{selectedCategory.category_name}</strong></div>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => { setShowSubcategoryModal(false); resetForm(); }}>Cancel</button>
+                    <button type="submit" className="btn btn-warning">{editingSubcategory ? "Update" : "Add"} Subcategory</button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
+
+      {/* Item Modal */}
+      {showItemModal && (
+        <>
+           <div className="modal show fade d-block">
+      <div className="modal-dialog modal-lg">
+        <div className="modal-content">
+          <form onSubmit={handleAddOrUpdateItem}>
+            <div className="modal-header">
+              <h5 className="modal-title">
+                {editingItem ? "Edit Item" : "Add Item"}
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => {
+                  setShowItemModal(false);
+                  resetForm();
+                }}
+              ></button>
+            </div>
+
+            <div className="modal-body">
+              {/* Printer Select */}
+              <div className="mb-3">
+                <label className="form-label">Printer*</label>
+                <select
+                  className="form-select"
+                  value={selectedPrinter}
+                  onChange={(e) => setSelectedPrinter(e.target.value)}
+                >
+                  <option value="">Select Printer</option>
+                  {Array.isArray(printers) &&
+                    printers.map((printer) => (
+                      <option key={printer.id} value={printer.id}>
+                        {printer.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Subcategory Info */}
+              {selectedSubcategory && (
+                <div className="alert alert-info">
+                  This will be an item in{" "}
+                  <strong>{selectedSubcategory.subcategory_name}</strong>
+                </div>
+              )}
+
+              {/* Item Types & Prices */}
+              <div className="border rounded p-2">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <strong>Item Types and Prices</strong>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-warning"
+                    onClick={handleAddRow}
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                {itemTypes.map((row, index) => (
+                  <div
+                    key={index}
+                    className="d-flex gap-2 mb-2 align-items-center"
+                  >
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Item name"
+                      value={row.item_name}
+                      onChange={(e) =>
+                        handleChangeRow(index, "item_name", e.target.value)
+                      }
+                    />
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Price (₹)"
+                      value={row.price}
+                      onChange={(e) =>
+                        handleChangeRow(index, "price", e.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => handleRemoveRow(index)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowItemModal(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-warning">
+                {editingItem ? "Update" : "Add"} Item
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
           <div className="modal-backdrop fade show"></div>
         </>
       )}

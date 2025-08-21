@@ -360,6 +360,8 @@
 // };
 
 // export default PrinterSetup;
+
+
 import React, { useState, useEffect } from 'react';
 import { RiPrinterLine, RiRestaurantLine, RiGobletLine, RiArrowDownSLine, RiLoader4Line, RiCheckLine, RiAddLine } from 'react-icons/ri';
 import { Modal, Button, Form } from 'react-bootstrap';
