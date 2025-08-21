@@ -1276,21 +1276,22 @@ useEffect(() => {
                       }`}
                   >
                     <span
-                      onClick={() => {
-                        if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
-                          setShowTableModal(true);
-                        }
-                      }}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <i
-                        className={`fa ${orderType === "dineIn"
-                            ? "fa-cutlery"
-                            : orderType === "takeOut"
-                              ? "fa-shopping-bag"
-                              : "fa-motorcycle"
-                          } me-2 small`}
-                      ></i>
+  onClick={() => {
+    if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
+      setShowTableModal(true);
+    }
+  }}
+  style={{ cursor: "pointer" }}
+>
+  <i
+    className={`fa ${
+      orderType === "dineIn"
+        ? "fa-cutlery"
+        : orderType === "takeOut"
+        ? "fa-shopping-bag"
+        : "fa-motorcycle"
+    } me-2 small`}
+  ></i>
 
                       {orderType === "dineIn"
                         ? "Dine In"
@@ -1439,25 +1440,25 @@ useEffect(() => {
 
 
 
-        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Select a Table</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div className="d-flex flex-wrap gap-2">
-              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-                <Button
-                  key={table}
-                  variant="outline-dark"
-                  className="flex-grow-1"
-                  onClick={() => handleTableSelect(table)}
-                >
-                  {table}
-                </Button>
-              ))}
-            </div>
-          </Modal.Body>
-        </Modal>
+ <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Select a Table</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="d-flex flex-wrap gap-2">
+            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+              <Button
+                key={table}
+                variant="outline-dark"
+                className="flex-grow-1"
+                onClick={() => handleTableSelect(table)}
+              >
+                {table}
+              </Button>
+            ))}
+          </div>
+        </Modal.Body>
+      </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (

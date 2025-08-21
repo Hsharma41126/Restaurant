@@ -599,6 +599,7 @@ const ReservationsManagement = () => {
     tableId: null,
     tableName: "",
     customerName: "",
+    customerEmail: "",
     phoneNumber: "",
     email: "",
     date: "",
@@ -680,7 +681,7 @@ const ReservationsManagement = () => {
   //   }
   // ]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(5);
+  const [limit] = useState(115);
   const [totalPages, setTotalPages] = useState(1);
   const [activeFilter, setActiveFilter] = useState("all");
   const [totalCount, setTotalCount] = useState(0);
@@ -743,7 +744,7 @@ const ReservationsManagement = () => {
       return alert("Please enter a valid 10-digit phone number.");
     }
 
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email.trim())) {
+    if (formData.customerEmail && !/\S+@\S+\.\S+/.test(formData.customerEmail.trim())) {
       return alert("Please enter a valid email address.");
     }
 
@@ -751,7 +752,7 @@ const ReservationsManagement = () => {
       table_id: formData.tableId,
       customer_name: formData.customerName.trim(),
       customer_phone: formData.phoneNumber.trim(),
-      customer_email: formData.email.trim() || null,
+      customer_email: formData.customerEmail.trim() || null,
       reservation_date: formData.date,
       reservation_time: formData.time,
       duration_hours: Number(formData.durationHours) || 1,
@@ -761,7 +762,7 @@ const ReservationsManagement = () => {
 
     try {
       // Disable button while submitting
-      //setIsSubmitting(true);
+      setIsSubmitting(true);
 
       await axiosInstance.post("/reservations", payload);
 
@@ -772,6 +773,7 @@ const ReservationsManagement = () => {
         tableId: null,
         tableName: "",
         customerName: "",
+        customerEmail: "",
         phoneNumber: "",
         email: "",
         date: "",
@@ -787,9 +789,7 @@ const ReservationsManagement = () => {
     } catch (err) {
       console.error("Error creating reservation:", err);
       alert(err?.response?.data?.message || "❌ Failed to create reservation.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    } 
   };
 
 
