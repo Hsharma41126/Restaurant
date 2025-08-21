@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
+import { apiUrl } from "../utils/config";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -24,7 +25,7 @@ const ResetPassword = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`/users/reset-password`, {
+      const response = await fetch(`${apiUrl}/users/reset-password`, {
    method: "POST",
         headers: {
           "Content-Type": "application/json",

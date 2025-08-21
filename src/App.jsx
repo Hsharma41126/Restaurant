@@ -61,7 +61,7 @@ function App() {
   // Pages that don't need layout (auth pages)
   const hideLayout = location.pathname === "/" ||
     location.pathname === "/signup" ||
-    location.pathname === "/forgot-password";
+    location.pathname === "/forgot-password"||
     location.pathname === "/reset-password";
 
   // Protected route component
