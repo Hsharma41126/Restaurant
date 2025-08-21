@@ -3,14 +3,7 @@ import axiosInstance from '../utils/axiosInstance';
 import { apiUrl } from '../utils/config';
 import { toast } from 'react-toastify';
 
-
 const Profile = () => {
-
-
-
-
-
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,90 +13,88 @@ const Profile = () => {
     confirmPassword: ''
   });
 
+  // Generic input handler
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-   
 
+  // Fetch user data
   useEffect(() => {
-    // Fetch user data and populate form
     const fetchUserData = async () => {
-      const userData = await axiosInstance.get(`${apiUrl}/auth/profile`); // Replace with your data fetching logic
-     console.log(userData);
-
-      setFormData(
-        {
-          name: userData.data.data.user.name,
-          email: userData.data.data.user.email,
-          // address: userData.data.data.user.address,
-          phone: userData.data.data.user.phone,
-          currentPassword: '' ,
-          newPassword: '',
-          confirmPassword: ''
+      try {
+        const userData = await axiosInstance.get(`${apiUrl}/auth/profile`);
+        if (userData.data?.success) {
+          const { name, email, phone } = userData.data.data.user;
+          setFormData((prev) => ({
+            ...prev,
+            name: name || '',
+            email: email || '',
+            phone: phone || '',
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          }));
         }
-      );
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        toast.error(error.response?.data?.message || 'Failed to load profile.');
+      }
     };
     fetchUserData();
   }, []);
 
+  // Profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    // Handle update logic
-    
-     const payload = {
-       phone: formData.phone,
-       name: formData.name,
-     }
+    const payload = {
+      phone: formData.phone,
+      name: formData.name
+    };
 
-     try{
-       const response = await axiosInstance.put(`${apiUrl}/auth/profile`, payload);
-       if (response.data.success) {
-      toast.success(response.data.message || "Profile updated successfully!");
-       
-        console.log(response);
-       }
-
-     } catch (error) {
-       console.error('Error updating profile:', error);
-        toast.error(error.response?.data?.message || "Failed to update profile.");
-     }
-  };
-
-  const handlePasswordUpdate = async (e) => {
-  e.preventDefault();
-
-  if (formData.newPassword !== formData.confirmPassword) {
-    alert("New passwords do not match!");
-    return;
-  }
-
-  const payload = {
-    currentPassword: formData.currentPassword,
-    newPassword: formData.newPassword,
-  };
-
-  try {
-    const response = await axiosInstance.put(`${apiUrl}/auth/change-password`, payload);
-
-    if (response.data.success) {
-      toast.success(response.data.message || "Password updated successfully!");
-      setFormData({
-        ...formData,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-    } else {
-      toast.error(response.data.message || "Failed to update password.");
+    try {
+      const response = await axiosInstance.put(`${apiUrl}/auth/profile`, payload);
+      if (response.data.success) {
+        toast.success(response.data.message || 'Profile updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile.');
     }
-  } catch (error) {
-    console.error("Error updating password:", error);
-    toast.error(error.response?.data?.message || "Failed to update password.");
-  }
-};
+  };
 
+  // Password update
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error('New passwords do not match!');
+      return;
+    }
+
+    const payload = {
+      currentPassword: formData.currentPassword,
+      newPassword: formData.newPassword
+    };
+
+    try {
+      const response = await axiosInstance.put(`${apiUrl}/auth/change-password`, payload);
+      if (response.data.success) {
+        toast.success(response.data.message || 'Password updated successfully!');
+        setFormData((prev) => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      } else {
+        toast.error(response.data.message || 'Failed to update password.');
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error(error.response?.data?.message || 'Failed to update password.');
+    }
+  };
 
   return (
     <div className="p-4">
@@ -123,6 +114,7 @@ const Profile = () => {
             required
           />
         </div>
+
         <div className="mb-3">
           <label className="form-label">Email</label>
           <input
@@ -130,37 +122,26 @@ const Profile = () => {
             className="form-control"
             name="email"
             value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email address"
-            required
             readOnly
           />
         </div>
 
-            <div className="mb-3">
+        <div className="mb-3">
           <label className="form-label">Phone</label>
           <input
-                  type="number"
-                  className="form-control "
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-        </div>
-        {/* <div className="mb-3">
-          <label className="form-label">Address</label>
-          <textarea
+            type="text"
             className="form-control"
-            name="address"
-            value={formData.address}
+            name="phone"   // ✅ fixed
+            value={formData.phone}
             onChange={handleChange}
-            placeholder="Enter your address"
-            rows={3}
+            placeholder="Phone Number"
             required
           />
-        </div> */}
-        <button type="submit" className="btn btn-warning text-white">Update Profile</button>
+        </div>
+
+        <button type="submit" className="btn btn-warning text-white">
+          Update Profile
+        </button>
       </form>
 
       {/* Password Update */}
@@ -205,7 +186,9 @@ const Profile = () => {
           />
         </div>
 
-        <button type="submit" className="btn btn-success">Update Password</button>
+        <button type="submit" className="btn btn-success">
+          Update Password
+        </button>
       </form>
     </div>
   );
