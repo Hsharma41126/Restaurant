@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import axiosInstance from "../utils/axiosInstance";
+import { apiUrl } from "../utils/config";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -9,11 +11,37 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simulate sending reset link
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSubmitted(true);
-    setIsLoading(false);
+    
+    try {
+      const response = await fetch(
+        `${apiUrl}/users/forget-password`,
+      
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+    );
+      
+      if (response.data.success || response.data.message) {
+        alert(response.data.message || "Reset link sent successfully!");
+        setIsSubmitted(true);
+      } else {
+        alert("Reset link sent (no message from server)");
+        setIsSubmitted(true);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      if (error.response && error.response.data && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("Error sending reset link. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -31,7 +59,6 @@ const ForgotPassword = () => {
               className="navbar-logo m-2"
               style={{ height: "50px" }}
             />
-
           </div>
 
           <h2 className="h5 text-secondary mt-3">Forgot Password?</h2>
@@ -81,7 +108,11 @@ const ForgotPassword = () => {
           )}
 
           <div className="text-center mt-3">
-            <Link to="/" className="text-decoration-none fw-semibold" style={{ color: "#1f2937" }}>
+            <Link
+              to="/"
+              className="text-decoration-none fw-semibold"
+              style={{ color: "#1f2937" }}
+            >
               Back to Login
             </Link>
           </div>
