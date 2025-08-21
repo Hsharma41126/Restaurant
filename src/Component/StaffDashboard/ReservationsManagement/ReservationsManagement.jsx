@@ -762,7 +762,7 @@ const ReservationsManagement = () => {
 
     try {
       // Disable button while submitting
-      // setIsSubmitting(true);
+      setIsSubmitting(true);
 
       await axiosInstance.post("/reservations", payload);
 
@@ -837,6 +837,7 @@ const ReservationsManagement = () => {
 
 
 
+
   useEffect(() => {
     fetchReservations();
   }, [page, activeFilter]);
@@ -848,22 +849,11 @@ const ReservationsManagement = () => {
   const filteredReservations = reservations?.filter((res) => {
     const resDate = res.reservation_date.split("T")[0];
 
-    // status "all" ho to sab allow, warna filter
     const statusMatch =
       activeFilter === "all" ? true : res.status === activeFilter;
 
     return resDate === today && statusMatch;
   }) || [];
-
-
-
-
-  // Get today's date in readable format for display
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-
-
-
-
 
 
   // Stats for today's summary
@@ -967,51 +957,51 @@ const ReservationsManagement = () => {
                     </Col>
 
                     {/* Table Dropdown */}
-                  <Col md={6}>
-  <Form.Group>
-    <Form.Label>Table</Form.Label>
-    <Dropdown
-      show={showTableTypeDropdown}
-      onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
-    >
-      <Dropdown.Toggle
-        className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
-        style={{
-          fontSize: "1rem",
-          height: "38px",
-          borderRadius: "6px",
-          border: "1px solid #dee2e6",
-          backgroundColor: "white",
-        }}
-      >
-        {formData.tableName || "Select table"}
-      </Dropdown.Toggle>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label>Table</Form.Label>
+                        <Dropdown
+                          show={showTableTypeDropdown}
+                          onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
+                        >
+                          <Dropdown.Toggle
+                            className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
+                            style={{
+                              fontSize: "1rem",
+                              height: "38px",
+                              borderRadius: "6px",
+                              border: "1px solid #dee2e6",
+                              backgroundColor: "white",
+                            }}
+                          >
+                            {formData.tableName || "Select table"}
+                          </Dropdown.Toggle>
 
-      <Dropdown.Menu
-        className="w-100 custom-dropdown-menu"
-        style={{
-          maxHeight: "200px", // limit height
-          overflowY: "auto",  // add vertical scrollbar
-          overflowX: "hidden" // hide horizontal scrollbar
-        }}
-      >
-        {tables.length > 0 ? (
-          tables.map((table) => (
-            <Dropdown.Item
-              key={table.id}
-              onClick={() => handleTableSelect(table)}
-              className="text-dark"
-            >
-              {table.table_name} ({table.table_number})
-            </Dropdown.Item>
-          ))
-        ) : (
-          <Dropdown.Item disabled>No tables available</Dropdown.Item>
-        )}
-      </Dropdown.Menu>
-    </Dropdown>
-  </Form.Group>
-</Col>
+                          <Dropdown.Menu
+                            className="w-100 custom-dropdown-menu"
+                            style={{
+                              maxHeight: "200px", // limit height
+                              overflowY: "auto",  // add vertical scrollbar
+                              overflowX: "hidden" // hide horizontal scrollbar
+                            }}
+                          >
+                            {tables.length > 0 ? (
+                              tables.map((table) => (
+                                <Dropdown.Item
+                                  key={table.id}
+                                  onClick={() => handleTableSelect(table)}
+                                  className="text-dark"
+                                >
+                                  {table.table_name} ({table.table_number})
+                                </Dropdown.Item>
+                              ))
+                            ) : (
+                              <Dropdown.Item disabled>No tables available</Dropdown.Item>
+                            )}
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      </Form.Group>
+                    </Col>
 
                     {/* Date */}
                     <Col md={6}>
@@ -1196,18 +1186,18 @@ const ReservationsManagement = () => {
                         <td>{reservation.party_size}</td>
                         <td>{reservation.special_requests || "None"}</td>
                         <td>
-                          {reservation.status === "confirmed" && (
+                          {reservation.status == "confirmed" && (
                             <Badge bg="primary">Confirmed</Badge>
                           )}
-                          {reservation.status === "arrived" && (
+                          {reservation.status == "arrived" && (
                             <Badge bg="success">Arrived</Badge>
                           )}
-                          {reservation.status === "cancelled" && (
+                          {reservation.status == "cancelled" && (
                             <Badge bg="danger">Cancelled</Badge>
                           )}
                         </td>
                         <td>
-                          {reservation.status === "confirmed" ? (
+                          {reservation.status == "confirmed" ? (
                             <>
                               <Button
                                 variant="success"

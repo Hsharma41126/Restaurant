@@ -63,6 +63,7 @@ const Tables = () => {
   const [editingGroup, setEditingGroup] = useState(null);
 
   const [groupForm, setGroupForm] = useState({
+    id: null,
     name: "",
     selectedTables: [],
     hourlyRate: "",
@@ -304,14 +305,19 @@ const Tables = () => {
     setGroupForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTableSelection = (tableId) => {
-    setGroupForm((prev) => ({
+const handleTableSelection = (tableId) => {
+  setGroupForm((prev) => {
+    const currentSelectedTables = Array.isArray(prev.selectedTables) ? prev.selectedTables : [];
+
+    return {
       ...prev,
-      selectedTables: prev.selectedTables.includes(tableId)
-        ? prev.selectedTables.filter((id) => id !== tableId)
-        : [...prev.selectedTables, tableId],
-    }));
-  };
+      selectedTables: currentSelectedTables.includes(tableId)
+        ? currentSelectedTables.filter((id) => id !== tableId)
+        : [...currentSelectedTables, tableId],
+    };
+  });
+};
+
 
   const handleEditTable = (table) => {
     setEditingTable(table);
@@ -327,8 +333,15 @@ const Tables = () => {
     setShowTableActions(false);
   };
 
-  const handleDeleteTable = (tableId) => {
-    if (window.confirm("Are you sure you want to delete this table?")) {
+const handleDeleteTable = async (tableId) => {
+  if (window.confirm("Are you sure you want to delete this table?")) {
+    try {
+      // Call API to delete the table
+      await axiosInstance.delete(
+        `/tables/${tableId}`
+      );
+
+      // Update state after successful deletion
       setTables((prev) => prev.filter((table) => table.id !== tableId));
       setGroupTables((prev) => prev.filter((table) => table.id !== tableId));
       setGroups((prev) =>
@@ -338,14 +351,32 @@ const Tables = () => {
         }))
       );
       setShowTableActions(false);
-    }
-  };
 
-  const handleDeleteGroup = (groupId) => {
-    if (window.confirm("Are you sure you want to delete this group?")) {
-      setGroups((prev) => prev.filter((group) => group.id !== groupId));
+      alert("Table deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting table:", error);
+      alert("Failed to delete table. Please try again.");
     }
-  };
+  }
+};
+
+const handleDeleteGroup = async (groupId) => {
+  if (window.confirm("Are you sure you want to delete this group?")) {
+    try {
+      // ✅ Call DELETE API
+      await axiosInstance.delete(`/tables/tablegroups/${groupId}`);
+
+      // ✅ Remove group from state after successful delete
+      setGroups((prev) => prev.filter((group) => group.id !== groupId));
+
+      alert("Group deleted successfully!");
+    } catch (error) {
+      console.error("❌ Error deleting group:", error);
+      alert("Failed to delete group!");
+    }
+  }
+};
+
 
   const handleTableClick = (table, event) => {
     event.stopPropagation();
@@ -461,38 +492,56 @@ const Tables = () => {
   // add group api call
 
   // ✅ Group Submit Function
-  const handleGroupSubmit = async (e) => {
-    e.preventDefault();
 
-    try {
-      const payload = {
-        name: groupForm.name,
-        description: groupForm.description || "Group for selected tables", // description optional रखी
-        hourly_rate: groupForm.hourlyRate,
-        fixed_rate: groupForm.fixedRate,
-        discout: groupForm.discount, // spelling आपने ऐसा दिया था
-        selected_pool: groupForm.selectedTables.join(", "), // IDs को string में भेजा
-      };
 
-      const res = await axiosInstance.post(`/tables/groups`, payload);
 
+
+const handleGroupSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const payload = {
+      name: groupForm.name,
+      description: groupForm.description || "Group for selected tables",
+      hourly_rate: groupForm.hourlyRate,
+      fixed_rate: groupForm.fixedRate,
+      discout: groupForm.discount,
+      selected_pool: groupForm.selectedTables.join(","), // comma-separated table IDs
+    };
+
+    let res;
+    if (editingGroup) {
+      // ✅ Update existing group
+      res = await axiosInstance.put(`/tables/tablegroups/${groupForm.id}`, payload);
+      console.log("✅ Group updated:", res.data);
+      alert("Group updated successfully!");
+    } else {
+      // ✅ Create new group
+      res = await axiosInstance.post(`/tables/groups`, payload);
       console.log("✅ Group created:", res.data);
       alert("Group created successfully!");
-
-      setGroupModalOpen(false);
-      setGroupForm({
-        name: "",
-        description: "",
-        hourlyRate: "",
-        fixedRate: "",
-        discount: "",
-        selectedTables: [],
-      });
-    } catch (error) {
-      console.error("❌ Error creating group:", error);
-      alert("Failed to create group!");
     }
-  };
+
+    // ✅ Reset form & close modal after success
+    setGroupModalOpen(false);
+    setGroupForm({
+      id: null,
+      name: "",
+      description: "",
+      hourlyRate: "",
+      fixedRate: "",
+      discount: "",
+      selectedTables: [],
+    });
+    setEditingGroup(null);
+  } catch (error) {
+    console.error("❌ Error creating/updating group:", error);
+    alert(editingGroup ? "Failed to update group!" : "Failed to create group!");
+  }
+};
+
+
+
 
   const [groups, setGroups] = useState([]);
   const [tableForm, setTableForm] = useState({
@@ -520,7 +569,7 @@ const Tables = () => {
 
   
   
-  // table post api function
+// table post api function
 
   const [plugs, setPlugs] = useState([]);
 
@@ -552,37 +601,47 @@ const Tables = () => {
     setTableForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTableSubmit = async (e) => {
-    e.preventDefault();
+const handleTableSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const payload = {
-        table_number: randomnumber(),
-        table_name: tableForm.name,
-        table_type: tableForm.type,
-        group_id: parseInt(tableForm.group, 10),
-        capacity: tableForm.seats || 4,
-        plug_id: tableForm.plugId || null,
-        status: tableForm.status || "inactive",
-        location: "Main Hall",
-        hourly_rate: "0",
-      };
+  try {
+    const payload = {
+      table_number: editingTable ? editingTable.table_number : randomnumber(), // Use old number if editing
+      table_name: tableForm.name,
+      table_type: tableForm.type,
+      group_id: parseInt(tableForm.group, 10),
+      capacity: tableForm.seats || 4,
+      plug_id: tableForm.plugId || null,
+      status: tableForm.status || editingTable?.status || "available",
 
-      console.log("🚀 Submitting payload:", payload);
+      location: editingTable ? editingTable.location : "Main Hall", // Keep location static or from API if editing
+      hourly_rate: editingTable ? editingTable.hourly_rate : "0", // Keep old or default 0
+    };
 
-      const res = await axiosInstance.post(`tables`, payload);
+    console.log("🚀 Submitting payload:", payload);
 
+    let res;
+    if (editingTable) {
+      // PUT request for editing
+      res = await axiosInstance.put(`tables/${editingTable.id}`, payload);
+      console.log("✅ Table Updated:", res.data);
+      alert("Table updated successfully!");
+    } else {
+      // POST request for adding new
+      res = await axiosInstance.post(`tables`, payload);
       console.log("✅ Table Added:", res.data);
       alert("Table added successfully!");
-
-      setTableModalOpen(false);
-      setTableForm({});
-      fetchTables();
-    } catch (err) {
-      console.error("❌ Error adding table:", err.response?.data || err.message);
-      alert("Failed to add table");
     }
-  };
+
+    setTableModalOpen(false);
+    setTableForm({});
+    fetchTables();
+  } catch (err) {
+    console.error("❌ Error saving table:", err.response?.data || err.message);
+    alert("Failed to save table");
+  }
+};
+
 
   // render table data according to data api cards
   const fetchTables = async () => {
@@ -660,7 +719,7 @@ const Tables = () => {
   };
 
 
-// Update Table  Api Integrate
+
 
 
 
@@ -1732,363 +1791,378 @@ const Tables = () => {
       )}
 
       {/* Group Management Modal */}
-      {groupModalOpen && (
-        <div
+   {groupModalOpen && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1050,
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        width: "90%",
+        maxWidth: "600px",
+        maxHeight: "90vh",
+        overflow: "auto",
+      }}
+    >
+      <div
+        style={{
+          padding: "20px",
+          borderBottom: "1px solid #ddd",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h5 style={{ margin: 0 }}>
+          {editingGroup ? "Edit Group" : "Create Group"}
+        </h5>
+        <button
+          onClick={() => setGroupModalOpen(false)}
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1050,
+            background: "none",
+            border: "none",
+            fontSize: "24px",
+            cursor: "pointer",
+            padding: 0,
+            color: "#666",
           }}
         >
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "8px",
-              width: "90%",
-              maxWidth: "600px",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-          >
-            <div
+          ×
+        </button>
+      </div>
+
+      <form onSubmit={handleGroupSubmit}>
+        <div style={{ padding: "20px" }}>
+          {/* Group Name */}
+          <div style={{ marginBottom: "15px" }}>
+            <label
               style={{
-                padding: "20px",
-                borderBottom: "1px solid #ddd",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "bold",
               }}
             >
-              <h5 style={{ margin: 0 }}>
-                {editingGroup ? "Edit Group" : "Create Group"}
-              </h5>
+              Group Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={groupForm.name}
+              onChange={handleGroupFormChange}
+              placeholder="Enter group name"
+              required
+              style={{
+                width: "100%",
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+              }}
+            />
+          </div>
+
+          {/* Select Tables */}
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "bold",
+              }}
+            >
+              Select Tables
+            </label>
+            <div
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                maxHeight: "200px",
+                overflow: "auto",
+              }}
+            >
+              {tablesByCategory.map(
+                (cat) =>
+                  cat.tables.length > 0 && (
+                    <div key={cat.category} style={{ marginBottom: "10px" }}>
+                      <div
+                        style={{
+                          backgroundColor: "#f8f9fa",
+                          padding: "8px 15px",
+                          fontWeight: "bold",
+                          borderBottom: "1px solid #dee2e6",
+                        }}
+                      >
+                        {cat.category === "electric"
+                          ? "🔌 Electric Tables"
+                          : "🛋️ Non-Electric Tables"}
+                      </div>
+                      <div style={{ padding: "10px 15px" }}>
+                        {cat.tables.map((table) => (
+                          <div
+                            key={table.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`table-${table.id}`}
+                              checked={Array.isArray(groupForm.selectedTables) && groupForm.selectedTables.includes(table.id)}
+
+                              onChange={() => handleTableSelection(table.id)}
+                            />
+                            <label
+                              htmlFor={`table-${table.id}`}
+                              style={{ cursor: "pointer" }}
+                            >
+                              {table.table_name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+              )}
+            </div>
+          </div>
+
+          {/* Selected Tables */}
+        {Array.isArray(groupForm.selectedTables) && groupForm.selectedTables.length > 0 && (
+  <div style={{ marginBottom: "15px" }}>
+    <label
+      style={{
+        display: "block",
+        marginBottom: "5px",
+        fontWeight: "bold",
+      }}
+    >
+      Selected Tables
+    </label>
+    <div
+      style={{
+        border: "1px solid #ddd",
+        borderRadius: "4px",
+        padding: "10px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "8px",
+      }}
+    >
+      {groupForm.selectedTables.map((id) => {
+        // Find table by ID from allTableData or tablesByCategory
+        let table =
+          allTableData.find((t) => t.id === Number(id)) ||
+          tablesByCategory
+            .flatMap((cat) => cat.tables)
+            .find((t) => t.id === Number(id));
+
+        return (
+          table && (
+            <span
+              key={table.id}
+              style={{
+                backgroundColor: "#ffc107",
+                color: "black",
+                padding: "4px 8px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              {table.table_name || table.name}
               <button
-                onClick={() => setGroupModalOpen(false)}
+                type="button"
                 style={{
+                  marginLeft: "4px",
                   background: "none",
                   border: "none",
-                  fontSize: "24px",
+                  color: "#dc3545",
+                  fontWeight: "bold",
+                  fontSize: "16px",
                   cursor: "pointer",
-                  padding: 0,
-                  color: "#666",
+                  borderRadius: "50%",
+                  padding: "0 4px",
+                  lineHeight: 1,
+                }}
+                title="Remove"
+                onClick={() => {
+                  setGroupForm((prev) => ({
+                    ...prev,
+                    selectedTables: prev.selectedTables.filter(
+                      (tid) => tid !== id
+                    ),
+                  }));
                 }}
               >
                 ×
               </button>
-            </div>
-            <form onSubmit={handleGroupSubmit}>
-              <div style={{ padding: "20px" }}>
-                <div style={{ marginBottom: "15px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "5px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Group Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={groupForm.name}
-                    onChange={handleGroupFormChange}
-                    placeholder="Enter group name"
-                    required
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </div>
-                <div style={{ marginBottom: "15px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "5px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Select Tables
-                  </label>
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      maxHeight: "200px",
-                      overflow: "auto",
-                    }}
-                  >
-                    {tablesByCategory.map(
-                      (cat) =>
-                        cat.tables.length > 0 && (
-                          <div
-                            key={cat.category}
-                            style={{ marginBottom: "10px" }}
-                          >
-                            <div
-                              style={{
-                                backgroundColor: "#f8f9fa",
-                                padding: "8px 15px",
-                                fontWeight: "bold",
-                                borderBottom: "1px solid #dee2e6",
-                              }}
-                            >
-                              {cat.category === "electric"
-                                ? "🔌 Electric Tables"
-                                : "🛋️ Non-Electric Tables"}
-                            </div>
-                            <div style={{ padding: "10px 15px" }}>
-                              {cat.tables.map((table) => (
-                                <div
-                                  key={table.id}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    marginBottom: "8px",
-                                  }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    id={`table-${table.id}`}
-                                    checked={groupForm.selectedTables.includes(
-                                      table.id
-                                    )}
-                                    onChange={() =>
-                                      handleTableSelection(table.id)
-                                    }
-                                  />
-                                  <label
-                                    htmlFor={`table-${table.id}`}
-                                    style={{ cursor: "pointer" }}
-                                  >
-                                    {table.table_name}
-                                  </label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                    )}
-                  </div>
-                </div>
-                {groupForm.selectedTables.length > 0 && (
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "5px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Selected Tables
-                    </label>
-                    <div
-                      style={{
-                        border: "1px solid #ddd",
-                        borderRadius: "4px",
-                        padding: "10px",
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                      }}
-                    >
-                      {groupForm.selectedTables.map((id) => {
-                        const table = allTableData.find((t) => t.id === id);
-                        return (
-                          table && (
-                            <span
-                              key={table.id}
-                              style={{
-                                backgroundColor: "#ffc107",
-                                color: "black",
-                                padding: "4px 8px",
-                                borderRadius: "12px",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                              }}
-                            >
-                              {table.name}
-                              <button
-                                type="button"
-                                style={{
-                                  marginLeft: "4px",
-                                  background: "none",
-                                  border: "none",
-                                  color: "#dc3545",
-                                  fontWeight: "bold",
-                                  fontSize: "16px",
-                                  cursor: "pointer",
-                                  borderRadius: "50%",
-                                  padding: "0 4px",
-                                  lineHeight: 1,
-                                }}
-                                title="Remove"
-                                onClick={() => {
-                                  setGroupForm((prev) => ({
-                                    ...prev,
-                                    selectedTables: prev.selectedTables.filter(
-                                      (tid) => tid !== table.id
-                                    ),
-                                  }));
-                                }}
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "15px",
-                    marginBottom: "15px",
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "5px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Hourly Rate ($)
-                    </label>
-                    <input
-                      type="number"
-                      name="hourlyRate"
-                      value={groupForm.hourlyRate}
-                      onChange={handleGroupFormChange}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      required
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        border: "1px solid #ddd",
-                        borderRadius: "4px",
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "5px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Fixed Rate ($)
-                    </label>
-                    <input
-                      type="number"
-                      name="fixedRate"
-                      value={groupForm.fixedRate}
-                      onChange={handleGroupFormChange}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      required
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        border: "1px solid #ddd",
-                        borderRadius: "4px",
-                      }}
-                    />
-                  </div>
-                </div>
-                <div style={{ marginBottom: "15px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "5px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Discounted Rate (%){" "}
-                    <span style={{ color: "#6c757d", fontWeight: "normal" }}>
-                      Optional
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="discount"
-                    value={groupForm.discount}
-                    onChange={handleGroupFormChange}
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </div>
-              </div>
-              <div
+            </span>
+          )
+        );
+      })}
+    </div>
+  </div>
+)}
+
+
+          {/* Rates */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "15px",
+              marginBottom: "15px",
+            }}
+          >
+            <div>
+              <label
                 style={{
-                  padding: "20px",
-                  borderTop: "1px solid #ddd",
-                  display: "flex",
-                  gap: "10px",
-                  justifyContent: "flex-end",
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setGroupModalOpen(false)}
-                  style={{
-                    padding: "10px 20px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    backgroundColor: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: "10px 20px",
-                    border: "none",
-                    borderRadius: "4px",
-                    backgroundColor: "#ffc107",
-                    color: "black",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                  }}
-                >
-                  {editingGroup ? "Update Group" : "Create Group"}
-                </button>
-              </div>
-            </form>
+                Hourly Rate ($)
+              </label>
+              <input
+                type="number"
+                name="hourlyRate"
+                value={groupForm.hourlyRate}
+                onChange={handleGroupFormChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                  fontWeight: "bold",
+                }}
+              >
+                Fixed Rate ($)
+              </label>
+              <input
+                type="number"
+                name="fixedRate"
+                value={groupForm.fixedRate}
+                onChange={handleGroupFormChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Discount */}
+          <div style={{ marginBottom: "15px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "bold",
+              }}
+            >
+              Discounted Rate (%)
+              <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                {" "}
+                Optional
+              </span>
+            </label>
+            <input
+              type="number"
+              name="discount"
+              value={groupForm.discount}
+              onChange={handleGroupFormChange}
+              placeholder="0"
+              min="0"
+              max="100"
+              style={{
+                width: "100%",
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+              }}
+            />
           </div>
         </div>
-      )}
+
+        {/* Buttons */}
+        <div
+          style={{
+            padding: "20px",
+            borderTop: "1px solid #ddd",
+            display: "flex",
+            gap: "10px",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setGroupModalOpen(false)}
+            style={{
+              padding: "10px 20px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              backgroundColor: "white",
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            style={{
+              padding: "10px 20px",
+              border: "none",
+              borderRadius: "4px",
+              backgroundColor: "#ffc107",
+              color: "black",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            {editingGroup ? "Update Group" : "Create Group"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}  
+
 
       {/* Custom CSS */}
       <style>{`
