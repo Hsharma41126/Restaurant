@@ -614,6 +614,10 @@ const ReservationsManagement = () => {
   const [reservations, setReservations] = useState([]); // ✅ define state
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(5); // Show 5 reservations per page
+
+  
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -680,9 +684,9 @@ const ReservationsManagement = () => {
   //     status: 'confirmed'
   //   }
   // ]);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(115);
-  const [totalPages, setTotalPages] = useState(1);
+  // const [page, setPage] = useState(1);
+  // const [limit] = useState(115);
+  // const [totalPages, setTotalPages] = useState(1);
   const [activeFilter, setActiveFilter] = useState("all");
   const [totalCount, setTotalCount] = useState(0);
 
@@ -815,6 +819,20 @@ const handleStatusChange = async (id, newStatus) => {
   }
 };
 
+  // ✅ Reservation ko filter karo based on date + status
+  const filteredReservations = reservations?.filter((res) => {
+    const resDate = res.reservation_date.split("T")[0];
+
+    const statusMatch =
+      activeFilter === "all" ? true : res.status === activeFilter;
+
+    return resDate === today && statusMatch;
+  }) || [];
+
+
+
+// Calculate total pages
+const totalPages = Math.ceil(filteredReservations.length / limit);
 
   // ✅ Fetch reservations dynamically
   const fetchReservations = async () => {
@@ -848,15 +866,12 @@ const handleStatusChange = async (id, newStatus) => {
   // Filter for today's reservations based on created_at
 
 
-  // ✅ Reservation ko filter karo based on date + status
-  const filteredReservations = reservations?.filter((res) => {
-    const resDate = res.reservation_date.split("T")[0];
 
-    const statusMatch =
-      activeFilter === "all" ? true : res.status === activeFilter;
 
-    return resDate === today && statusMatch;
-  }) || [];
+// Slice data for current page
+const indexOfLast = page * limit;
+const indexOfFirst = indexOfLast - limit;
+const currentReservations = filteredReservations.slice(indexOfFirst, indexOfLast);
 
 
   // Stats for today's summary
@@ -1158,109 +1173,115 @@ const handleStatusChange = async (id, newStatus) => {
             </div>
 
             {/* Reservations table */}
-            <div className="table-responsive">
-              <Table striped bordered hover>
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Table</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Guests</th>
-                    <th>Requests</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReservations.length > 0 ? (
-                    filteredReservations.map((reservation) => (
-                      <tr key={reservation.id}>
-                        <td className="fw-bold">{reservation.customer_name}</td>
-                        <td>{reservation.customer_phone}</td>
-                        <td>{reservation.customer_email || "N/A"}</td>
-                        <td>{reservation.table_name}</td>
-                        <td>{reservation.table_type}</td>
-                        <td>{new Date(reservation.reservation_date).toLocaleDateString()}</td>
-                        <td>{reservation.reservation_time}</td>
-                        <td>{reservation.party_size}</td>
-                        <td>{reservation.special_requests || "None"}</td>
-                        <td>
-                          {reservation.status == "confirmed" && (
-                            <Badge bg="primary">Confirmed</Badge>
-                          )}
-                          {reservation.status == "arrived" && (
-                            <Badge bg="success">Arrived</Badge>
-                          )}
-                          {reservation.status == "cancelled" && (
-                            <Badge bg="danger">Cancelled</Badge>
-                          )}
-                        </td>
-                        <td>
-                          {reservation.status === "confirmed" ? (
-                            <>
-                              <Button
-                                variant="success"
-                                size="sm"
-                                className="me-2 mb-2"
-                                onClick={() => handleStatusChange(reservation.id, "arrived")}
-                              >
-                                Mark Arrived
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleStatusChange(reservation.id, "cancelled")}
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <span className="text-muted small">
-                              {reservation.status === "arrived"
-                                ? "No actions available"
-                                : "Cancelled"}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="11" className="text-center">
-                        No reservations found for today
-                      </td>
-                    </tr>
+           <div className="table-responsive">
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Table</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Guests</th>
+            <th>Requests</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentReservations.length > 0 ? (
+            currentReservations.map((reservation) => (
+              <tr key={reservation.id}>
+                <td className="fw-bold">{reservation.customer_name}</td>
+                <td>{reservation.customer_phone}</td>
+                <td>{reservation.customer_email || "N/A"}</td>
+                <td>{reservation.table_name}</td>
+                <td>{reservation.table_type}</td>
+                <td>
+                  {new Date(reservation.reservation_date).toLocaleDateString()}
+                </td>
+                <td>{reservation.reservation_time}</td>
+                <td>{reservation.party_size}</td>
+                <td>{reservation.special_requests || "None"}</td>
+                <td>
+                  {reservation.status === "confirmed" && (
+                    <Badge bg="primary">Confirmed</Badge>
                   )}
-                </tbody>
-              </Table>
-            </div>
+                  {reservation.status === "arrived" && (
+                    <Badge bg="success">Arrived</Badge>
+                  )}
+                  {reservation.status === "cancelled" && (
+                    <Badge bg="danger">Cancelled</Badge>
+                  )}
+                </td>
+                <td>
+                  {reservation.status === "confirmed" ? (
+                    <>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="me-2 mb-2"
+                        onClick={() =>
+                          handleStatusChange(reservation.id, "arrived")
+                        }
+                      >
+                        Mark Arrived
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() =>
+                          handleStatusChange(reservation.id, "cancelled")
+                        }
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-muted small">
+                      {reservation.status === "arrived"
+                        ? "No actions available"
+                        : "Cancelled"}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="11" className="text-center">
+                No reservations found for today
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </Table>
+    </div>
 
-            {/* Pagination */}
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((prev) => prev - 1)}
-              >
-                Previous
-              </Button>
-              <span className="small">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === totalPages}
-                onClick={() => setPage((prev) => prev + 1)}
-              >
-                Next
-              </Button>
-            </div>
+    {/* Pagination */}
+    <div className="d-flex justify-content-between align-items-center mt-3">
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={page === 1}
+        onClick={() => setPage((prev) => prev - 1)}
+      >
+        Previous
+      </Button>
+      <span className="small">
+        Page {page} of {totalPages}
+      </span>
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={page === totalPages}
+        onClick={() => setPage((prev) => prev + 1)}
+      >
+        Next
+      </Button>
+    </div>
           </Card.Body>
         </Card>
       </div>
