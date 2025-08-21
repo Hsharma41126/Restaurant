@@ -344,7 +344,7 @@ const MyBilling = () => {
     try {
       setLoading(true);
       // const response = await axiosInstance.get(`/billing/session/${sessionId}`);
-      const response = await axios.get(`https://ssknf82q-6100.inc1.devtunnels.ms/api/billing/session/${sessionId}`, 
+      const response = await axiosInstance.get(`/billing/session/${sessionId}`, 
         {
           headers: {
             "Authorization" : `Bearer ${localStorage.getItem("token")}`

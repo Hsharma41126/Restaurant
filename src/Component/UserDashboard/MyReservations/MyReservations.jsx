@@ -11,6 +11,7 @@ import {
   RiMapPinLine,
 } from "react-icons/ri";
 import { apiUrl } from "../../../utils/config";
+import axiosInstance from "../../../utils/axiosInstance";
 // import 'bootstrap/dist/css/bootstrap.min.css';
 
 const MyReservations = () => {
@@ -25,8 +26,8 @@ const MyReservations = () => {
     const fetchReservations = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `${apiUrl}/reservations/my-reservations`,
+        const res = await axiosInstance.get(
+          `/reservations/my-reservations`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -92,7 +93,7 @@ const MyReservations = () => {
       {/* Reservations Grid */}
       <div className="row g-3">
         {reservations
-          .filter((item) => item.status === "confirmed")
+          .filter((item) => item.status === "confirmed" || item.status === "arrived")
           .map((reservation) => (
             <div key={reservation.id} className="col-12 col-lg-6">
               <div className="card shadow-sm h-100 position-relative overflow-hidden">
@@ -318,13 +319,11 @@ const MyReservations = () => {
                     {calendarDays.map((dayObj, index) => (
                       <div
                         key={index}
-                        className={`text-center small py-2 ${
-                          dayObj.disabled ? "text-muted" : "text-dark"
-                        } ${
-                          dayObj.day === selectedDate
+                        className={`text-center small py-2 ${dayObj.disabled ? "text-muted" : "text-dark"
+                          } ${dayObj.day === selectedDate
                             ? "bg-warning text-dark rounded fw-medium"
                             : ""
-                        }`}
+                          }`}
                         style={{
                           width: "14.28%",
                           cursor: dayObj.disabled ? "default" : "pointer",
@@ -345,11 +344,10 @@ const MyReservations = () => {
                     {timeSlots.map((time) => (
                       <div key={time} className="col-4 col-md-3">
                         <button
-                          className={`btn btn-sm w-100 ${
-                            time === selectedTime
+                          className={`btn btn-sm w-100 ${time === selectedTime
                               ? "btn-warning"
                               : "btn-outline-secondary"
-                          }`}
+                            }`}
                           onClick={() => handleTimeSelect(time)}
                         >
                           {time}
