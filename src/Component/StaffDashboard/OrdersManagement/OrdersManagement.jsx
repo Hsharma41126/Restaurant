@@ -847,11 +847,11 @@ const OrdersManagement = () => {
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   // const [allOrders, setAllOrders] = useState([]);
 
-const [orders, setOrders] = useState([]);
-const [page, setPage] = useState(1);
-const [limit, setLimit] = useState(10);
-const [totalPages, setTotalPages] = useState(1);
-const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
 
   // Data
@@ -920,29 +920,51 @@ const [loading, setLoading] = useState(false);
   };
 
   // api to fetch orders 
-const fetchOrders = async () => {
-  try {
-    setLoading(true);
-    const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
 
-    console.log("API Response:", res.data); // Debugging
+      console.log("API Response:", res.data); // Debugging
 
-    if (res.data.success) {
-      setOrders(res.data.data.orders || []);
-      setTotalPages(res.data.data.totalPages || 1);
+      if (res.data.success) {
+        setOrders(res.data.data.orders || []);
+        setTotalPages(res.data.data.totalPages || 1);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  console.log("useEffect triggered");
-  fetchOrders();
-}, [page, limit]);
+  useEffect(() => {
+    console.log("useEffect triggered");
+    fetchOrders();
+  }, [page, limit]);
 
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setLoadingCustomers(true);
+      try {
+        // Replace with your actual API endpoint
+        const res = await axiosInstance.get('/users?page=1&limit=10&role=user');
+        if (res.data.data.users) {
+          setCustomers(res.data.data.users);
+        }
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+      } finally {
+        setLoadingCustomers(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   const navigate = useNavigate();
 
@@ -1185,7 +1207,7 @@ useEffect(() => {
                     onClick={() => setIsCustomerModalOpen(true)}
                     className="btn btn-light flex-grow-1 text-start btn-sm"
                   >
-                    <i className="fa fa-user me-2"></i>Customer
+                    <i className="fa fa-user-plus me-2"></i>Add Customer
                   </button>
                   <button
                     onClick={() => setIsNoteModalOpen(true)}
@@ -1276,22 +1298,21 @@ useEffect(() => {
                       }`}
                   >
                     <span
-  onClick={() => {
-    if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
-      setShowTableModal(true);
-    }
-  }}
-  style={{ cursor: "pointer" }}
->
-  <i
-    className={`fa ${
-      orderType === "dineIn"
-        ? "fa-cutlery"
-        : orderType === "takeOut"
-        ? "fa-shopping-bag"
-        : "fa-motorcycle"
-    } me-2 small`}
-  ></i>
+                      onClick={() => {
+                        if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
+                          setShowTableModal(true);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <i
+                        className={`fa ${orderType === "dineIn"
+                          ? "fa-cutlery"
+                          : orderType === "takeOut"
+                            ? "fa-shopping-bag"
+                            : "fa-motorcycle"
+                          } me-2 small`}
+                      ></i>
 
                       {orderType === "dineIn"
                         ? "Dine In"
@@ -1440,25 +1461,25 @@ useEffect(() => {
 
 
 
- <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Select a Table</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="d-flex flex-wrap gap-2">
-            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-              <Button
-                key={table}
-                variant="outline-dark"
-                className="flex-grow-1"
-                onClick={() => handleTableSelect(table)}
-              >
-                {table}
-              </Button>
-            ))}
-          </div>
-        </Modal.Body>
-      </Modal>
+        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Select a Table</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="d-flex flex-wrap gap-2">
+              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+                <Button
+                  key={table}
+                  variant="outline-dark"
+                  className="flex-grow-1"
+                  onClick={() => handleTableSelect(table)}
+                >
+                  {table}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+        </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (
@@ -1555,6 +1576,45 @@ useEffect(() => {
                 ></button>
               </div>
               <div className="modal-body">
+                {/* Customer Dropdown */}
+                <div className="mb-3">
+                  <label className="form-label">Select Customer</label>
+                  <select
+                    className="form-select"
+                    value={selectedCustomer ? selectedCustomer.id : ""}
+                    onChange={(e) => {
+                      const customerId = e.target.value;
+                      if (customerId) {
+                        const customer = customers.find(c => c.id === parseInt(customerId));
+                        setSelectedCustomer(customer);
+                        setCustomerInfo({
+                          ...customerInfo,
+                          name: customer.name,
+                          phone: customer.phone
+                        });
+                      } else {
+                        setSelectedCustomer(null);
+                        setCustomerInfo({
+                          ...customerInfo,
+                          name: '',
+                          phone: ''
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Select Customer</option>
+                    {loadingCustomers ? (
+                      <option disabled>Loading customers...</option>
+                    ) : (
+                      customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} ({customer.phone})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
                 <div className="mb-3">
                   <label className="form-label">Name</label>
                   <input
