@@ -500,14 +500,17 @@ const handleGroupSubmit = async (e) => {
   e.preventDefault();
 
   try {
-    const payload = {
-      name: groupForm.name,
-      description: groupForm.description || "Group for selected tables",
-      hourly_rate: groupForm.hourlyRate,
-      fixed_rate: groupForm.fixedRate,
-      discout: groupForm.discount,
-      selected_pool: groupForm.selectedTables.join(","), // comma-separated table IDs
-    };
+  const payload = {
+  name: groupForm.name,
+  description: groupForm.description || "Group for selected tables",
+  hourly_rate: groupForm.hourlyRate,
+  fixed_rate: groupForm.fixedRate,
+  discout: groupForm.discount,
+  selected_pool: Array.isArray(groupForm.selectedTables)
+    ? groupForm.selectedTables.join(",")
+    : groupForm.selectedTables, // fallback if it's already a string
+};
+
 
     let res;
     if (editingGroup) {
@@ -1530,7 +1533,7 @@ const handleTableSubmit = async (e) => {
                     >
                       📊 {group.selected_pool} tables
                     </div>
-                    {group.discount > 0 && (
+                    {group.discout > 0 && (
                       <div
                         style={{
                           backgroundColor: "#e91e63",
@@ -1722,67 +1725,72 @@ const handleTableSubmit = async (e) => {
                   </div>
 
                   {/* Group summary stats at bottom */}
-                  <div
-                    style={{
-                      marginTop: "15px",
-                      padding: "10px",
-                      backgroundColor: "#f8f9fa",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <span>
-                        <strong>Total Revenue Potential:</strong>
-                      </span>
-                      <span style={{ fontWeight: "bold", color: "#4caf50" }}>
-                        ${(group.hourlyRate * selectedTables.length).toFixed(2)}
-                        /hr
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <span>
-                        <strong>Fixed Revenue:</strong>
-                      </span>
-                      <span style={{ fontWeight: "bold", color: "#2196f3" }}>
-                        ${(group.fixedRate * selectedTables.length).toFixed(2)}
-                      </span>
-                    </div>
-                    {group.discount > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          color: "#e91e63",
-                        }}
-                      >
-                        <span>
-                          <strong>After Discount:</strong>
-                        </span>
-                        <span style={{ fontWeight: "bold" }}>
-                          $
-                          {(
-                            group.hourlyRate *
-                            selectedTables.length *
-                            (1 - group.discount / 100)
-                          ).toFixed(2)}
-                          /hr
-                        </span>
-                      </div>
-                    )}
-                  </div>
+          <div
+  style={{
+    marginTop: "15px",
+    padding: "10px",
+    backgroundColor: "#f8f9fa",
+    borderRadius: "6px",
+    fontSize: "12px",
+  }}
+>
+  {/* ✅ Total Revenue Potential */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: "4px",
+    }}
+  >
+    <span>
+      <strong>Total Revenue Potential:</strong>
+    </span>
+    <span style={{ fontWeight: "bold", color: "#4caf50" }}>
+      ${(group.hourlyRate * selectedTables.length).toFixed(2)}/hr
+    </span>
+  </div>
+
+  {/* ✅ Fixed Revenue */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: "4px",
+    }}
+  >
+    <span>
+      <strong>Fixed Revenue:</strong>
+    </span>
+    <span style={{ fontWeight: "bold", color: "#2196f3" }}>
+      ${(group.fixedRate * selectedTables.length).toFixed(2)}
+    </span>
+  </div>
+
+  {/* ✅ Discounted Revenue (Only if discount > 0) */}
+  {Number(group.discout) > 0 && (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        color: "#e91e63", // Pink/Red for discount
+      }}
+    >
+      <span>
+        <strong>After Discount ({group.discount}%):</strong>
+      </span>
+      <span style={{ fontWeight: "bold", color: "#e91e63" }}>
+        $
+        {(
+          group.hourlyRate *
+          selectedTables.length *
+          (1 - Number(group.discout) / 100)
+        ).toFixed(2)}
+        /hr
+      </span>
+    </div>
+  )}
+</div>
+
                 </div>
               );
             })}
