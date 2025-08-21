@@ -10,6 +10,7 @@ import {
   RiCalendarLine,
   RiMapPinLine,
 } from "react-icons/ri";
+import { apiUrl } from "../../../utils/config";
 // import 'bootstrap/dist/css/bootstrap.min.css';
 
 const MyReservations = () => {
@@ -25,8 +26,7 @@ const MyReservations = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-        //   "https://restaurant-backend-production-a63a.up.railway.app/api/reservations/my-reservations",
-             'https://ssknf82q-6100.inc1.devtunnels.ms/api/reservations/my-reservations',
+          `${apiUrl}/reservations/my-reservations`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -91,90 +91,116 @@ const MyReservations = () => {
 
       {/* Reservations Grid */}
       <div className="row g-3">
-        {reservations.filter((item)=>item.status == "confirmed").map((reservation) => (
-          <div key={reservation.id} className={`col-12 col-lg-6`}>
-            <div
-              className={`card shadow-sm h-100 position-relative overflow-hidden`}
-            >
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start mb-3">
-                  <div className="d-flex align-items-center gap-3">
-                    <div
-                      className={`bg-light rounded p-2 d-flex align-items-center justify-content-center`}
-                      style={{ width: "48px", height: "48px" }}
+        {reservations
+          .filter((item) => item.status === "confirmed")
+          .map((reservation) => (
+            <div key={reservation.id} className="col-12 col-lg-6">
+              <div className="card shadow-sm h-100 position-relative overflow-hidden">
+                <div className="card-body">
+                  {/* Header Section */}
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <div
+                        className="bg-light rounded p-2 d-flex align-items-center justify-content-center"
+                        style={{ width: "48px", height: "48px" }}
+                      >
+                        {/* Icon based on table_type */}
+                        {reservation.table_type === "snooker" && (
+                          <RiBilliardsLine className="text-success fs-4" />
+                        )}
+                        {reservation.table_type === "pool" && (
+                          <RiBilliardsLine className="text-warning fs-4" />
+                        )}
+                        {reservation.table_type === "playstation" && (
+                          <RiGamepadLine className="text-info fs-4" />
+                        )}
+                        {reservation.table_type === "restaurant" && (
+                          <RiRestaurantLine className="text-primary fs-4" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="card-title fs-5 fw-semibold text-dark mb-0">
+                          {reservation.table_name}
+                        </h3>
+                        <p className="text-muted small mb-0">
+                          Booking ID: #{reservation.reservation_id}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="badge rounded-pill bg-secondary px-3 py-1 text-capitalize">
+                      {reservation.status}
+                    </span>
+                  </div>
+
+                  {/* Customer Details */}
+                  <div className="mb-4">
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">Name</span>
+                      <span className="fw-semibold text-dark">
+                        {reservation.customer_name}
+                      </span>
+                    </div>
+
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">Phone No</span>
+                      <span className="fw-semibold text-dark">
+                        {reservation.customer_phone}
+                      </span>
+                    </div>
+
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">Email</span>
+                      <span className="fw-semibold text-dark">
+                        {reservation.customer_email}
+                      </span>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <RiCalendarLine className="text-muted" />
+                      <span className="text-dark small">
+                        {new Date(
+                          reservation.reservation_date
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <RiTimeLine className="text-muted" />
+                      <span className="text-dark small">
+                        {reservation.reservation_time?.slice(0, 5)}{" "}
+                        {/* HH:MM */}
+                      </span>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2">
+                      <RiMapPinLine className="text-muted" />
+                      <span className="text-dark small">
+                        {reservation.table_number} {reservation.table_name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-danger btn-sm flex-grow-1 rounded-pill"
+                      onClick={() => handleCancelClick(reservation.id)}
+                      disabled={reservation.status === "cancelled"}
                     >
-                      {/* Icon based on table_type */}
-                      {reservation.table_type === "snooker" && (
-                        <RiBilliardsLine className="text-success fs-4" />
-                      )}
-                      {reservation.table_type === "pool" && (
-                        <RiBilliardsLine className="text-warning fs-4" />
-                      )}
-                      {reservation.table_type === "playstation" && (
-                        <RiGamepadLine className="text-info fs-4" />
-                      )}
-                      {reservation.table_type === "restaurant" && (
-                        <RiRestaurantLine className="text-primary fs-4" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="card-title fs-5 fw-semibold text-dark mb-0">
-                        {reservation.table_name}
-                      </h3>
-                      <p className="text-muted small mb-0">
-                        Booking ID: #{reservation.reservation_id}
-                      </p>
-                    </div>
+                      Cancel Booking
+                    </button>
+                    <button
+                      className="btn btn-warning btn-sm flex-grow-1 rounded-pill"
+                      onClick={() => handleRescheduleClick(reservation.id)}
+                    >
+                      Reschedule
+                    </button>
                   </div>
-                  <span
-                    className={`badge rounded-pill bg-secondary px-3 py-1 text-capitalize`}
-                  >
-                    {reservation.status}
-                  </span>
-                </div>
-
-                <div className="mb-4">
-                  <div className="d-flex align-items-center gap-2 mb-1">
-                    <RiCalendarLine className="text-muted" />
-                    <span className="text-dark small">
-                      {new Date(
-                        reservation.reservation_date
-                      ).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="d-flex align-items-center gap-2 mb-1">
-                    <RiTimeLine className="text-muted" />
-                    <span className="text-dark small">
-                      {reservation.reservation_time?.slice(0, 5)} {/* HH:MM */}
-                    </span>
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <RiMapPinLine className="text-muted" />
-                    <span className="text-dark small">
-                      {reservation.table_number}, {reservation.table_name}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <button
-                    className="btn btn-danger btn-sm flex-grow-1 rounded-pill"
-                    onClick={() => handleCancelClick(reservation.id)}
-                    disabled={reservation.status === "cancelled"}
-                  >
-                    Cancel Booking
-                  </button>
-                  <button
-                    className="btn btn-warning btn-sm flex-grow-1 rounded-pill"
-                    onClick={() => handleRescheduleClick(reservation.id)}
-                  >
-                    Reschedule
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       {/* Cancel Modal */}
@@ -241,7 +267,8 @@ const MyReservations = () => {
                     disabled={
                       !!reservations.find(
                         (r) =>
-                          (r.id === currentBookingId || r.id === Number(currentBookingId)) &&
+                          (r.id === currentBookingId ||
+                            r.id === Number(currentBookingId)) &&
                           r.status === "cancelled"
                       )
                     }

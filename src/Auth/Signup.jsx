@@ -10,7 +10,7 @@ const Signup = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState(""); 
+  const [phone, setPhone] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [passwordMismatch, setPasswordMismatch] = useState(false);
@@ -42,7 +42,7 @@ const Signup = () => {
 
       await dispatch(registerUser(payload)).unwrap();
 
-toast.success("Signup successful! ");
+      toast.success("Signup successful! ");
 
 
       // Save authentication flag (demo only)
@@ -73,7 +73,7 @@ toast.success("Signup successful! ");
                 className="navbar-logo m-2"
                 style={{ height: "50px" }}
               />
-          
+
             </div>
 
             <h2 className="h5 text-secondary mt-3">Create an Account</h2>
@@ -120,7 +120,7 @@ toast.success("Signup successful! ");
               </div>
 
 
-               <div className="mb-3 position-relative">
+              <div className="mb-3 position-relative">
                 <i className="bi bi-phone position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
                 <input
                   type="number"
