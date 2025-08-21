@@ -5,6 +5,9 @@ import {
     RiSearchLine, RiRestaurantLine, RiCupLine, RiCheckLine,
     RiTimeLine, RiTimerLine
 } from 'react-icons/ri';
+import axiosInstance from "../../../utils/axiosInstance";
+
+
 
 const KOTQueue = () => {
     const [activeTab, setActiveTab] = useState('activeKots');
@@ -56,6 +59,22 @@ const KOTQueue = () => {
         }
     ]);
 
+     const [orders, setOrders] = useState([]);
+
+   useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await axiosInstance.get("/orders/pending"); // ✅ using axiosInstance
+        if (res.data.success) {
+          setOrders(res.data.data.orders); // set orders array
+        }
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+    };
+
+    fetchOrders();
+  }, []);
     useEffect(() => {
         const timer = setInterval(() => {
             setLastUpdated(prev => prev + 1);
@@ -156,85 +175,128 @@ const KOTQueue = () => {
                                     </select>
                                 </div>
                             </div>
+  <div className="kot-table-container bg-white rounded shadow-sm border border-light overflow-hidden">
+      <div className="table-responsive">
+        <table className="kot-table table mb-0">
+          <thead className="kot-table-header bg-light border-bottom border-light">
+            <tr>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                KOT Number
+              </th>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                Table/Session
+              </th>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                Items
+              </th>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                Category
+              </th>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                Time Elapsed
+              </th>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                Status
+              </th>
+              <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="kot-table-body">
+            {orders.map((order, index) => (
+              <tr key={index} className="kot-table-row">
+                {/* 🔥 KOT Number = order_number */}
+                <td className="kot-table-td px-4 py-3">
+                  <div className="kot-id fw-medium text-dark">
+                    #{order.order_number}
+                  </div>
+                </td>
 
-                            <div className="kot-table-container bg-white rounded shadow-sm border border-light overflow-hidden">
-                                <div className="table-responsive">
-                                    <table className="kot-table table mb-0">
-                                        <thead className="kot-table-header bg-light border-bottom border-light">
-                                            <tr>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">KOT Number</th>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">Table/Session</th>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">Items</th>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">Category</th>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">Time Elapsed</th>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">Status</th>
-                                                <th className="kot-table-th px-4 py-3 text-start small fw-semibold text-muted text-uppercase">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="kot-table-body">
-                                            {kots.map((kot, index) => (
-                                                <tr key={index} className="kot-table-row">
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        <div className="kot-id fw-medium text-dark">{`#${kot.id}`}</div>
-                                                    </td>
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        <div className="kot-table-info">{kot.table}</div>
-                                                        <div className="kot-session-info small text-muted">{kot.session}</div>
-                                                    </td>
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        {kot.items.map((item, i) => (
-                                                            <div key={i} className="kot-item-info">{item}</div>
-                                                        ))}
-                                                        <div className="kot-item-count small text-muted">{`${kot.items.length} items total`}</div>
-                                                    </td>
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        <span className={`kot-category-badge d-inline-flex align-items-center px-2 py-1 rounded-pill small fw-medium ${kot.category === 'Food' ? 'bg-orange-100 text-orange-800' :
-                                                            kot.category === 'Beverages' ? 'bg-blue-100 text-blue-800' :
-                                                                'bg-purple-100 text-purple-800'
-                                                            }`}>
-                                                            {kot.category === 'Food' && <RiRestaurantLine className="me-1" />}
-                                                            {kot.category === 'Beverages' && <RiCupLine className="me-1" />}
-                                                            {kot.category}
-                                                        </span>
-                                                    </td>
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        <div className={`kot-time-elapsed small fw-medium ${kot.timeElapsed === 'Completed' ? 'text-success' :
-                                                            kot.timeElapsed === '12 min' ? 'text-danger' : 'text-warning'
-                                                            }`}>
-                                                            {kot.timeElapsed}
-                                                        </div>
-                                                        {kot.priority && <div className="kot-priority-info small text-muted">{kot.priority}</div>}
-                                                        {kot.completedTime && <div className="kot-completed-time small text-muted">{kot.completedTime}</div>}
-                                                    </td>
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        <span className={`kot-status-badge d-inline-flex align-items-center px-2 py-1 rounded-pill small fw-medium ${kot.status === 'Completed' ? 'bg-success-100 text-success-800' : 'bg-warning-100 text-warning-800'
-                                                            }`}>
-                                                            {kot.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="kot-table-td px-4 py-3">
-                                                        {!kot.completed ? (
-                                                            <button
-                                                                className="kot-complete-btn btn btn-success text-white rounded-1 small fw-medium px-3 py-1"
-                                                                onClick={() => handleMarkComplete(kot.id)}
-                                                            >
-                                                                Mark Complete
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                className="kot-completed-btn btn btn-light text-muted rounded-1 small fw-medium px-3 py-1"
-                                                                disabled
-                                                            >
-                                                                Completed
-                                                            </button>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                {/* Table/Session */}
+                <td className="kot-table-td px-4 py-3">
+                  <div className="kot-table-info">{order.table_name}</div>
+                  <div className="kot-session-info small text-muted">
+                    {order.table_number}
+                  </div>
+                </td>
+
+                {/* Items */}
+                <td className="kot-table-td px-4 py-3">
+                  <div className="kot-item-info">
+                    {order.item_name} × {order.quantity}
+                  </div>
+                  {order.special_instructions && (
+                    <div className="kot-item-note small text-muted">
+                      {order.special_instructions}
+                    </div>
+                  )}
+                </td>
+
+                {/* Category (example: Food/Beverages by simple check) */}
+                <td className="kot-table-td px-4 py-3">
+                  <span
+                    className={`kot-category-badge d-inline-flex align-items-center px-2 py-1 rounded-pill small fw-medium ${
+                      order.item_name.toLowerCase().includes("cola")
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-orange-100 text-orange-800"
+                    }`}
+                  >
+                    {order.item_name.toLowerCase().includes("cola") ? (
+                      <RiCupLine className="me-1" />
+                    ) : (
+                      <RiRestaurantLine className="me-1" />
+                    )}
+                    {order.item_name.toLowerCase().includes("cola")
+                      ? "Beverages"
+                      : "Food"}
+                  </span>
+                </td>
+
+                {/* Time Elapsed (just showing created_at for now) */}
+                <td className="kot-table-td px-4 py-3">
+                  <div className="kot-time-elapsed small fw-medium text-warning">
+                    {new Date(order.created_at).toLocaleTimeString()}
+                  </div>
+                </td>
+
+                {/* Status */}
+                <td className="kot-table-td px-4 py-3">
+                  <span
+                    className={`kot-status-badge d-inline-flex align-items-center px-2 py-1 rounded-pill small fw-medium ${
+                      order.item_status === "pending"
+                        ? "bg-warning-100 text-warning-800"
+                        : "bg-success-100 text-success-800"
+                    }`}
+                  >
+                    {order.item_status}
+                  </span>
+                </td>
+
+                {/* Actions */}
+                <td className="kot-table-td px-4 py-3">
+                  {order.item_status === "pending" ? (
+                    <button
+                      className="kot-complete-btn btn btn-success text-white rounded-1 small fw-medium px-3 py-1"
+                      onClick={() => console.log("Mark complete", order.item_id)}
+                    >
+                      Mark Complete
+                    </button>
+                  ) : (
+                    <button
+                      className="kot-completed-btn btn btn-light text-muted rounded-1 small fw-medium px-3 py-1"
+                      disabled
+                    >
+                      Completed
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
                         </div>
                     )}
 
