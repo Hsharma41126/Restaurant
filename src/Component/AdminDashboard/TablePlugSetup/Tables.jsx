@@ -319,19 +319,7 @@ const handleTableSelection = (tableId) => {
 };
 
 
-  const handleEditTable = (table) => {
-    setEditingTable(table);
-    setTableForm({
-      name: table.name,
-      type: table.type || "food",
-      plugId: table.plugId || "",
-      status: table.status === "inactive" ? "inactive" : "active",
-      seats: table.seats || 8,
-      group: table.group || "",
-    });
-    setTableModalOpen(true);
-    setShowTableActions(false);
-  };
+ 
 
 const handleDeleteTable = async (tableId) => {
   if (window.confirm("Are you sure you want to delete this table?")) {
@@ -603,47 +591,60 @@ const handleGroupSubmit = async (e) => {
     const { name, value } = e.target;
     setTableForm((prev) => ({ ...prev, [name]: value }));
   };
+const handleEditTable = (table) => {
+  setEditingTable(table);
+  setTableForm({
+    name: table.table_name,
+    type: table.table_type,
+    group: table.group_id,
+    seats: table.capacity,
+    plugId: table.plug_id,
+    status: table.status,
+  });
+  setTableModalOpen(true);
+};
 
 const handleTableSubmit = async (e) => {
   e.preventDefault();
 
   try {
     const payload = {
-      table_number: editingTable ? editingTable.table_number : randomnumber(), // Use old number if editing
-      table_name: tableForm.name,
-      table_type: tableForm.type,
-      group_id: parseInt(tableForm.group, 10),
-      capacity: tableForm.seats || 4,
-      plug_id: tableForm.plugId || null,
+      table_number: editingTable ? editingTable.table_number : randomnumber(), // Keep old number if editing
+      table_name: tableForm.name || editingTable?.table_name,
+      table_type: tableForm.type || editingTable?.table_type,
+      group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
+      capacity: tableForm.seats || editingTable?.capacity || 4,
+      plug_id: tableForm.plugId || editingTable?.plug_id || null,
       status: tableForm.status || editingTable?.status || "available",
-
-      location: editingTable ? editingTable.location : "Main Hall", // Keep location static or from API if editing
-      hourly_rate: editingTable ? editingTable.hourly_rate : "0", // Keep old or default 0
+      location: editingTable ? editingTable.location : "Main Hall",
+      hourly_rate: editingTable ? editingTable.hourly_rate : "0",
     };
 
     console.log("🚀 Submitting payload:", payload);
 
     let res;
     if (editingTable) {
-      // PUT request for editing
+      // ✅ PUT request for editing
       res = await axiosInstance.put(`tables/${editingTable.id}`, payload);
       console.log("✅ Table Updated:", res.data);
       alert("Table updated successfully!");
     } else {
-      // POST request for adding new
+      // ✅ POST request for adding new
       res = await axiosInstance.post(`tables`, payload);
       console.log("✅ Table Added:", res.data);
       alert("Table added successfully!");
     }
 
     setTableModalOpen(false);
-    setTableForm({});
-    fetchTables();
+    setEditingTable(null); // Clear editing state
+    setTableForm({}); // Reset form
+    fetchTables(); // Refresh UI
   } catch (err) {
     console.error("❌ Error saving table:", err.response?.data || err.message);
     alert("Failed to save table");
   }
 };
+
 
 
   // render table data according to data api cards
@@ -1550,179 +1551,187 @@ const handleTableSubmit = async (e) => {
                   </div>
 
                   {/* Visual representation of tables in group */}
-                  <div
-                    style={{
-                      border: "1px dashed #ffc107",
-                      borderRadius: "8px",
-                      padding: "15px",
-                      minHeight: "150px",
-                      backgroundColor: "#ffffff",
-                      position: "relative",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                        color: "#f57f17",
-                        marginBottom: "10px",
-                        textAlign: "center",
-                      }}
-                    >
-                      GROUP LAYOUT
-                    </div>
+                <div
+  style={{
+    border: "1px dashed #ffc107",
+    borderRadius: "8px",
+    padding: "15px",
+    minHeight: "150px",
+    backgroundColor: "#ffffff",
+    position: "relative",
+  }}
+>
+  <div
+    style={{
+      fontSize: "12px",
+      fontWeight: "bold",
+      color: "#f57f17",
+      marginBottom: "10px",
+      textAlign: "center",
+    }}
+  >
+    GROUP LAYOUT
+  </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      {selectedTables.map((table, index) => {
-                        const getTableIcon = (type) => {
-                          switch (type) {
-                            case "pool":
-                              return "🎱";
-                            case "snooker":
-                              return "🎯";
-                            case "playstation":
-                              return "🎮";
-                            case "largetable":
-                              return "🪑";
-                            default:
-                              return "🍽️";
-                          }
-                        };
+  <div
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "8px",
+      justifyContent: "center",
+      alignItems: "center",
+      position: "relative",
+      zIndex: 2,
+    }}
+  >
+    {group.tables && group.tables.length > 0 ? (
+      group.tables.map((table, index) => {
+        const getTableIcon = (type) => {
+          switch (type) {
+            case "pool":
+              return "🎱";
+            case "snooker":
+              return "🎯";
+            case "playstation":
+              return "🎮";
+            case "largetable":
+              return "🪑";
+            default:
+              return "🍽️";
+          }
+        };
 
-                        const getTableColor = (type) => {
-                          switch (type) {
-                            case "pool":
-                              return "#4caf50";
-                            case "snooker":
-                              return "#2196f3";
-                            case "playstation":
-                              return "#9c27b0";
-                            case "largetable":
-                              return "#795548";
-                            default:
-                              return "#ff9800";
-                          }
-                        };
+        const getTableColor = (type) => {
+          switch (type) {
+            case "pool":
+              return "#4caf50"; // Green
+            case "snooker":
+              return "#2196f3"; // Blue
+            case "playstation":
+              return "#9c27b0"; // Purple
+            case "largetable":
+              return "#795548"; // Brown
+            default:
+              return "#ff9800"; // Orange
+          }
+        };
 
-                        return (
-                          <div
-                            key={table.id}
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              margin: "5px",
-                              position: "relative",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius:
-                                  table.type === "food" ? "50%" : "8px",
-                                backgroundColor: getTableColor(
-                                  table.type || "food"
-                                ),
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "18px",
-                                border: "2px solid white",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                position: "relative",
-                              }}
-                            >
-                              {getTableIcon(table.type || "food")}
-                              {table.status === "occupied" && (
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    top: "-3px",
-                                    right: "-3px",
-                                    width: "12px",
-                                    height: "12px",
-                                    borderRadius: "50%",
-                                    backgroundColor: "#f44336",
-                                    border: "2px solid white",
-                                  }}
-                                ></div>
-                              )}
-                              {table.status === "reserved" && (
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    top: "-3px",
-                                    right: "-3px",
-                                    width: "12px",
-                                    height: "12px",
-                                    borderRadius: "50%",
-                                    backgroundColor: "#ff9800",
-                                    border: "2px solid white",
-                                  }}
-                                ></div>
-                              )}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "10px",
-                                fontWeight: "bold",
-                                color: "#666",
-                                marginTop: "4px",
-                                textAlign: "center",
-                                lineHeight: "1",
-                              }}
-                            >
-                              {table.name}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+        return (
+          <div
+            key={table.id || index}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              margin: "5px",
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: table.table_type === "food" ? "50%" : "8px",
+                backgroundColor: getTableColor(table.table_type || "food"),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                border: "2px solid white",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                position: "relative",
+              }}
+            >
+              {getTableIcon(table.table_type || "food")}
 
-                    {/* Connection lines between tables */}
-                    <svg
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                        zIndex: 1,
-                      }}
-                    >
-                      {selectedTables.map((_, index) => {
-                        if (index === selectedTables.length - 1) return null;
-                        const startX = 50 + index * 60;
-                        const startY = 80;
-                        const endX = 50 + (index + 1) * 60;
-                        const endY = 80;
+              {table.status === "occupied" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-3px",
+                    right: "-3px",
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: "#f44336", // Red
+                    border: "2px solid white",
+                  }}
+                ></div>
+              )}
 
-                        return (
-                          <line
-                            key={index}
-                            x1={`${startX}px`}
-                            y1={`${startY}px`}
-                            x2={`${endX}px`}
-                            y2={`${endY}px`}
-                            stroke="#ffc107"
-                            strokeWidth="2"
-                            strokeDasharray="5,5"
-                            opacity="0.6"
-                          />
-                        );
-                      })}
-                    </svg>
-                  </div>
+              {table.status === "reserved" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-3px",
+                    right: "-3px",
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: "#ff9800", // Orange
+                    border: "2px solid white",
+                  }}
+                ></div>
+              )}
+            </div>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: "bold",
+                color: "#666",
+                marginTop: "4px",
+                textAlign: "center",
+                lineHeight: "1",
+              }}
+            >
+              {table.table_name || "Table"}
+            </div>
+          </div>
+        );
+      })
+    ) : (
+      <div style={{ fontSize: "12px", color: "#888" }}>No tables added</div>
+    )}
+  </div>
+
+  {/* Connection lines */}
+  <svg
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
+      zIndex: 1,
+    }}
+  >
+    {group.tables &&
+      group.tables.map((_, index) => {
+        if (index === group.tables.length - 1) return null;
+        const startX = 50 + index * 60;
+        const startY = 80;
+        const endX = 50 + (index + 1) * 60;
+        const endY = 80;
+
+        return (
+          <line
+            key={index}
+            x1={`${startX}px`}
+            y1={`${startY}px`}
+            x2={`${endX}px`}
+            y2={`${endY}px`}
+            stroke="#ffc107"
+            strokeWidth="2"
+            strokeDasharray="5,5"
+            opacity="0.6"
+          />
+        );
+      })}
+  </svg>
+</div>
+
 
                   {/* Group summary stats at bottom */}
           <div
