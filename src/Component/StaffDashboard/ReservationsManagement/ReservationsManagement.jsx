@@ -762,7 +762,7 @@ const ReservationsManagement = () => {
 
     try {
       // Disable button while submitting
-      setIsSubmitting(true);
+      //setIsSubmitting(true);
 
       await axiosInstance.post("/reservations", payload);
 
@@ -793,26 +793,29 @@ const ReservationsManagement = () => {
   };
 
 
-  // Handle status change
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      await axiosInstance.put(`/reservations/${id}/status`, { status: newStatus });
+// Handle status change
+const handleStatusChange = async (id, newStatus) => {
+  try {
+    const response = await axiosInstance.patch(`/reservations/${id}/status`, { status: newStatus });
 
-      // Update the local state
+    if (response.data.success) {
+      const updatedStatus = response.data.data.status;
+      const updatedId = response.data.data.reservationId;
+
+      // Update the local state with API response
       setReservations((prev) =>
         prev.map((res) =>
-          res.id === id ? { ...res, status: newStatus } : res
+          String(res.id) === String(updatedId) ? { ...res, status: updatedStatus } : res
         )
       );
-    } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Failed to update reservation status.");
     }
-  };
+  } catch (error) {
+    console.error("Error updating status:", error);
+    alert("Failed to update reservation status.");
+  }
+};
 
-  // Fetch reservations
 
-  // ✅ Fetch reservations dynamically
   // ✅ Fetch reservations dynamically
   const fetchReservations = async () => {
     try {
@@ -1197,7 +1200,7 @@ const ReservationsManagement = () => {
                           )}
                         </td>
                         <td>
-                          {reservation.status == "confirmed" ? (
+                          {reservation.status === "confirmed" ? (
                             <>
                               <Button
                                 variant="success"
