@@ -323,7 +323,7 @@ const SessionHistory = () => {
     const fetchSessions = async () => {
       try {
         const res = await axiosInstance.get(
-          "https://ssknf82q-6100.inc1.devtunnels.ms/api/sessions/my-sessions"
+          "/sessions/my-sessions"
         );
         if (res.data.success && res.data.data.sessions) {
           setSessions(res.data.data.sessions);
