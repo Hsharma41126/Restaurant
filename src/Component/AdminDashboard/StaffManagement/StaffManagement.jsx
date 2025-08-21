@@ -1144,7 +1144,7 @@ import axios from "axios";
 import {
   Container, Row, Col, Card, Button, Form,
   Modal, Navbar, Nav, Badge, Dropdown,
-  FormControl, InputGroup, ListGroup, Alert,Pagination
+  FormControl, InputGroup, ListGroup, Alert, Pagination
 } from 'react-bootstrap';
 import {
   Dash, People, Search, Plus, Pencil, Trash,
@@ -1210,17 +1210,18 @@ const StaffManagement = () => {
     confirmPassword: ''
   });
   const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
-   const token = localStorage.getItem("token");
-const [newStaff, setNewStaff] = useState({
-  name: "",
-  username: "",
-  email: "",
-  password: "",
-  phone: "",
-  role: "staff",
-});
-//const [passwordVisible, setPasswordVisible] = useState(false);
-// const [showAddModal, setShowAddModal] = useState(false);
+  const token = localStorage.getItem("token");
+  const [newStaff, setNewStaff] = useState({
+    name: "",
+    username: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "staff",
+    permissions: []
+  });
+  //const [passwordVisible, setPasswordVisible] = useState(false);
+  // const [showAddModal, setShowAddModal] = useState(false);
 
   const [permissions, setPermissions] = useState({});
   const [staffMembers, setStaffMembers] = useState([]);
@@ -1230,22 +1231,22 @@ const [newStaff, setNewStaff] = useState({
 
 
 
-// it fetches staff list
-const fetchStaffList = async (pageNumber = 1) => {
-  try {
-    const res = await axiosInstance.get(
-      `/users?page=${pageNumber}&limit=${limit}&role=staff`
-    );
+  // it fetches staff list
+  const fetchStaffList = async (pageNumber = 1) => {
+    try {
+      const res = await axiosInstance.get(
+        `/users?page=${pageNumber}&limit=${limit}&role=staff`
+      );
 
-    if (res.data.success) {
-      setStaffMembers(res.data.data.users);
-      setTotalPages(res.data.data.totalPages);
-      setPage(res.data.data.page);
+      if (res.data.success) {
+        setStaffMembers(res.data.data.users);
+        setTotalPages(res.data.data.totalPages);
+        setPage(res.data.data.page);
+      }
+    } catch (error) {
+      console.error("Error fetching staff:", error);
     }
-  } catch (error) {
-    console.error("Error fetching staff:", error);
-  }
-};
+  };
 
   useEffect(() => {
     fetchStaffList(page);
@@ -1277,10 +1278,10 @@ const fetchStaffList = async (pageNumber = 1) => {
     setSelectedStaff(staff.id);
     setShowModal(true);
   };
-const handleChange = (e) => {
-  const { name, value } = e.target;
-  setNewStaff((prev) => ({ ...prev, [name]: value }));
-};
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setNewStaff((prev) => ({ ...prev, [name]: value }));
+  };
 
 
   const handleResetPasswordChange = (e) => {
@@ -1310,62 +1311,62 @@ const handleChange = (e) => {
 
 
   const handleAddStaff = async () => {
-  try {
-   
-    console.log("Token being sent:", token);
+    try {
 
-    if (!token) {
-      toast.error("Unauthorized! Please login as admin.");
-      return;
-    }
+      console.log("Token being sent:", token);
 
-    const res = await axios.post(
-      "https://restaurant-backend-production-a63a.up.railway.app/api/users",
-      newStaff,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,  // adjust if backend doesn’t want Bearer
-        },
+      if (!token) {
+        toast.error("Unauthorized! Please login as admin.");
+        return;
       }
-    );
 
-    if (res.data.success) {
-      toast.success(res.data.message || "Staff added successfully!");
-      setShowAddModal(false);
-      setNewStaff({ name: "", username: "", email: "", password: "", phone: "", role: "Staff" });
-    } else {
-      toast.error(res.data.message || "Failed to add staff");
+      const res = await axios.post(
+        "https://restaurant-backend-production-a63a.up.railway.app/api/users",
+        newStaff,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,  // adjust if backend doesn’t want Bearer
+          },
+        }
+      );
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Staff added successfully!");
+        setShowAddModal(false);
+        setNewStaff({ name: "", username: "", email: "", password: "", phone: "", role: "Staff" });
+      } else {
+        toast.error(res.data.message || "Failed to add staff");
+      }
+    } catch (error) {
+      console.error("Error adding staff:", error);
+      toast.error(error.response?.data?.message || "Something went wrong!");
     }
-  } catch (error) {
-    console.error("Error adding staff:", error);
-    toast.error(error.response?.data?.message || "Something went wrong!");
-  }
-};
+  };
 
 
-// ✅ Delete Staff Handler
-const handleDeleteStaff = async (id) => {
-  try {
-    // Ask confirmation before delete
-    const confirmDelete = window.confirm("Are you sure you want to delete this staff member?");
-    if (!confirmDelete) return; // exit if user cancels
+  // ✅ Delete Staff Handler
+  const handleDeleteStaff = async (id) => {
+    try {
+      // Ask confirmation before delete
+      const confirmDelete = window.confirm("Are you sure you want to delete this staff member?");
+      if (!confirmDelete) return; // exit if user cancels
 
-    // API Call to delete staff
-    await axiosInstance.delete(`/users/${id}`);
+      // API Call to delete staff
+      await axiosInstance.delete(`/users/${id}`);
 
-    // Update state after successful delete
-    setStaffMembers((prevStaff) => prevStaff.filter((staff) => staff.id !== id));
+      // Update state after successful delete
+      setStaffMembers((prevStaff) => prevStaff.filter((staff) => staff.id !== id));
 
-    console.log(`Staff with id ${id} deleted successfully`);
-  } catch (error) {
-    console.error("Error deleting staff:", error);
-  }
-};
+      console.log(`Staff with id ${id} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting staff:", error);
+    }
+  };
 
 
-const togglePasswordVisibility = () => {
-  setPasswordVisible((prev) => !prev);
-};
+  const togglePasswordVisibility = () => {
+    setPasswordVisible((prev) => !prev);
+  };
 
 
   const toggleResetPasswordVisibility = () => {
@@ -1386,41 +1387,41 @@ const togglePasswordVisibility = () => {
     setShowResetPasswordModal(true);
   };
 
-const submitResetPassword = async () => {
-  if (!resetPassword.newPassword || !resetPassword.confirmPassword) {
-    alert("Please fill in both password fields!");
-    return;
-  }
+  const submitResetPassword = async () => {
+    if (!resetPassword.newPassword || !resetPassword.confirmPassword) {
+      alert("Please fill in both password fields!");
+      return;
+    }
 
-  if (resetPassword.newPassword !== resetPassword.confirmPassword) {
-    alert("Passwords don't match!");
-    return;
-  }
+    if (resetPassword.newPassword !== resetPassword.confirmPassword) {
+      alert("Passwords don't match!");
+      return;
+    }
 
-  if (resetPassword.newPassword.length < 6) {
-    alert("Password should be at least 6 characters long!");
-    return;
-  }
+    if (resetPassword.newPassword.length < 6) {
+      alert("Password should be at least 6 characters long!");
+      return;
+    }
 
-  try {
-    // ✅ include userId or email depending on your backend
-    await axiosInstance.put(`/auth/change-password`, {
-      userId: selectedStaff,  
-      password: resetPassword.newPassword,
-    });
+    try {
+      // ✅ include userId or email depending on your backend
+      await axiosInstance.put(`/auth/change-password`, {
+        userId: selectedStaff,
+        password: resetPassword.newPassword,
+      });
 
-    alert(`Password for ${selectedStaff} has been reset successfully!`);
+      alert(`Password for ${selectedStaff} has been reset successfully!`);
 
-    setShowResetPasswordModal(false);
-    setResetPassword({
-      newPassword: "",
-      confirmPassword: "",
-    });
-  } catch (error) {
-    console.error("Error resetting password:", error);
-    alert("Failed to reset password. Please try again.");
-  }
-};
+      setShowResetPasswordModal(false);
+      setResetPassword({
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      alert("Failed to reset password. Please try again.");
+    }
+  };
 
   const renderPermissionControls = () => {
     if (!selectedStaff) return (
@@ -1436,25 +1437,25 @@ const submitResetPassword = async () => {
     return (
       <Row className="g-4 mb-4">
         {/* Staff Info Card */}
-      <Card className="mb-4 shadow-sm">
-        <Card.Body>
-          <h6 className="mb-3">Staff Information</h6>
-          <Row>
-            <Col md={6}>
-              <p><strong>Name:</strong> {staff.name}</p>
-              <p><strong>Email:</strong> {staff.email}</p>
-              <p><strong>Phone:</strong> {staff.phone}</p>
-            </Col>
-            <Col md={6}>
-              <p><strong>Role:</strong> {staff.role}</p>
-              <p><strong>Status:</strong> {staff.status}</p>
-              <p>
-                <strong>Discount:</strong> {staff.discount_percentage || "0"}%
-              </p>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+        <Card className="mb-4 shadow-sm">
+          <Card.Body>
+            <h6 className="mb-3">Staff Information</h6>
+            <Row>
+              <Col md={6}>
+                <p><strong>Name:</strong> {staff.name}</p>
+                <p><strong>Email:</strong> {staff.email}</p>
+                <p><strong>Phone:</strong> {staff.phone}</p>
+              </Col>
+              <Col md={6}>
+                <p><strong>Role:</strong> {staff.role}</p>
+                <p><strong>Status:</strong> {staff.status}</p>
+                <p>
+                  <strong>Discount:</strong> {staff.discount_percentage || "0"}%
+                </p>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
 
         {/* Tables Management */}
         <Col xs={12} md={6} lg={4}>
@@ -1664,27 +1665,27 @@ const submitResetPassword = async () => {
         </Col>
 
         {/* Role-specific information */}
-       {/* Role-specific Summary */}
-      <Col xs={12}>
-        <Card className="bg-primary-subtle">
-          <Card.Body>
-            <h6 className="mb-2">Current Access Summary for {staff.name}</h6>
-            <p className="mb-0">
-              <strong>Role:</strong> {staff.role} - {staff.role === 'Admin'
-                ? 'Full system access including staff management'
-                : staff.role === 'Manager'
-                  ? 'Can manage orders, tables, and apply discounts (up to 15%)'
-                  : 'Basic staff access for order creation and table viewing'}
-            </p>
-            {staff.role === 'Manager' && (
-              <p className="mb-0 mt-2">
-                <strong>Manager Privileges:</strong> Can add menu items, change prices,
-                and apply discounts (up to {permissions.specialPermissions?.discounts?.maxDiscount || 0}%)
+        {/* Role-specific Summary */}
+        <Col xs={12}>
+          <Card className="bg-primary-subtle">
+            <Card.Body>
+              <h6 className="mb-2">Current Access Summary for {staff.name}</h6>
+              <p className="mb-0">
+                <strong>Role:</strong> {staff.role} - {staff.role === 'Admin'
+                  ? 'Full system access including staff management'
+                  : staff.role === 'Manager'
+                    ? 'Can manage orders, tables, and apply discounts (up to 15%)'
+                    : 'Basic staff access for order creation and table viewing'}
               </p>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
+              {staff.role === 'Manager' && (
+                <p className="mb-0 mt-2">
+                  <strong>Manager Privileges:</strong> Can add menu items, change prices,
+                  and apply discounts (up to {permissions.specialPermissions?.discounts?.maxDiscount || 0}%)
+                </p>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
       </Row>
     );
   };
@@ -1744,13 +1745,13 @@ const submitResetPassword = async () => {
                 </div>
                 <div className="d-flex">
                   <Button
-  variant="light"
-  className="me-2 flex-grow-1 text-dark"
-  onClick={() => handleEditClick(staff)} // pass whole staff
->
-  <Gear className="me-1" />
-  Manage Permissions
-</Button>
+                    variant="light"
+                    className="me-2 flex-grow-1 text-dark"
+                    onClick={() => handleEditClick(staff)} // pass whole staff
+                  >
+                    <Gear className="me-1" />
+                    Manage Permissions
+                  </Button>
 
                   <Button
                     variant="outline-danger"
@@ -1763,7 +1764,7 @@ const submitResetPassword = async () => {
                 <div className="mt-2">
                   <Button
                     variant="outline-info"
-                    onClick={() =>  handleResetPasswordClick(staff.id)}
+                    onClick={() => handleResetPasswordClick(staff.id)}
                     disabled={staff.role.toLowerCase() === "admin"}
                     className="w-100"
                   >
@@ -1943,24 +1944,24 @@ const submitResetPassword = async () => {
       </Modal>
 
       {/* Edit Permissions Modal */}
-<Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
-  <Modal.Header closeButton>
-    <Modal.Title>
-      Manage Permissions – {selectedStaff?.name}
-    </Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    {selectedStaff && renderPermissionControls(selectedStaff)} 
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setShowModal(false)}>
-      Close
-    </Button>
-    <Button variant="primary" onClick={handleSave}>
-      Save Changes
-    </Button>
-  </Modal.Footer>
-</Modal>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Manage Permissions – {selectedStaff?.name}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedStaff && renderPermissionControls(selectedStaff)}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleSave}>
+            Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
 
       {/* Reset Password Modal */}
