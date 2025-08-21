@@ -821,7 +821,7 @@ import TableManagement from './TableManagement';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Modal, Button } from 'react-bootstrap';
-
+import axiosInstance from "../../../utils/axiosInstance";
 const OrdersManagement = () => {
   // State management
   const [activeTab, setActiveTab] = useState('register');
@@ -829,7 +829,7 @@ const OrdersManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState('food');
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-   const [showTableModal, setShowTableModal] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
@@ -846,6 +846,13 @@ const OrdersManagement = () => {
   const [isSidesModalOpen, setIsSidesModalOpen] = useState(false);
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   // const [allOrders, setAllOrders] = useState([]);
+
+const [orders, setOrders] = useState([]);
+const [page, setPage] = useState(1);
+const [limit, setLimit] = useState(10);
+const [totalPages, setTotalPages] = useState(1);
+const [loading, setLoading] = useState(false);
+
 
   // Data
   const categories = [
@@ -911,6 +918,31 @@ const OrdersManagement = () => {
       { id: 14, name: 'Darts - 1 Hour', price: 8.99 }
     ]
   };
+
+  // api to fetch orders 
+const fetchOrders = async () => {
+  try {
+    setLoading(true);
+    const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
+
+    console.log("API Response:", res.data); // Debugging
+
+    if (res.data.success) {
+      setOrders(res.data.data.orders || []);
+      setTotalPages(res.data.data.totalPages || 1);
+    }
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  console.log("useEffect triggered");
+  fetchOrders();
+}, [page, limit]);
+
 
   const navigate = useNavigate();
 
@@ -984,9 +1016,9 @@ const OrdersManagement = () => {
   // Function to handle table selection from TableManagement
   const handleTableSelect = (tableNumber) => {
     setSelectedTable(tableNumber);
-    setActiveTab('register'); 
+    setActiveTab('register');
     setShowTableModal(false); // Close the table selection modal
-    
+
     // Switch to register tab after selecting table
   };
 
@@ -1244,29 +1276,28 @@ const OrdersManagement = () => {
                       }`}
                   >
                     <span
-  onClick={() => {
-    if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
-      setShowTableModal(true);
-    }
-  }}
-  style={{ cursor: "pointer" }}
->
-  <i
-    className={`fa ${
-      orderType === "dineIn"
-        ? "fa-cutlery"
-        : orderType === "takeOut"
-        ? "fa-shopping-bag"
-        : "fa-motorcycle"
-    } me-2 small`}
-  ></i>
+                      onClick={() => {
+                        if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
+                          setShowTableModal(true);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <i
+                        className={`fa ${orderType === "dineIn"
+                            ? "fa-cutlery"
+                            : orderType === "takeOut"
+                              ? "fa-shopping-bag"
+                              : "fa-motorcycle"
+                          } me-2 small`}
+                      ></i>
 
-  {orderType === "dineIn"
-    ? "Dine In"
-    : orderType === "takeOut"
-    ? "Take Out"
-    : "Delivery"}
-</span>
+                      {orderType === "dineIn"
+                        ? "Dine In"
+                        : orderType === "takeOut"
+                          ? "Take Out"
+                          : "Delivery"}
+                    </span>
 
                   </button>
 
@@ -1305,19 +1336,19 @@ const OrdersManagement = () => {
                 {/* Action Buttons */}
                 <div className="d-flex gap-2">
 
-                  {  orderType === 'dineIn'  &&
-                  <button
-                    onClick={() => {
-                      setActiveTab('tables');
-                      setSelectedTable(null);
-                      setOrderItems([]);
-                      setSelectedOrder(null);
-                    }}
-                    className="btn btn-dark btn-sm flex-grow-1"
-                  >
-                    New
-                  </button>
-}
+                  {orderType === 'dineIn' &&
+                    <button
+                      onClick={() => {
+                        setActiveTab('tables');
+                        setSelectedTable(null);
+                        setOrderItems([]);
+                        setSelectedOrder(null);
+                      }}
+                      className="btn btn-dark btn-sm flex-grow-1"
+                    >
+                      New
+                    </button>
+                  }
                   <button
                     onClick={() => setOrderItems([])}
                     className="btn btn-danger btn-sm flex-grow-1"
@@ -1381,8 +1412,8 @@ const OrdersManagement = () => {
 
               {/* Product Grid */}
               <div className="flex-grow-1 p-3 overflow-auto">
-  <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-    {filteredProducts.map((product) => (
+                <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                  {filteredProducts.map((product) => (
                     <div
                       key={product.id}
                       onClick={() => addToOrder(product)}
@@ -1400,33 +1431,33 @@ const OrdersManagement = () => {
                       </div>
                     </div>
                   ))}
-  </div>
-</div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
 
 
- <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Select a Table</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="d-flex flex-wrap gap-2">
-            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-              <Button
-                key={table}
-                variant="outline-dark"
-                className="flex-grow-1"
-                onClick={() => handleTableSelect(table)}
-              >
-                {table}
-              </Button>
-            ))}
-          </div>
-        </Modal.Body>
-      </Modal>
+        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Select a Table</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="d-flex flex-wrap gap-2">
+              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+                <Button
+                  key={table}
+                  variant="outline-dark"
+                  className="flex-grow-1"
+                  onClick={() => handleTableSelect(table)}
+                >
+                  {table}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+        </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (
@@ -1459,7 +1490,11 @@ const OrdersManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {allOrders.length === 0 ? (
+                      {loading ? (
+                        <tr>
+                          <td colSpan="8" className="text-center py-5">Loading...</td>
+                        </tr>
+                      ) : orders.length === 0 ? (
                         <tr>
                           <td colSpan="8" className="text-center py-5">
                             <i className="fa fa-receipt text-muted fs-1 mb-3"></i>
@@ -1468,37 +1503,19 @@ const OrdersManagement = () => {
                           </td>
                         </tr>
                       ) : (
-                        allOrders.map((order) => (
-                          <tr
-                            key={order.id}
-                            className={`cursor-pointer ${selectedOrder && selectedOrder.id === order.id ? 'selected-row' : ''}`}
-                            onClick={() => handleOrderSelect(order)}
-                          >
-                            <td>#{order.id.toString().slice(-6)}</td>
-                            <td>{order.table}</td>
-                            <td>{order.customer}</td>
+                        orders.map((order) => (
+                          <tr key={order.id}>
+                            <td>#{order.order_number}</td>
+                            <td>{order.table_name} ({order.table_number})</td>
+                            <td>{order.customer_name}</td>
+                            <td>—</td> {/* ✅ items agar API se aayenge to map karna hoga */}
+                            <td>${parseFloat(order.total_amount).toFixed(2)}</td>
+                            <td>{new Date(order.created_at).toLocaleTimeString()}</td>
                             <td>
-                              <div className="d-flex flex-wrap gap-1">
-                                {order.items.map((item, idx) => (
-                                  <span key={idx} className="badge bg-light text-dark">
-                                    {item.name} × {item.quantity}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>${order.total.toFixed(2)}</td>
-                            <td>{new Date(order.timestamp).toLocaleTimeString()}</td>
-
-                            {/* ✅ Status column */}
-                            <td>
-                              <span
-                                className={`badge ${order.status === 'completed' ? 'bg-success' : 'bg-warning text-dark'
-                                  }`}
-                              >
-                                {order.status === 'completed' ? 'Completed' : 'Running'}
+                              <span className={`badge ${order.status === "completed" ? "bg-success" : "bg-warning text-dark"}`}>
+                                {order.status}
                               </span>
                             </td>
-
                             <td>
                               <Link to="/staff/billingpayment">
                                 <button className="btn btn-success btn-sm flex-grow-1">
@@ -1510,6 +1527,7 @@ const OrdersManagement = () => {
                         ))
                       )}
                     </tbody>
+
                   </table>
                 </div>
 
@@ -1682,7 +1700,7 @@ const OrdersManagement = () => {
                     </div>
                   ))}
 
-                 
+
                 </div>
               </div>
               <div className="modal-footer">
