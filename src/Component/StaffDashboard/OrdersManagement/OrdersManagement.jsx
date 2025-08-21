@@ -829,7 +829,7 @@ const OrdersManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState('food');
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-   const [showTableModal, setShowTableModal] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
@@ -984,9 +984,9 @@ const OrdersManagement = () => {
   // Function to handle table selection from TableManagement
   const handleTableSelect = (tableNumber) => {
     setSelectedTable(tableNumber);
-    setActiveTab('register'); 
+    setActiveTab('register');
     setShowTableModal(false); // Close the table selection modal
-    
+
     // Switch to register tab after selecting table
   };
 
@@ -1244,29 +1244,28 @@ const OrdersManagement = () => {
                       }`}
                   >
                     <span
-  onClick={() => {
-    if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
-      setShowTableModal(true);
-    }
-  }}
-  style={{ cursor: "pointer" }}
->
-  <i
-    className={`fa ${
-      orderType === "dineIn"
-        ? "fa-cutlery"
-        : orderType === "takeOut"
-        ? "fa-shopping-bag"
-        : "fa-motorcycle"
-    } me-2 small`}
-  ></i>
+                      onClick={() => {
+                        if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
+                          setShowTableModal(true);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <i
+                        className={`fa ${orderType === "dineIn"
+                          ? "fa-cutlery"
+                          : orderType === "takeOut"
+                            ? "fa-shopping-bag"
+                            : "fa-motorcycle"
+                          } me-2 small`}
+                      ></i>
 
-  {orderType === "dineIn"
-    ? "Dine In"
-    : orderType === "takeOut"
-    ? "Take Out"
-    : "Delivery"}
-</span>
+                      {orderType === "dineIn"
+                        ? "Dine In"
+                        : orderType === "takeOut"
+                          ? "Take Out"
+                          : "Delivery"}
+                    </span>
 
                   </button>
 
@@ -1305,19 +1304,19 @@ const OrdersManagement = () => {
                 {/* Action Buttons */}
                 <div className="d-flex gap-2">
 
-                  {  orderType === 'dineIn'  &&
-                  <button
-                    onClick={() => {
-                      setActiveTab('tables');
-                      setSelectedTable(null);
-                      setOrderItems([]);
-                      setSelectedOrder(null);
-                    }}
-                    className="btn btn-dark btn-sm flex-grow-1"
-                  >
-                    New
-                  </button>
-}
+                  {orderType === 'dineIn' &&
+                    <button
+                      onClick={() => {
+                        setActiveTab('tables');
+                        setSelectedTable(null);
+                        setOrderItems([]);
+                        setSelectedOrder(null);
+                      }}
+                      className="btn btn-dark btn-sm flex-grow-1"
+                    >
+                      New
+                    </button>
+                  }
                   <button
                     onClick={() => setOrderItems([])}
                     className="btn btn-danger btn-sm flex-grow-1"
@@ -1381,8 +1380,8 @@ const OrdersManagement = () => {
 
               {/* Product Grid */}
               <div className="flex-grow-1 p-3 overflow-auto">
-  <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-    {filteredProducts.map((product) => (
+                <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                  {filteredProducts.map((product) => (
                     <div
                       key={product.id}
                       onClick={() => addToOrder(product)}
@@ -1400,33 +1399,31 @@ const OrdersManagement = () => {
                       </div>
                     </div>
                   ))}
-  </div>
-</div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-
-
- <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Select a Table</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="d-flex flex-wrap gap-2">
-            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-              <Button
-                key={table}
-                variant="outline-dark"
-                className="flex-grow-1"
-                onClick={() => handleTableSelect(table)}
-              >
-                {table}
-              </Button>
-            ))}
-          </div>
-        </Modal.Body>
-      </Modal>
+        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Select a Table</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="d-flex flex-wrap gap-2">
+              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+                <Button
+                  key={table}
+                  variant="outline-dark"
+                  className="flex-grow-1"
+                  onClick={() => handleTableSelect(table)}
+                >
+                  {table}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+        </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (
@@ -1682,7 +1679,7 @@ const OrdersManagement = () => {
                     </div>
                   ))}
 
-                 
+
                 </div>
               </div>
               <div className="modal-footer">

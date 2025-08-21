@@ -599,6 +599,7 @@ const ReservationsManagement = () => {
     tableId: null,
     tableName: "",
     customerName: "",
+    customerEmail: "",
     phoneNumber: "",
     email: "",
     date: "",
@@ -609,10 +610,78 @@ const ReservationsManagement = () => {
   });
 
   const [showTableTypeDropdown, setShowTableTypeDropdown] = useState(false);
-  const [reservations, setReservations] = useState([]);
   const [tables, setTables] = useState([]);
+  const [reservations, setReservations] = useState([]); // ✅ define state
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const res = await axiosInstance.get("/users?page=1&limit=10&role=user");
+        if (res.data?.data?.users) {
+          setUsers(res.data.data.users); // adjust if response structure is different
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+
+  // State for active filter
+  //const [activeFilter, setActiveFilter] = useState('all');
+
+  // State for reservations data
+  // const [reservations, setReservations] = useState([
+  //   {
+  //     id: 1,
+  //     customer: 'Michael Johnson',
+  //     phone: '+1 (555) 123-4567',
+  //     tableType: 'Snooker Table',
+  //     time: '2:00 PM',
+  //     status: 'confirmed'
+  //   },
+  //   {
+  //     id: 2,
+  //     customer: 'Sarah Williams',
+  //     phone: '+1 (555) 987-6543',
+  //     tableType: 'PlayStation Station',
+  //     time: '3:30 PM',
+  //     status: 'arrived'
+  //   },
+  //   {
+  //     id: 3,
+  //     customer: 'David Chen',
+  //     phone: '+1 (555) 456-7890',
+  //     tableType: 'Pool Table',
+  //     time: '5:00 PM',
+  //     status: 'confirmed'
+  //   },
+  //   {
+  //     id: 4,
+  //     customer: 'Emma Rodriguez',
+  //     phone: '+1 (555) 321-0987',
+  //     tableType: 'Restaurant Table',
+  //     time: '6:30 PM',
+  //     status: 'cancelled'
+  //   },
+  //   {
+  //     id: 5,
+  //     customer: 'James Wilson',
+  //     phone: '+1 (555) 654-3210',
+  //     tableType: 'Snooker Table',
+  //     time: '8:00 PM',
+  //     status: 'confirmed'
+  //   }
+  // ]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(5);
+  const [limit] = useState(115);
   const [totalPages, setTotalPages] = useState(1);
   const [activeFilter, setActiveFilter] = useState("all");
   const [totalCount, setTotalCount] = useState(0);
@@ -636,9 +705,9 @@ const ReservationsManagement = () => {
         console.error("Error fetching tables:", error);
       }
     };
-
     fetchTables();
   }, []);
+
 
   const handleTableSelect = (table) => {
     setFormData({
@@ -664,32 +733,47 @@ const ReservationsManagement = () => {
 
     // Basic required validations
     if (!formData.tableId) return alert("Please select a table.");
-    if (!formData.customerName) return alert("Please enter customer name.");
-    if (!formData.phoneNumber) return alert("Please enter phone number.");
+    if (!formData.customerName.trim()) return alert("Please enter customer name.");
+    if (!formData.phoneNumber.trim()) return alert("Please enter phone number.");
     if (!formData.date) return alert("Please select a reservation date.");
     if (!formData.time) return alert("Please select a reservation time.");
+
+    // Additional validations
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(formData.phoneNumber.trim())) {
+      return alert("Please enter a valid 10-digit phone number.");
+    }
+
+    if (formData.customerEmail && !/\S+@\S+\.\S+/.test(formData.customerEmail.trim())) {
+      return alert("Please enter a valid email address.");
+    }
 
     const payload = {
       table_id: formData.tableId,
       customer_name: formData.customerName.trim(),
       customer_phone: formData.phoneNumber.trim(),
-      customer_email: formData.email.trim(),
+      customer_email: formData.customerEmail.trim() || null,
       reservation_date: formData.date,
       reservation_time: formData.time,
-      duration_hours: Number(formData.durationHours),
-      party_size: Number(formData.partySize),
+      duration_hours: Number(formData.durationHours) || 1,
+      party_size: Number(formData.partySize) || 1,
       special_requests: formData.specialRequests.trim(),
     };
 
     try {
+      // Disable button while submitting
+      // setIsSubmitting(true);
+
       await axiosInstance.post("/reservations", payload);
-      alert("Reservation created successfully!");
+
+      alert("✅ Reservation created successfully!");
 
       // Reset form
       setFormData({
         tableId: null,
         tableName: "",
         customerName: "",
+        customerEmail: "",
         phoneNumber: "",
         email: "",
         date: "",
@@ -701,11 +785,13 @@ const ReservationsManagement = () => {
 
       // Refresh reservations list
       fetchReservations();
+
     } catch (err) {
       console.error("Error creating reservation:", err);
-      alert(err?.response?.data?.message || "Failed to create reservation.");
-    }
+      alert(err?.response?.data?.message || "❌ Failed to create reservation.");
+    } 
   };
+
 
   // Handle status change
   const handleStatusChange = async (id, newStatus) => {
@@ -725,6 +811,9 @@ const ReservationsManagement = () => {
   };
 
   // Fetch reservations
+
+  // ✅ Fetch reservations dynamically
+  // ✅ Fetch reservations dynamically
   const fetchReservations = async () => {
     try {
       let url = `/reservations?page=${page}&limit=${limit}`;
@@ -734,7 +823,7 @@ const ReservationsManagement = () => {
         url += `&status=${activeFilter}`;
       }
 
-      const res = await axiosInstance.get(url);
+      const res = await axiosInstance.get(url); // 👈 ab yeh dynamic url use karo
 
       if (res.data?.success) {
         setReservations(res.data.data || []);
@@ -746,14 +835,36 @@ const ReservationsManagement = () => {
     }
   };
 
+
+
   useEffect(() => {
     fetchReservations();
   }, [page, activeFilter]);
 
   // Filter for today's reservations based on created_at
-  const filteredReservations = reservations.filter(
-    (res) => new Date(res.created_at).toISOString().split("T")[0] === today
-  );
+
+
+  // ✅ Reservation ko filter karo based on date + status
+  const filteredReservations = reservations?.filter((res) => {
+    const resDate = res.reservation_date.split("T")[0];
+
+    // status "all" ho to sab allow, warna filter
+    const statusMatch =
+      activeFilter === "all" ? true : res.status === activeFilter;
+
+    return resDate === today && statusMatch;
+  }) || [];
+
+
+
+
+  // Get today's date in readable format for display
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+
+
+
+
+
 
   // Stats for today's summary
   const todayStats = {
@@ -782,21 +893,39 @@ const ReservationsManagement = () => {
 
                 <Form onSubmit={handleSubmit}>
                   <Row className="g-3">
-                    {/* Customer Name */}
+                    {/* Customer Dropdown */}
                     <Col md={6}>
                       <Form.Group>
-                        <Form.Label>Customer Name</Form.Label>
-                        <div className="input-group">
-                          <span className="input-group-text"><Person /></span>
-                          <Form.Control
-                            type="text"
-                            name="customerName"
-                            value={formData.customerName}
-                            onChange={handleInputChange}
-                            placeholder="Enter customer name"
-                            required
-                          />
-                        </div>
+                        <Form.Label>Customer</Form.Label>
+                        <Form.Select
+                          value={formData.customerId || ""}
+                          onChange={(e) => {
+                            const selectedUser = users.find(
+                              (u) => String(u.id) === e.target.value
+                            );
+                            if (selectedUser) {
+                              setFormData({
+                                ...formData,
+                                customerId: selectedUser.id,
+                                customerName: selectedUser.name,
+                                phoneNumber: selectedUser.phone,
+                                customerEmail: selectedUser.email,
+                              });
+                            }
+                          }}
+                          required
+                        >
+                          <option value="">Select Customer</option>
+                          {loadingUsers ? (
+                            <option disabled>Loading...</option>
+                          ) : (
+                            users.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.name} ({user.phone})
+                              </option>
+                            ))
+                          )}
+                        </Form.Select>
                       </Form.Group>
                     </Col>
 
@@ -805,14 +934,16 @@ const ReservationsManagement = () => {
                       <Form.Group>
                         <Form.Label>Phone Number</Form.Label>
                         <div className="input-group">
-                          <span className="input-group-text"><Telephone /></span>
+                          <span className="input-group-text">
+                            <Telephone />
+                          </span>
                           <Form.Control
                             type="tel"
                             name="phoneNumber"
-                            value={formData.phoneNumber}
-                            onChange={handleInputChange}
+                            value={formData.phoneNumber || ""}
                             placeholder="Enter phone number"
                             required
+                            readOnly // auto-filled from customer
                           />
                         </div>
                       </Form.Group>
@@ -826,60 +957,70 @@ const ReservationsManagement = () => {
                           <span className="input-group-text">@</span>
                           <Form.Control
                             type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="Enter email address"
+                            name="customerEmail"
+                            value={formData.customerEmail || ""}
+                            placeholder="Enter email"
+                            readOnly
                           />
                         </div>
                       </Form.Group>
                     </Col>
 
                     {/* Table Dropdown */}
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label>Table</Form.Label>
-                        <Dropdown
-                          show={showTableTypeDropdown}
-                          onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
-                        >
-                          <Dropdown.Toggle
-                            className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
-                            style={{
-                              fontSize: "1rem",
-                              height: "38px",
-                              borderRadius: "6px",
-                              border: "1px solid #dee2e6",
-                              backgroundColor: "white",
-                            }}
-                          >
-                            {formData.tableName || "Select table"}
-                          </Dropdown.Toggle>
+                  <Col md={6}>
+  <Form.Group>
+    <Form.Label>Table</Form.Label>
+    <Dropdown
+      show={showTableTypeDropdown}
+      onToggle={(isOpen) => setShowTableTypeDropdown(isOpen)}
+    >
+      <Dropdown.Toggle
+        className="w-100 text-dark text-start d-flex justify-content-between align-items-center"
+        style={{
+          fontSize: "1rem",
+          height: "38px",
+          borderRadius: "6px",
+          border: "1px solid #dee2e6",
+          backgroundColor: "white",
+        }}
+      >
+        {formData.tableName || "Select table"}
+      </Dropdown.Toggle>
 
-                          <Dropdown.Menu className="w-100">
-                            {tables.length > 0 ? (
-                              tables.map((table) => (
-                                <Dropdown.Item
-                                  key={table.id}
-                                  onClick={() => handleTableSelect(table)}
-                                >
-                                  {table.table_name} ({table.table_number})
-                                </Dropdown.Item>
-                              ))
-                            ) : (
-                              <Dropdown.Item disabled>No tables available</Dropdown.Item>
-                            )}
-                          </Dropdown.Menu>
-                        </Dropdown>
-                      </Form.Group>
-                    </Col>
+      <Dropdown.Menu
+        className="w-100 custom-dropdown-menu"
+        style={{
+          maxHeight: "200px", // limit height
+          overflowY: "auto",  // add vertical scrollbar
+          overflowX: "hidden" // hide horizontal scrollbar
+        }}
+      >
+        {tables.length > 0 ? (
+          tables.map((table) => (
+            <Dropdown.Item
+              key={table.id}
+              onClick={() => handleTableSelect(table)}
+              className="text-dark"
+            >
+              {table.table_name} ({table.table_number})
+            </Dropdown.Item>
+          ))
+        ) : (
+          <Dropdown.Item disabled>No tables available</Dropdown.Item>
+        )}
+      </Dropdown.Menu>
+    </Dropdown>
+  </Form.Group>
+</Col>
 
                     {/* Date */}
                     <Col md={6}>
                       <Form.Group>
                         <Form.Label>Date</Form.Label>
                         <div className="input-group">
-                          <span className="input-group-text"><Calendar /></span>
+                          <span className="input-group-text">
+                            <Calendar />
+                          </span>
                           <Form.Control
                             type="date"
                             name="date"
@@ -896,7 +1037,9 @@ const ReservationsManagement = () => {
                       <Form.Group>
                         <Form.Label>Time</Form.Label>
                         <div className="input-group">
-                          <span className="input-group-text"><Clock /></span>
+                          <span className="input-group-text">
+                            <Clock />
+                          </span>
                           <Form.Control
                             type="time"
                             name="time"
@@ -952,10 +1095,13 @@ const ReservationsManagement = () => {
                         />
                       </Form.Group>
                     </Col>
-
                   </Row>
 
-                  <Button type="submit" variant="warning" className="w-100 mt-4 text-white">
+                  <Button
+                    type="submit"
+                    variant="warning"
+                    className="w-100 mt-4 text-white"
+                  >
                     Add Reservation
                   </Button>
                 </Form>
