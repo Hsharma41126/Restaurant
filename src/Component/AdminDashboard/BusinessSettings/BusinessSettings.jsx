@@ -986,7 +986,7 @@ const BusinessSettings = () => {
                     </div>
                   </div>
                   <div
-                    className={`rounded-pill position-relative ${modes.restaurant ? 'bg-success' : 'bg-secondary'}`}
+                    className={`rounded-pill  position-relative ${modes.restaurant ? 'bg-success' : 'bg-secondary'}`}
                     style={{ width: '48px', height: '24px', cursor: 'pointer' }}
                     onClick={() => toggleMode('restaurant')}
                   >
@@ -995,6 +995,8 @@ const BusinessSettings = () => {
                       style={{
                         width: '20px',
                         height: '20px',
+                       marginTop: '2px',
+                       marginBottom: '2px',
                         left: modes.restaurant ? 'calc(100% - 22px)' : '2px',
                         transition: 'left 0.3s ease'
                       }}
@@ -1024,6 +1026,8 @@ const BusinessSettings = () => {
                       style={{
                         width: '20px',
                         height: '20px',
+                         marginTop: '2px',
+                       marginBottom: '2px',
                         left: modes.gamezone ? 'calc(100% - 22px)' : '2px',
                         transition: 'left 0.3s ease'
                       }}
@@ -1053,6 +1057,8 @@ const BusinessSettings = () => {
                       style={{
                         width: '20px',
                         height: '20px',
+                         marginTop: '2px',
+                       marginBottom: '2px',
                         left: modes.lounge ? 'calc(100% - 22px)' : '2px',
                         transition: 'left 0.3s ease'
                       }}
@@ -1068,12 +1074,12 @@ const BusinessSettings = () => {
                   <h2 className="fs-5 fw-semibold text-dark">Business Hours</h2>
                 </div>
 
-                <div className="d-flex flex-column gap-3">
+               <div className="d-flex flex-column gap-3">
                   {/* Monday - Friday */}
                   <div className="d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center">
                       <div className="fw-medium text-dark me-3">Weekdays</div>
-                      <div className="small text-muted">Mon - Fri</div>
+                      {/* <div className="small text-muted">Mon - Fri</div> */}
                     </div>
                     <div className="d-flex align-items-center gap-2">
                       <Form.Select
@@ -1219,7 +1225,7 @@ const BusinessSettings = () => {
                       </Form.Select>
                     </div>
                   </div>
-                </div>
+                </div> 
               </div>
 
               <div className="mt-4 pt-3 border-top small text-muted">

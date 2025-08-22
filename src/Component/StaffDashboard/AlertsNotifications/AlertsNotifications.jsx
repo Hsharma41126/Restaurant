@@ -1,76 +1,81 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import "./Alerts.css"
 import axiosInstance from '../../../utils/axiosInstance';
-
 const AlertsNotifications = () => {
   const [notifications, setNotifications] = useState({
-    tableAlerts: [
-      {
-        id: 1,
-        table: 'Table 12',
-        location: 'VIP Room - Section A',
-        message: 'Session exceeded by 15 minutes',
-        startTime: '12:00 PM',
-        endTime: '2:00 PM',
-        status: 'OVERDUE',
-        color: 'danger'
-      },
-      {
-        id: 2,
-        table: 'Table 8',
-        location: 'Gaming Zone - Section B',
-        message: '5 minutes remaining',
-        startTime: '1:00 PM',
-        endTime: '3:00 PM',
-        status: 'WARNING',
-        color: 'warning'
-      },
-      {
-        id: 3,
-        table: 'Table 15',
-        location: 'Private Booth - Section C',
-        message: '10 minutes remaining',
-        startTime: '12:30 PM',
-        endTime: '2:30 PM',
-        status: 'WARNING',
-        color: 'warning'
-      }
-    ],
-    reservations: [
-      {
-        id: 1,
-        customer: 'Michael Johnson',
-        details: 'VIP Room - Table 12',
-        time: 'Today at 2:30 PM',
-        arrival: 'Arriving in 15 minutes',
-        party: 'Party of 4 • Premium Package',
-        status: 'DUE SOON',
-        color: 'warning'
-      },
-      {
-        id: 2,
-        customer: 'Sarah Williams',
-        details: 'Gaming Zone - Table 8',
-        time: 'Today at 3:00 PM',
-        arrival: 'Arriving in 45 minutes',
-        party: 'Party of 2 • Standard Package',
-        status: 'UPCOMING',
-        color: 'primary'
-      }
-    ],
-    upcomingReservations: [
-      { name: 'David Chen - Table 5', time: '4:00 PM' },
-      { name: 'Emma Rodriguez - Table 3', time: '4:30 PM' },
-      { name: 'James Wilson - VIP Room', time: '5:00 PM' }
-    ]
+    tableAlerts: [],
+    reservations: [],
+    upcomingReservations: []
   });
 
   const [alertStatus, setAlertStatus] = useState({
-    activeAlerts: 5,
-    overdueTables: 1,
-    tableTimeoutAlerts: 3,
-    reservationReminders: 2,
-    upcomingReservations: 1
+    activeAlerts: 0,
+    overdueTables: 0,
+    tableTimeoutAlerts: 0,
+    reservationReminders: 0,
+    dueSoon: 0,
+    upcoming: 0
   });
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const res = await axiosInstance.get("/alerts");
+        if (res.data.success) {
+          const apiData = res.data.data;
+
+          // format table timeout alerts
+          const formattedTableAlerts = apiData.tableTimeoutAlerts.map((item, index) => ({
+            id: item.reservation_id || index,
+            table: `Table ${item.table_number} - ${item.table_name}`,
+            location: item.location,
+            message:
+              item.exceeded_minutes > 0
+                ? `Session exceeded by ${item.exceeded_minutes} minutes`
+                : `${Math.abs(item.exceeded_minutes)} minutes remaining`,
+            startTime: new Date(item.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            endTime: new Date(item.expected_end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            status: item.exceeded_minutes > 0 ? "OVERDUE" : "WARNING",
+            color: item.exceeded_minutes > 0 ? "danger" : "warning"
+          }));
+
+          // format reservations reminders
+          const formattedReservations = apiData.reservationReminders.map((item, index) => ({
+            id: item.reservation_id || index,
+            customer: item.customer_name,
+            details: `${item.location} - Table ${item.table_number} (${item.table_name})`,
+            time: new Date(item.reservation_date).toDateString() +
+              " at " +
+              item.reservation_time.slice(0, 5),
+            arrival: `Arriving in ${item.minutes_remaining} minutes`,
+            party: `Party of ${item.party_size}`,
+            status: item.minutes_remaining <= 30 ? "DUE SOON" : "UPCOMING",
+            color: item.minutes_remaining <= 30 ? "warning" : "primary"
+          }));
+
+          setNotifications({
+            tableAlerts: formattedTableAlerts,
+            reservations: formattedReservations,
+            upcomingReservations: [] // keep empty since API doesn’t provide
+          });
+
+          setAlertStatus({
+            activeAlerts: apiData.activeAlerts,
+            overdueTables: apiData.overdueTables,
+            tableTimeoutAlerts: apiData.tableTimeoutAlerts.length,
+            reservationReminders: apiData.reservationReminders.length,
+            dueSoon: formattedReservations.filter(r => r.status === "DUE SOON").length,
+            upcoming: formattedReservations.filter(r => r.status === "UPCOMING").length
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching alerts:", error);
+      }
+    };
+
+    fetchAlerts();
+  }, []);
 
   const styles = `
     .alert-section {
@@ -138,9 +143,11 @@ const AlertsNotifications = () => {
       <style>{styles}</style>
 
       <h1 className="fs-3 fw-bold text-dark">Alerts & Notifications</h1>
-      <p className="text-muted mb-3 mb-md-4 text-start">Monitor table timeouts and reservation reminders in real-time</p>
+      <p className="text-muted mb-3 mb-md-4 text-start">
+        Monitor table timeouts and reservation reminders in real-time
+      </p>
 
-      {/* Stats Cards - Responsive Grid */}
+      {/* Stats Cards */}
       <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3 mb-4">
         <div className="col">
           <div className="card stats-card h-100 shadow-sm">
@@ -149,7 +156,7 @@ const AlertsNotifications = () => {
                 <h6 className="text-muted small mb-1">Active Alerts</h6>
                 <h4 className="mb-0">{alertStatus.activeAlerts}</h4>
               </div>
-              <div className="stats-icon" style={{ backgroundColor: '#fdecea' }}>
+              <div className="stats-icon" style={{ backgroundColor: "#fdecea" }}>
                 <i className="ri-alarm-warning-line text-danger fs-4"></i>
               </div>
             </div>
@@ -163,7 +170,7 @@ const AlertsNotifications = () => {
                 <h6 className="text-muted small mb-1">Overdue Tables</h6>
                 <h4 className="mb-0">{alertStatus.overdueTables}</h4>
               </div>
-              <div className="stats-icon" style={{ backgroundColor: '#fdecea' }}>
+              <div className="stats-icon" style={{ backgroundColor: "#fdecea" }}>
                 <i className="ri-time-line text-danger fs-4"></i>
               </div>
             </div>
@@ -177,7 +184,7 @@ const AlertsNotifications = () => {
                 <h6 className="text-muted small mb-1">Due Soon</h6>
                 <h4 className="mb-0">{alertStatus.dueSoon}</h4>
               </div>
-              <div className="stats-icon" style={{ backgroundColor: '#fff7e6' }}>
+              <div className="stats-icon" style={{ backgroundColor: "#fff7e6" }}>
                 <i className="ri-calendar-check-line text-warning fs-4"></i>
               </div>
             </div>
@@ -191,7 +198,7 @@ const AlertsNotifications = () => {
                 <h6 className="text-muted small mb-1">Upcoming</h6>
                 <h4 className="mb-0">{alertStatus.upcoming}</h4>
               </div>
-              <div className="stats-icon" style={{ backgroundColor: '#e7f1ff' }}>
+              <div className="stats-icon" style={{ backgroundColor: "#e7f1ff" }}>
                 <i className="ri-calendar-line text-primary fs-4"></i>
               </div>
             </div>
@@ -199,7 +206,7 @@ const AlertsNotifications = () => {
         </div>
       </div>
 
-      {/* Main Content - Responsive Columns */}
+      {/* Main Content */}
       <div className="row g-3 g-md-4">
         {/* Table Timeout Alerts */}
         <div className="col-12 col-lg-6">
@@ -223,11 +230,13 @@ const AlertsNotifications = () => {
 
                 <ul className="alert-details">
                   <li className={`fw-medium text-${alert.color}`}>{alert.message}</li>
-                  <li className={`small text-${alert.color}`}>Started: {alert.startTime} • Expected End: {alert.endTime}</li>
+                  <li className={`small text-${alert.color}`}>
+                    Started: {alert.startTime} • Expected End: {alert.endTime}
+                  </li>
                 </ul>
 
                 <div className="mt-3 text-start">
-                  {alert.status === 'OVERDUE' ? (
+                  {alert.status === "OVERDUE" ? (
                     <>
                       <h6 className="small fw-bold">Step Timer</h6>
                       <div className="action-buttons">
@@ -265,8 +274,12 @@ const AlertsNotifications = () => {
             {notifications.reservations.map(reservation => (
               <div key={reservation.id} className={`alert-item alert-${reservation.color}`}>
                 <div className="d-flex justify-content-between align-items-start mb-2">
-                  <h5 className="fw-bold" mb-1>{reservation.customer}</h5>
-                  <span className={`badge bg-${reservation.color} text-white`}>{reservation.status}</span>
+                  <h5 className="fw-bold" mb-1>
+                    {reservation.customer}
+                  </h5>
+                  <span className={`badge bg-${reservation.color} text-white`}>
+                    {reservation.status}
+                  </span>
                 </div>
 
                 <ul className="alert-details">
@@ -293,7 +306,10 @@ const AlertsNotifications = () => {
               <div className="card stats-card shadow-sm">
                 <div className="card-body">
                   {notifications.upcomingReservations.map((res, index) => (
-                    <div key={index} className="d-flex justify-content-between py-2 text-start">
+                    <div
+                      key={index}
+                      className="d-flex justify-content-between py-2 text-start"
+                    >
                       <span>{res.name}</span>
                       <span className="text-muted">{res.time}</span>
                     </div>
