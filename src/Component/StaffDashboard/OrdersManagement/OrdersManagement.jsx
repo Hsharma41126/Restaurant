@@ -826,7 +826,7 @@ const OrdersManagement = () => {
   // State management
   const [activeTab, setActiveTab] = useState('register');
   const [activeFloor, setActiveFloor] = useState('main');
-  const [selectedCategory, setSelectedCategory] = useState('food');
+  //const [selectedCategory, setSelectedCategory] = useState('food');
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
@@ -836,7 +836,7 @@ const OrdersManagement = () => {
     specialRequests: ''
   });
   const [orderNote, setOrderNote] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  //const [searchTerm, setSearchTerm] = useState('');
   const [orderType, setOrderType] = useState('dineIn');
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -847,101 +847,162 @@ const OrdersManagement = () => {
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   // const [allOrders, setAllOrders] = useState([]);
 
-const [orders, setOrders] = useState([]);
-const [page, setPage] = useState(1);
-const [limit, setLimit] = useState(10);
-const [totalPages, setTotalPages] = useState(1);
-const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]); // products later
+
+  // ✅ Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [items, setItems] = useState([]); // items from API
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
 
-  // Data
-  const categories = [
-    { id: 'food', name: 'Food', icon: 'fa fa-cutlery' },
-    { id: 'drinks', name: 'Drinks', icon: 'fa fa-coffee' },
-    { id: 'games', name: 'Games', icon: 'fa fa-gamepad' }
-  ];
-
-  const products = {
-    food: [
-      {
-        id: 1,
-        name: 'Classic Bacon Burger',
-        price: 12.99,
-        sides: [
-          { id: 's1', name: 'Belgian Fresh Fries', price: 3.99 },
-          { id: 's2', name: 'Sweet Potato Fries', price: 4.99 },
-          { id: 's3', name: 'Grilled Vegetables', price: 4.99 },
-          { id: 's4', name: 'Onion Rings', price: 4.49 }
-        ]
-      },
-      {
-        id: 2,
-        name: 'Gourmet Pizza',
-        price: 15.99,
-        sides: [
-          { id: 's5', name: 'Garden Salad', price: 4.99 },
-          { id: 's6', name: 'Garlic Bread', price: 3.99 },
-          { id: 's7', name: 'Caesar Side Salad', price: 5.99 }
-        ]
-      },
-      {
-        id: 3,
-        name: 'Grilled Chicken',
-        price: 16.99,
-        sides: [
-          { id: 's8', name: 'Mashed Potatoes', price: 4.99 },
-          { id: 's9', name: 'Steamed Broccoli', price: 3.99 },
-          { id: 's10', name: 'Rice Pilaf', price: 3.99 }
-        ]
-      },
-      {
-        id: 4,
-        name: 'Pasta Carbonara',
-        price: 14.99,
-        sides: [
-          { id: 's11', name: 'Garlic Bread', price: 3.99 },
-          { id: 's12', name: 'Side Salad', price: 4.99 },
-          { id: 's13', name: 'Soup of the Day', price: 4.99 }
-        ]
+  // ✅ Fetch all categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axiosInstance.get("/categories");
+        if (res.data.success) {
+          setCategories(res.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
       }
-    ],
-    drinks: [
-      { id: 7, name: 'Coca Cola', price: 2.99 },
-      { id: 8, name: 'Fresh Orange Juice', price: 4.99 },
-      { id: 9, name: 'Iced Coffee', price: 3.99 },
-      { id: 10, name: 'Lemonade', price: 3.49 }
-    ],
-    games: [
-      { id: 11, name: 'Pool Table - 1 Hour', price: 25.99 },
-      { id: 12, name: 'Ping Pong - 1 Hour', price: 15.99 },
-      { id: 13, name: 'Foosball - 1 Hour', price: 12.99 },
-      { id: 14, name: 'Darts - 1 Hour', price: 8.99 }
-    ]
+    };
+
+    fetchCategories();
+  }, []);
+
+  // ✅ Fetch subcategories when category changes
+  useEffect(() => {
+    if (!selectedCategory) return;
+
+    const fetchSubcategories = async () => {
+      try {
+        const res = await axiosInstance.get(
+          `/subcategories?category_id=${selectedCategory}`
+        );
+        if (res.data.success) {
+          setSubcategories(res.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subcategories:", error);
+      }
+    };
+
+    fetchSubcategories();
+  }, [selectedCategory]);
+
+
+  // ✅ Fetch items when subcategory is clicked
+  const handleSubcategoryClick = async (sub) => {
+    try {
+      const res = await axiosInstance.get(`/items/${sub.id}`);
+      if (res.data.success) {
+        setItems(res.data.data);
+        setSelectedSubcategory(sub.subcategory_name);
+        setShowModal(true); // open modal
+      }
+    } catch (error) {
+      console.error("Error fetching items:", error);
+    }
   };
+  // Data
+  // const categories = [
+  //   { id: 'food', name: 'Food', icon: 'fa fa-cutlery' },
+  //   { id: 'drinks', name: 'Drinks', icon: 'fa fa-coffee' },
+  //   { id: 'games', name: 'Games', icon: 'fa fa-gamepad' }
+  // ];
+
+  // const products = {
+  //   food: [
+  //     {
+  //       id: 1,
+  //       name: 'Classic Bacon Burger',
+  //       price: 12.99,
+  //       sides: [
+  //         { id: 's1', name: 'Belgian Fresh Fries', price: 3.99 },
+  //         { id: 's2', name: 'Sweet Potato Fries', price: 4.99 },
+  //         { id: 's3', name: 'Grilled Vegetables', price: 4.99 },
+  //         { id: 's4', name: 'Onion Rings', price: 4.49 }
+  //       ]
+  //     },
+  //     {
+  //       id: 2,
+  //       name: 'Gourmet Pizza',
+  //       price: 15.99,
+  //       sides: [
+  //         { id: 's5', name: 'Garden Salad', price: 4.99 },
+  //         { id: 's6', name: 'Garlic Bread', price: 3.99 },
+  //         { id: 's7', name: 'Caesar Side Salad', price: 5.99 }
+  //       ]
+  //     },
+  //     {
+  //       id: 3,
+  //       name: 'Grilled Chicken',
+  //       price: 16.99,
+  //       sides: [
+  //         { id: 's8', name: 'Mashed Potatoes', price: 4.99 },
+  //         { id: 's9', name: 'Steamed Broccoli', price: 3.99 },
+  //         { id: 's10', name: 'Rice Pilaf', price: 3.99 }
+  //       ]
+  //     },
+  //     {
+  //       id: 4,
+  //       name: 'Pasta Carbonara',
+  //       price: 14.99,
+  //       sides: [
+  //         { id: 's11', name: 'Garlic Bread', price: 3.99 },
+  //         { id: 's12', name: 'Side Salad', price: 4.99 },
+  //         { id: 's13', name: 'Soup of the Day', price: 4.99 }
+  //       ]
+  //     }
+  //   ],
+  //   drinks: [
+  //     { id: 7, name: 'Coca Cola', price: 2.99 },
+  //     { id: 8, name: 'Fresh Orange Juice', price: 4.99 },
+  //     { id: 9, name: 'Iced Coffee', price: 3.99 },
+  //     { id: 10, name: 'Lemonade', price: 3.49 }
+  //   ],
+  //   games: [
+  //     { id: 11, name: 'Pool Table - 1 Hour', price: 25.99 },
+  //     { id: 12, name: 'Ping Pong - 1 Hour', price: 15.99 },
+  //     { id: 13, name: 'Foosball - 1 Hour', price: 12.99 },
+  //     { id: 14, name: 'Darts - 1 Hour', price: 8.99 }
+  //   ]
+  // };
 
   // api to fetch orders 
-const fetchOrders = async () => {
-  try {
-    setLoading(true);
-    const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
 
-    console.log("API Response:", res.data); // Debugging
+      console.log("API Response:", res.data); // Debugging
 
-    if (res.data.success) {
-      setOrders(res.data.data.orders || []);
-      setTotalPages(res.data.data.totalPages || 1);
+      if (res.data.success) {
+        setOrders(res.data.data.orders || []);
+        setTotalPages(res.data.data.totalPages || 1);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  console.log("useEffect triggered");
-  fetchOrders();
-}, [page, limit]);
+  useEffect(() => {
+    console.log("useEffect triggered");
+    fetchOrders();
+  }, [page, limit]);
 
 
   const navigate = useNavigate();
@@ -1055,9 +1116,9 @@ useEffect(() => {
     navigate("/staff/billingpayment");
   };
 
-  const filteredProducts = products[selectedCategory].filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // //onst filteredProducts = products[selectedCategory].filter(product =>
+  //   product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
 
   // Add table highlight effect when component mounts
   useEffect(() => {
@@ -1219,7 +1280,7 @@ useEffect(() => {
                         </div>
                         <div className="d-flex align-items-center mt-1">
                           <span className="text-muted small">Qty: {item.quantity}</span>
-                          <span className="text-muted small ms-2">${item.price.toFixed(2)} each</span>
+                          <span className="text-muted small ms-2"> ₹{parseFloat(item.price || 0).toFixed(2)} each</span>
                         </div>
                         {item.sides && item.sides.length > 0 && (
                           <div className="mt-1">
@@ -1276,22 +1337,21 @@ useEffect(() => {
                       }`}
                   >
                     <span
-  onClick={() => {
-    if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
-      setShowTableModal(true);
-    }
-  }}
-  style={{ cursor: "pointer" }}
->
-  <i
-    className={`fa ${
-      orderType === "dineIn"
-        ? "fa-cutlery"
-        : orderType === "takeOut"
-        ? "fa-shopping-bag"
-        : "fa-motorcycle"
-    } me-2 small`}
-  ></i>
+                      onClick={() => {
+                        if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
+                          setShowTableModal(true);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <i
+                        className={`fa ${orderType === "dineIn"
+                          ? "fa-cutlery"
+                          : orderType === "takeOut"
+                            ? "fa-shopping-bag"
+                            : "fa-motorcycle"
+                          } me-2 small`}
+                      ></i>
 
                       {orderType === "dineIn"
                         ? "Dine In"
@@ -1380,9 +1440,8 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Right Panel - Product Selection */}
             <div className="flex-grow-1 d-flex flex-column">
-              {/* Search Bar */}
+              {/* 🔍 Search Bar */}
               <div className="p-2">
                 <div className="position-relative">
                   <input
@@ -1395,23 +1454,40 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Category Switcher */}
+              {/* 📂 Category Switcher */}
               <div className="p-3">
                 <div className="d-flex gap-2 overflow-auto">
                   {categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`btn ${selectedCategory === category.id ? 'btn-warning' : 'btn-light'} flex-shrink-0`}
+                      className={`btn ${selectedCategory === category.id ? "btn-warning" : "btn-light"
+                        } flex-shrink-0`}
                     >
-                      <i className={`${category.icon} me-2`}></i>
-                      {category.name}
+                      {category.category_name}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Product Grid */}
+              {/* 📂 Subcategory Switcher */}
+              {subcategories.length > 0 && (
+                <div className="px-3 pb-3">
+                  <div className="d-flex gap-2 overflow-auto">
+                    {subcategories.map((sub) => (
+                      <button
+                        key={sub.id}
+                        onClick={() => handleSubcategoryClick(sub)}
+                        className="btn btn-outline-secondary flex-shrink-0"
+                      >
+                        {sub.subcategory_name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 🛒 Product Grid */}
               <div className="flex-grow-1 p-3 overflow-auto">
                 <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
                   {filteredProducts.map((product) => (
@@ -1423,7 +1499,9 @@ useEffect(() => {
                       <div className="card h-100 cursor-pointer hover-shadow border-0">
                         <div className="card-body text-center d-flex flex-column justify-content-center">
                           <h5 className="card-title mb-1">{product.name}</h5>
-                          <p className="h5 text-warning mb-0">${product.price.toFixed(2)}</p>
+                          <p className="h5 text-warning mb-0">
+                            ${product.price.toFixed(2)}
+                          </p>
                           <p className="small text-muted mt-1">
                             <i className="fa fa-plus-circle mr-1"></i>
                             Select options
@@ -1434,31 +1512,76 @@ useEffect(() => {
                   ))}
                 </div>
               </div>
+
+              {/* 🔔 Modal for Items */}
+              <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+                <Modal.Header closeButton>
+                  <Modal.Title>{selectedSubcategory} Items</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                  {items.length > 0 ? (
+                    <div className="list-group">
+                      {items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="list-group-item d-flex justify-content-between align-items-center"
+                        >
+                          <div>
+                            <h6 className="mb-1">{item.item_name}</h6>
+                            <small className="text-muted">
+                              Printer: {item.printer_name}
+                            </small>
+                          </div>
+                          <div>
+                            <span className="fw-bold text-warning me-3">
+                              ₹{parseFloat(item.price || 0).toFixed(2)}
+                            </span>
+
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => {
+                                addToOrder(item);
+                                setShowModal(false);
+                              }}
+                            >
+                              Select
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No items available.</p>
+                  )}
+                </Modal.Body>
+              </Modal>
             </div>
+
           </div>
         )}
 
 
 
- <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Select a Table</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="d-flex flex-wrap gap-2">
-            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-              <Button
-                key={table}
-                variant="outline-dark"
-                className="flex-grow-1"
-                onClick={() => handleTableSelect(table)}
-              >
-                {table}
-              </Button>
-            ))}
-          </div>
-        </Modal.Body>
-      </Modal>
+        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Select a Table</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="d-flex flex-wrap gap-2">
+              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+                <Button
+                  key={table}
+                  variant="outline-dark"
+                  className="flex-grow-1"
+                  onClick={() => handleTableSelect(table)}
+                >
+                  {table}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+        </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (
