@@ -1769,6 +1769,10 @@ const Tables = () => {
   const [electricFilter, setElectricFilter] = useState(["pool", "snooker", "playstation"]);
   const [nonElectricFilter, setNonElectricFilter] = useState(["dining", "largetable"]);
 
+  // Multi-select states
+  const [selectedTableIds, setSelectedTableIds] = useState([]);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -1818,6 +1822,41 @@ const Tables = () => {
     }
   };
 
+  // New function to handle multiple table deletion
+  // Updated function to handle multiple table deletion
+  const handleDeleteMultipleTables = async () => {
+    if (selectedTableIds.length === 0) return;
+
+    if (window.confirm(`Are you sure you want to delete ${selectedTableIds.length} tables?`)) {
+      try {
+        // For multiple tables, send the IDs in the request body
+        await axiosInstance.delete(`/tables`, {
+          data: { ids: selectedTableIds }
+        });
+
+        // Update local state
+        setTables((prev) => prev.filter((table) => !selectedTableIds.includes(table.id)));
+        setGroupTables((prev) => prev.filter((table) => !selectedTableIds.includes(table.id)));
+        setGroups((prev) =>
+          prev.map((group) => ({
+            ...group,
+            selectedTables: group.selectedTables.filter((id) => !selectedTableIds.includes(id)),
+          }))
+        );
+
+        // Reset selection
+        setSelectedTableIds([]);
+        setIsMultiSelectMode(false);
+        alert(`${selectedTableIds.length} tables deleted successfully!`);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error deleting tables:", error);
+        alert("Failed to delete tables. Please try again.");
+      }
+    }
+  };
+
+
   const handleDeleteGroup = async (groupId) => {
     if (window.confirm("Are you sure you want to delete this group?")) {
       try {
@@ -1832,10 +1871,26 @@ const Tables = () => {
     }
   };
 
+  // const handleTableClick = (table, event) => {
+  //   event.stopPropagation();
+  //   setSelectedTable(table);
+  //   setShowTableActions(true);
+  // };
   const handleTableClick = (table, event) => {
     event.stopPropagation();
-    setSelectedTable(table);
-    setShowTableActions(true);
+
+    if (isMultiSelectMode) {
+      // Toggle selection in multi-select mode
+      setSelectedTableIds(prev =>
+        prev.includes(table.id)
+          ? prev.filter(id => id !== table.id)
+          : [...prev, table.id]
+      );
+    } else {
+      // Show single table actions in normal mode
+      setSelectedTable(table);
+      setShowTableActions(true);
+    }
   };
 
   useEffect(() => {
@@ -1847,102 +1902,238 @@ const Tables = () => {
       return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [showTableActions]);
+  // Toggle multi-select mode
+  const toggleMultiSelectMode = () => {
+    setIsMultiSelectMode(!isMultiSelectMode);
+    if (isMultiSelectMode) {
+      setSelectedTableIds([]); // Clear selection when exiting multi-select mode
+    }
+  };
 
   // UI HELPERS
   const allTableData = [...tables, ...groupTables];
 
-  const renderTableCard = (table) => (
-    <div
-      key={table.id}
-      id={`table-${table.id}`}
-      onClick={(e) => handleTableClick(table, e)}
-      style={{
-        background: "#fff",
-        border: `3px solid ${statusColors[table.status] || "#bbb"}`,
-        borderRadius: "12px",
-        margin: "15px",
-        padding: "12px",
-        minWidth: "150px",
-        maxWidth: "200px",
-        minHeight: "150px",
-        maxHeight: "200px",
-        boxShadow:
-          selectedTable?.id === table.id
-            ? "0 0 8px #ffc107"
-            : "0 2px 8px rgba(0,0,0,0.05)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        cursor: "pointer",
-        position: "relative",
-        transition: "all 0.2s",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "40px",
-          marginBottom: "8px",
-        }}
-      >
-        {getCategoryIcon(table.table_type)}
-      </div>
-      <div
-        style={{
-          fontWeight: "bold",
-          color: "#333",
-          marginBottom: "3px",
-          maxWidth: "100%",        // parent ke andar hi rahe
-          overflow: "hidden",      // overflow hide kare
-          textOverflow: "ellipsis", // ... dikhaye agar bahar jaaye
-          whiteSpace: "nowrap",    // single line me rakhe
-        }}
-        title={table.table_name}   // hover par full name dikhane ke liye
-      >
-        {table.table_name}
-      </div>
+  // const renderTableCard = (table) => (
+  //   <div
+  //     key={table.id}
+  //     id={`table-${table.id}`}
+  //     onClick={(e) => handleTableClick(table, e)}
+  //     style={{
+  //       background: "#fff",
+  //       border: `3px solid ${statusColors[table.status] || "#bbb"}`,
+  //       borderRadius: "12px",
+  //       margin: "15px",
+  //       padding: "12px",
+  //       minWidth: "150px",
+  //       maxWidth: "200px",
+  //       minHeight: "150px",
+  //       maxHeight: "200px",
+  //       boxShadow:
+  //         selectedTable?.id === table.id
+  //           ? "0 0 8px #ffc107"
+  //           : "0 2px 8px rgba(0,0,0,0.05)",
+  //       display: "flex",
+  //       flexDirection: "column",
+  //       alignItems: "center",
+  //       cursor: "pointer",
+  //       position: "relative",
+  //       transition: "all 0.2s",
+  //       textAlign: "center",
+  //     }}
+  //   >
+  //     <div
+  //       style={{
+  //         fontSize: "40px",
+  //         marginBottom: "8px",
+  //       }}
+  //     >
+  //       {getCategoryIcon(table.table_type)}
+  //     </div>
+  //     <div
+  //       style={{
+  //         fontWeight: "bold",
+  //         color: "#333",
+  //         marginBottom: "3px",
+  //         maxWidth: "100%",        // parent ke andar hi rahe
+  //         overflow: "hidden",      // overflow hide kare
+  //         textOverflow: "ellipsis", // ... dikhaye agar bahar jaaye
+  //         whiteSpace: "nowrap",    // single line me rakhe
+  //       }}
+  //       title={table.table_name}   // hover par full name dikhane ke liye
+  //     >
+  //       {table.table_name}
+  //     </div>
 
-      <div style={{ fontSize: "14px", color: "#666" }}>
-        Status: {table.status}
-      </div>
-      {table.guests > 0 && (
+  //     <div style={{ fontSize: "14px", color: "#666" }}>
+  //       Status: {table.status}
+  //     </div>
+  //     {table.guests > 0 && (
+  //       <div
+  //         style={{
+  //           position: "absolute",
+  //           top: "8px",
+  //           right: "8px",
+  //           background: "#17a2b8",
+  //           color: "#fff",
+  //           borderRadius: "10px",
+  //           padding: "3px 7px",
+  //           fontSize: "12px",
+  //           fontWeight: "bold",
+  //         }}
+  //       >
+  //         Guests: {table.guests}
+  //       </div>
+  //     )}
+  //     {table.seats && (
+  //       <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+  //         Seats: {table.seats}
+  //       </div>
+  //     )}
+  //     {table.group && (
+  //       <div
+  //         style={{
+  //           marginTop: "2px",
+  //           fontSize: "11px",
+  //           background: "#ffc10760",
+  //           color: "#444",
+  //           borderRadius: "7px",
+  //           padding: "2px 7px",
+  //         }}
+  //       >
+  //         Group: {table.group}
+  //       </div>
+  //     )}
+  //   </div>
+  // );
+  const renderTableCard = (table) => {
+    const isSelected = selectedTableIds.includes(table.id);
+
+    return (
+      <div
+        key={table.id}
+        id={`table-${table.id}`}
+        onClick={(e) => handleTableClick(table, e)}
+        style={{
+          background: "#fff",
+          border: `3px solid ${isSelected ? "#ff6b6b" : statusColors[table.status] || "#bbb"}`,
+          borderRadius: "12px",
+          margin: "15px",
+          padding: "12px",
+          minWidth: "150px",
+          maxWidth: "200px",
+          minHeight: "150px",
+          maxHeight: "200px",
+          boxShadow:
+            selectedTable?.id === table.id
+              ? "0 0 8px #ffc107"
+              : isSelected
+                ? "0 0 8px #ff6b6b"
+                : "0 2px 8px rgba(0,0,0,0.05)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          cursor: "pointer",
+          position: "relative",
+          transition: "all 0.2s",
+          textAlign: "center",
+        }}
+      >
+        {/* Checkbox for multi-select */}
+        {isMultiSelectMode && (
+          <div
+            style={{
+              position: "absolute",
+              top: "8px",
+              left: "8px",
+              zIndex: 10,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                e.stopPropagation();
+                setSelectedTableIds(prev =>
+                  prev.includes(table.id)
+                    ? prev.filter(id => id !== table.id)
+                    : [...prev, table.id]
+                );
+              }}
+              style={{
+                width: "18px",
+                height: "18px",
+                cursor: "pointer",
+              }}
+            />
+          </div>
+        )}
+
         <div
           style={{
-            position: "absolute",
-            top: "8px",
-            right: "8px",
-            background: "#17a2b8",
-            color: "#fff",
-            borderRadius: "10px",
-            padding: "3px 7px",
-            fontSize: "12px",
+            fontSize: "40px",
+            marginBottom: "8px",
+          }}
+        >
+          {getCategoryIcon(table.table_type)}
+        </div>
+        <div
+          style={{
             fontWeight: "bold",
+            color: "#333",
+            marginBottom: "3px",
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
+          title={table.table_name}
         >
-          Guests: {table.guests}
+          {table.table_name}
         </div>
-      )}
-      {table.seats && (
-        <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
-          Seats: {table.seats}
+
+        <div style={{ fontSize: "14px", color: "#666" }}>
+          Status: {table.status}
         </div>
-      )}
-      {table.group && (
-        <div
-          style={{
-            marginTop: "2px",
-            fontSize: "11px",
-            background: "#ffc10760",
-            color: "#444",
-            borderRadius: "7px",
-            padding: "2px 7px",
-          }}
-        >
-          Group: {table.group}
-        </div>
-      )}
-    </div>
-  );
+        {table.guests > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: "8px",
+              right: "8px",
+              background: "#17a2b8",
+              color: "#fff",
+              borderRadius: "10px",
+              padding: "3px 7px",
+              fontSize: "12px",
+              fontWeight: "bold",
+            }}
+          >
+            Guests: {table.guests}
+          </div>
+        )}
+        {table.seats && (
+          <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+            Seats: {table.seats}
+          </div>
+        )}
+        {table.group && (
+          <div
+            style={{
+              marginTop: "2px",
+              fontSize: "11px",
+              background: "#ffc10760",
+              color: "#444",
+              borderRadius: "7px",
+              padding: "2px 7px",
+            }}
+          >
+            Group: {table.group}
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   const handleGroupSubmit = async (e) => {
     e.preventDefault();
@@ -2295,6 +2486,7 @@ const Tables = () => {
               Jump
             </button>
           </div>
+
           <div
             style={{
               display: "flex",
@@ -2304,6 +2496,41 @@ const Tables = () => {
               flex: "1 1 200px",
             }}
           >
+            <button
+              onClick={toggleMultiSelectMode}
+              style={{
+                backgroundColor: isMultiSelectMode ? "#dc3545" : "#6c757d",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                flex: "1 1 auto",
+              }}
+            >
+              {isMultiSelectMode ? "Cancel Selection" : "Select Multiple"}
+            </button>
+
+            {/* Delete selected button (only visible in multi-select mode) */}
+            {isMultiSelectMode && selectedTableIds.length > 0 && (
+              <button
+                onClick={handleDeleteMultipleTables}
+                style={{
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  flex: "1 1 auto",
+                }}
+              >
+                Delete Selected ({selectedTableIds.length})
+              </button>
+            )}
+
             <button
               onClick={() => setTableModalOpen(true)}
               style={{
@@ -2337,6 +2564,41 @@ const Tables = () => {
           </div>
         </div>
       </div>
+
+      {/* Multi-select info banner */}
+      {isMultiSelectMode && (
+        <div
+          style={{
+            backgroundColor: "#e3f2fd",
+            padding: "10px 15px",
+            borderRadius: "8px",
+            marginBottom: "20px",
+            border: "1px solid #bbdefb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <strong>Multi-select mode:</strong> Click on tables to select them.
+            {selectedTableIds.length > 0 ? ` ${selectedTableIds.length} table(s) selected.` : " No tables selected yet."}
+          </div>
+          <button
+            onClick={toggleMultiSelectMode}
+            style={{
+              backgroundColor: "transparent",
+              border: "1px solid #2196f3",
+              color: "#2196f3",
+              padding: "5px 10px",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Done
+          </button>
+        </div>
+      )}
+
 
       {/* Category Wise Table Display */}
       <div
