@@ -2601,117 +2601,112 @@ const Tables = () => {
 
 
       {/* Category Wise Table Display */}
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "30px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          minHeight: "600px",
-          marginBottom: "30px",
-        }}
-      >
-        {tablesByCategory.map((cat) => {
-          // Only show category if it has tables and at least one filter is selected
-          if (cat.tables.length === 0 ||
-            (cat.category === "electric" && electricFilter.length === 0) ||
-            (cat.category === "non-electric" && nonElectricFilter.length === 0)) {
-            return null;
-          }
+<div className="bg-white p-4 p-md-5 rounded shadow-sm mb-4 min-height-600">
+  {tablesByCategory.map((cat) => {
+    if (
+      cat.tables.length === 0 ||
+      (cat.category === "electric" && electricFilter.length === 0) ||
+      (cat.category === "non-electric" && nonElectricFilter.length === 0)
+    ) {
+      return null;
+    }
 
-          return (
-            <div key={cat.category} style={{ marginBottom: "30px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h2
-                  style={{
-                    background: getCategoryColor(
-                      cat.category === "electric" ? "playstation" : "food"
-                    ),
-                    color: "#fff",
-                    padding: "10px 25px",
-                    borderRadius: "8px",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    textAlign: "left",
-                    display: "inline-block",
-                    margin: 0,
-                  }}
-                >
-                  {cat.category === "electric"
-                    ? "Electric Tables"
-                    : "Non-Electric Tables"}
-                </h2>
+    return (
+      <div key={cat.category} className="mb-4 mb-md-5">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
+          <h2
+            className="text-white p-3 rounded fs-5 fs-md-4 fw-bold text-start mb-3 mb-md-0"
+            style={{
+              background: getCategoryColor(
+                cat.category === "electric" ? "playstation" : "food"
+              )
+            }}
+          >
+            {cat.category === "electric"
+              ? "Electric Tables"
+              : "Non-Electric Tables"}
+          </h2>
 
-                {/* Filter buttons */}
-                <div style={{ display: "flex", flexWrap: "wrap" }}>
-                  {cat.category === "electric" && (
-                    <>
-                      <FilterButton
-                        type="all"
-                        active={areAllElectricFiltersSelected}
-                        onClick={toggleElectricFilter}
-                        icon=""
-                        label="All"
-                      />
-                      <FilterButton
-                        type="pool"
-                        active={electricFilter.includes("pool")}
-                        onClick={toggleElectricFilter}
-                        icon=""
-                        label="Pool"
-                      />
-                      <FilterButton
-                        type="snooker"
-                        active={electricFilter.includes("snooker")}
-                        onClick={toggleElectricFilter}
-                        icon=""
-                        label="Snooker"
-                      />
-                      <FilterButton
-                        type="playstation"
-                        active={electricFilter.includes("playstation")}
-                        onClick={toggleElectricFilter}
-                        icon=""
-                        label="PlayStation"
-                      />
-                    </>
-                  )}
+          {/* Filter buttons */}
+          <div className="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end">
+            {cat.category === "electric" && (
+              <>
+                <FilterButton
+                  type="all"
+                  active={areAllElectricFiltersSelected}
+                  onClick={toggleElectricFilter}
+                  icon=""
+                  label="All"
+                />
+                <FilterButton
+                  type="pool"
+                  active={electricFilter.includes("pool")}
+                  onClick={toggleElectricFilter}
+                  icon=""
+                  label="Pool"
+                />
+                <FilterButton
+                  type="snooker"
+                  active={electricFilter.includes("snooker")}
+                  onClick={toggleElectricFilter}
+                  icon=""
+                  label="Snooker"
+                />
+                <FilterButton
+                  type="playstation"
+                  active={electricFilter.includes("playstation")}
+                  onClick={toggleElectricFilter}
+                  icon=""
+                  label="PlayStation"
+                />
+              </>
+            )}
 
-                  {cat.category === "non-electric" && (
-                    <>
-                      <FilterButton
-                        type="all"
-                        active={areAllNonElectricFiltersSelected}
-                        onClick={toggleNonElectricFilter}
-                        icon=""
-                        label="All"
-                      />
-                      <FilterButton
-                        type="dining"
-                        active={nonElectricFilter.includes("dining")}
-                        onClick={toggleNonElectricFilter}
-                        icon=""
-                        label="Dining"
-                      />
-                      <FilterButton
-                        type="largetable"
-                        active={nonElectricFilter.includes("largetable")}
-                        onClick={toggleNonElectricFilter}
-                        icon=""
-                        label="Large Table"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
+            {cat.category === "non-electric" && (
+              <>
+                <FilterButton
+                  type="all"
+                  active={areAllNonElectricFiltersSelected}
+                  onClick={toggleNonElectricFilter}
+                  icon=""
+                  label="All"
+                />
+                <FilterButton
+                  type="dining"
+                  active={nonElectricFilter.includes("dining")}
+                  onClick={toggleNonElectricFilter}
+                  icon=""
+                  label="Dining"
+                />
+                <FilterButton
+                  type="largetable"
+                  active={nonElectricFilter.includes("largetable")}
+                  onClick={toggleNonElectricFilter}
+                  icon=""
+                  label="Large Table"
+                />
+              </>
+            )}
+          </div>
+        </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap" }}>
-                {cat.tables.map(renderTableCard)}
-              </div>
+        {/* Table cards section */}
+        <div className="row justify-content-center g-3">
+          {cat.tables.map((table, index) => (
+            <div
+              key={index}
+              className="col-10 col-sm-6 col-md-4 col-lg-2 d-flex justify-content-center"
+            >
+              {renderTableCard(table)}
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
+    );
+  })}
+</div>
+
+
 
       {/* Table Modal */}
       {tableModalOpen && (
@@ -3234,440 +3229,266 @@ const Tables = () => {
       )}
 
       {/* Groups Display - Graphical View */}
-      {groups.length > 0 && (
-        <div
-          style={{
-            marginTop: "30px",
-            backgroundColor: "white",
-            padding: "20px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2
-            style={{ marginBottom: "20px", color: "#333", textAlign: "center" }}
-          >
-            Created Groups - Visual Overview
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-              gap: "30px",
-            }}
-          >
-            {groups.map((group) => {
-              const allTables = [...tables, ...groupTables];
+    {groups.length > 0 && (
+  <div className="mt-4 mt-md-5 bg-white p-3 p-md-4 rounded shadow-sm">
+    <h2 className="mb-3 mb-md-4 text-dark text-center">
+      Created Groups - Visual Overview
+    </h2>
+    
+    <div className="row">
+      {groups.map((group) => {
+        const allTables = [...tables, ...groupTables];
 
-              // safe check (agar selectedTables undefined ya null hai toh empty array use hoga)
-              const selectedTables = allTables.filter((table) =>
-                (group.selectedTables || []).includes(table.id)
-              );
+        // safe check (if selectedTables is undefined or null, use empty array)
+        const selectedTables = allTables.filter((table) =>
+          (group.selectedTables || []).includes(table.id)
+        );
 
-              return (
-                <div
-                  key={group.id}
+        return (
+          <div key={group.id} className="col-12 col-md-6 col-lg-4 mb-4">
+            <div
+              className="border border-warning p-3 rounded bg-warning bg-opacity-10 position-relative"
+              style={{ minHeight: "300px" }}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3 className="m-0 text-warning fw-bold fs-5 fs-md-6">
+                  {group.name}
+                </h3>
+                <div className="d-flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingGroup(true);
+                      setGroupForm({
+                        id: group.id,
+                        name: group.name,
+                        hourlyRate: group.hourly_rate,
+                        fixedRate: group.fixed_rate,
+                        discount: group.discout,
+                        selectedTables: group.selected_pool
+                          ? String(group.selected_pool)
+                            .split(",")
+                            .map((id) => Number(id))
+                          : [],
+                      });
+                      setGroupModalOpen(true);
+                    }}
+                    className="bg-info text-white border-0 rounded-circle d-flex align-items-center justify-content-center"
+                    style={{
+                      width: "30px",
+                      height: "30px",
+                    }}
+                    title="Edit Group"
+                  >
+                    <RiEditLine className="m-0" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteGroup(group.id)}
+                    className="bg-danger text-white border-0 rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                    style={{
+                      width: "30px",
+                      height: "30px",
+                    }}
+                    title="Delete Group"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {/* Group Stats */}
+              <div className="row g-2 mb-3">
+                <div className="col-6">
+                  <div className="bg-success text-white p-2 rounded text-center fw-bold small">
+                    ${group.hourly_rate}/hr
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="bg-primary text-white p-2 rounded text-center fw-bold small">
+                    ${group.fixed_rate} fixed
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="bg-warning text-white p-2 rounded text-center fw-bold small">
+                    {group.selected_pool} tables
+                  </div>
+                </div>
+                {group.discout > 0 && (
+                  <div className="col-6">
+                    <div className="bg-danger text-white p-2 rounded text-center fw-bold small">
+                      {group.discout}% off
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Visual representation of tables in group */}
+              <div className="border border-warning border-dashed rounded p-3 bg-white position-relative mb-3">
+                <div className="text-warning fw-bold small text-center mb-2">
+                  GROUP LAYOUT
+                </div>
+
+                <div className="d-flex flex-wrap justify-content-center align-items-center gap-2 position-relative z-2">
+                  {group.tables && group.tables.length > 0 ? (
+                    group.tables.map((table, index) => {
+                      const getTableIcon = (type) => {
+                        switch (type) {
+                          case "pool":
+                            return "🎱";
+                          case "snooker":
+                            return "🎯";
+                          case "playstation":
+                            return "🎮";
+                          case "largetable":
+                            return "🪑";
+                          default:
+                            return "🍽️";
+                        }
+                      };
+
+                      const getTableColor = (type) => {
+                        switch (type) {
+                          case "pool":
+                            return "#4caf50"; // Green
+                          case "snooker":
+                            return "#2196f3"; // Blue
+                          case "playstation":
+                            return "#9c27b0"; // Purple
+                          case "largetable":
+                            return "#795548"; // Brown
+                          default:
+                            return "#ff9800"; // Orange
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={table.id || index}
+                          className="d-flex flex-column align-items-center mx-1 position-relative z-2"
+                        >
+                          <div
+                            className="d-flex align-items-center justify-content-center border-2 border-white"
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              borderRadius: table.table_type === "food" ? "50%" : "8px",
+                              backgroundColor: getTableColor(table.table_type || "food"),
+                              fontSize: "18px",
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                            }}
+                          >
+                            {getTableIcon(table.table_type || "food")}
+
+                            {table.status === "occupied" && (
+                              <div
+                                className="position-absolute rounded-circle border border-white"
+                                style={{
+                                  top: "-3px",
+                                  right: "-3px",
+                                  width: "12px",
+                                  height: "12px",
+                                  backgroundColor: "#f44336", // Red
+                                }}
+                              ></div>
+                            )}
+
+                            {table.status === "reserved" && (
+                              <div
+                                className="position-absolute rounded-circle border border-white"
+                                style={{
+                                  top: "-3px",
+                                  right: "-3px",
+                                  width: "12px",
+                                  height: "12px",
+                                  backgroundColor: "#ff9800", // Orange
+                                }}
+                              ></div>
+                            )}
+                          </div>
+                          <div className="fw-bold text-secondary small text-center mt-1 lh-1">
+                            {table.table_name || "Table"}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-secondary small">No tables added</div>
+                  )}
+                </div>
+
+                {/* Connection lines */}
+                <svg
+                  className="position-absolute top-0 start-0 w-100 h-100"
                   style={{
-                    border: "2px solid #ffc107",
-                    padding: "20px",
-                    borderRadius: "12px",
-                    backgroundColor: "#fff8e1",
-                    position: "relative",
-                    minHeight: "300px",
+                    pointerEvents: "none",
+                    zIndex: 1,
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "15px",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        margin: 0,
-                        color: "#f57f17",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {group.name}
-                    </h3>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button
-                        onClick={() => {
-                          setEditingGroup(true);
-                          setGroupForm({
-                            id: group.id,
-                            name: group.name,
-                            hourlyRate: group.hourly_rate,
-                            fixedRate: group.fixed_rate,
-                            discount: group.discout,
-                            // selectedTables: group.selected_pool,
-                            selectedTables: group.selected_pool
-                              ? String(group.selected_pool)
-                                .split(",")
-                                .map((id) => Number(id))
-                              : [],
-                          });
-                          setGroupModalOpen(true);
-                        }}
-                        style={{
-                          background: "#17a2b8",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "30px",
-                          height: "30px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                          fontSize: "14px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                        title="Edit Group"
-                      >
-                        <RiEditLine className="" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteGroup(group.id)}
-                        style={{
-                          background: "#dc3545",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "30px",
-                          height: "30px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                          fontSize: "14px",
-                        }}
-                        title="Delete Group"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
+                  {group.tables &&
+                    group.tables.map((_, index) => {
+                      if (index === group.tables.length - 1) return null;
+                      const startX = 50 + index * 60;
+                      const startY = 80;
+                      const endX = 50 + (index + 1) * 60;
+                      const endY = 80;
 
-                  {/* Group Stats */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "10px",
-                      marginBottom: "20px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        backgroundColor: "#4caf50",
-                        color: "white",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        textAlign: "center",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      ${group.hourly_rate}/hr
-                    </div>
-                    <div
-                      style={{
-                        backgroundColor: "#2196f3",
-                        color: "white",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        textAlign: "center",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      ${group.fixed_rate} fixed
-                    </div>
-                    <div
-                      style={{
-                        backgroundColor: "#ff9800",
-                        color: "white",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        textAlign: "center",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {group.selected_pool} tables
-                    </div>
-                    {group.discout > 0 && (
-                      <div
-                        style={{
-                          backgroundColor: "#e91e63",
-                          color: "white",
-                          padding: "8px",
-                          borderRadius: "6px",
-                          textAlign: "center",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {group.discout}% off
-                      </div>
-                    )}
-                  </div>
+                      return (
+                        <line
+                          key={index}
+                          x1={`${startX}px`}
+                          y1={`${startY}px`}
+                          x2={`${endX}px`}
+                          y2={`${endY}px`}
+                          stroke="#ffc107"
+                          strokeWidth="2"
+                          strokeDasharray="5,5"
+                          opacity="0.6"
+                        />
+                      );
+                    })}
+                </svg>
+              </div>
 
-                  {/* Visual representation of tables in group */}
-                  <div
-                    style={{
-                      border: "1px dashed #ffc107",
-                      borderRadius: "8px",
-                      padding: "15px",
-                      minHeight: "150px",
-                      backgroundColor: "#ffffff",
-                      position: "relative",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                        color: "#f57f17",
-                        marginBottom: "10px",
-                        textAlign: "center",
-                      }}
-                    >
-                      GROUP LAYOUT
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        position: "relative",
-                        zIndex: 2,
-                      }}
-                    >
-                      {group.tables && group.tables.length > 0 ? (
-                        group.tables.map((table, index) => {
-                          const getTableIcon = (type) => {
-                            switch (type) {
-                              case "pool":
-                                return "🎱";
-                              case "snooker":
-                                return "🎯";
-                              case "playstation":
-                                return "🎮";
-                              case "largetable":
-                                return "🪑";
-                              default:
-                                return "🍽️";
-                            }
-                          };
-
-                          const getTableColor = (type) => {
-                            switch (type) {
-                              case "pool":
-                                return "#4caf50"; // Green
-                              case "snooker":
-                                return "#2196f3"; // Blue
-                              case "playstation":
-                                return "#9c27b0"; // Purple
-                              case "largetable":
-                                return "#795548"; // Brown
-                              default:
-                                return "#ff9800"; // Orange
-                            }
-                          };
-
-                          return (
-                            <div
-                              key={table.id || index}
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                margin: "5px",
-                                position: "relative",
-                                zIndex: 2,
-                              }}
-                            >
-                              <div
-                                style={{
-                                  width: "40px",
-                                  height: "40px",
-                                  borderRadius: table.table_type === "food" ? "50%" : "8px",
-                                  backgroundColor: getTableColor(table.table_type || "food"),
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "18px",
-                                  border: "2px solid white",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                  position: "relative",
-                                }}
-                              >
-                                {getTableIcon(table.table_type || "food")}
-
-                                {table.status === "occupied" && (
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      top: "-3px",
-                                      right: "-3px",
-                                      width: "12px",
-                                      height: "12px",
-                                      borderRadius: "50%",
-                                      backgroundColor: "#f44336", // Red
-                                      border: "2px solid white",
-                                    }}
-                                  ></div>
-                                )}
-
-                                {table.status === "reserved" && (
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      top: "-3px",
-                                      right: "-3px",
-                                      width: "12px",
-                                      height: "12px",
-                                      borderRadius: "50%",
-                                      backgroundColor: "#ff9800", // Orange
-                                      border: "2px solid white",
-                                    }}
-                                  ></div>
-                                )}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "10px",
-                                  fontWeight: "bold",
-                                  color: "#666",
-                                  marginTop: "4px",
-                                  textAlign: "center",
-                                  lineHeight: "1",
-                                }}
-                              >
-                                {table.table_name || "Table"}
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div style={{ fontSize: "12px", color: "#888" }}>No tables added</div>
-                      )}
-                    </div>
-
-                    {/* Connection lines */}
-                    <svg
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                        zIndex: 1,
-                      }}
-                    >
-                      {group.tables &&
-                        group.tables.map((_, index) => {
-                          if (index === group.tables.length - 1) return null;
-                          const startX = 50 + index * 60;
-                          const startY = 80;
-                          const endX = 50 + (index + 1) * 60;
-                          const endY = 80;
-
-                          return (
-                            <line
-                              key={index}
-                              x1={`${startX}px`}
-                              y1={`${startY}px`}
-                              x2={`${endX}px`}
-                              y2={`${endY}px`}
-                              stroke="#ffc107"
-                              strokeWidth="2"
-                              strokeDasharray="5,5"
-                              opacity="0.6"
-                            />
-                          );
-                        })}
-                    </svg>
-                  </div>
-
-
-                  {/* Group summary stats at bottom */}
-                  <div
-                    style={{
-                      marginTop: "15px",
-                      padding: "10px",
-                      backgroundColor: "#f8f9fa",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {/* ✅ Total Revenue Potential */}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <span>
-                        <strong>Total Revenue Potential:</strong>
-                      </span>
-                      <span style={{ fontWeight: "bold", color: "#4caf50" }}>
-                        ${(group.hourlyRate * selectedTables.length).toFixed(2)}/hr
-                      </span>
-                    </div>
-
-                    {/* ✅ Fixed Revenue */}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <span>
-                        <strong>Fixed Revenue:</strong>
-                      </span>
-                      <span style={{ fontWeight: "bold", color: "#2196f3" }}>
-                        ${(group.fixedRate * selectedTables.length).toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* ✅ Discounted Revenue (Only if discount > 0) */}
-                    {Number(group.discout) > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          color: "#e91e63", // Pink/Red for discount
-                        }}
-                      >
-                        <span>
-                          <strong>After Discount ({group.discount}%):</strong>
-                        </span>
-                        <span style={{ fontWeight: "bold", color: "#e91e63" }}>
-                          $
-                          {(
-                            group.hourlyRate *
-                            selectedTables.length *
-                            (1 - Number(group.discout) / 100)
-                          ).toFixed(2)}
-                          /hr
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
+              {/* Group summary stats at bottom */}
+              <div className="p-2 bg-light rounded small">
+                {/* Total Revenue Potential */}
+                <div className="d-flex justify-content-between mb-1">
+                  <span className="fw-bold">Total Revenue Potential:</span>
+                  <span className="fw-bold text-success">
+                    ${(group.hourly_rate * selectedTables.length).toFixed(2)}/hr
+                  </span>
                 </div>
-              );
-            })}
+
+                {/* Fixed Revenue */}
+                <div className="d-flex justify-content-between mb-1">
+                  <span className="fw-bold">Fixed Revenue:</span>
+                  <span className="fw-bold text-primary">
+                    ${(group.fixed_rate * selectedTables.length).toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Discounted Revenue (Only if discount > 0) */}
+                {Number(group.discout) > 0 && (
+                  <div className="d-flex justify-content-between text-pink">
+                    <span className="fw-bold">After Discount ({group.discout}%):</span>
+                    <span className="fw-bold text-pink">
+                      $
+                      {(
+                        group.hourly_rate *
+                        selectedTables.length *
+                        (1 - Number(group.discout) / 100)
+                      ).toFixed(2)}
+                      /hr
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })}
+    </div>
+  </div>
+)}
 
       {/* Group Management Modal */}
       {groupModalOpen && (
