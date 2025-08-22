@@ -814,14 +814,14 @@
 
 
 
-
 import React, { useState, useEffect } from 'react';
 import './OrderManagement.css';
 import TableManagement from './TableManagement';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Modal, Button } from 'react-bootstrap';
 import axiosInstance from "../../../utils/axiosInstance";
+
 const OrdersManagement = () => {
   // State management
   const [activeTab, setActiveTab] = useState('register');
@@ -845,14 +845,12 @@ const OrdersManagement = () => {
   const [selectedSides, setSelectedSides] = useState([]);
   const [isSidesModalOpen, setIsSidesModalOpen] = useState(false);
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
-  // const [allOrders, setAllOrders] = useState([]);
 
-const [orders, setOrders] = useState([]);
-const [page, setPage] = useState(1);
-const [limit, setLimit] = useState(10);
-const [totalPages, setTotalPages] = useState(1);
-const [loading, setLoading] = useState(false);
-
+  const [orders, setOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   // Data
   const categories = [
@@ -920,29 +918,28 @@ const [loading, setLoading] = useState(false);
   };
 
   // api to fetch orders 
-const fetchOrders = async () => {
-  try {
-    setLoading(true);
-    const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/orders?page=${page}&limit=${limit}`);
 
-    console.log("API Response:", res.data); // Debugging
+      console.log("API Response:", res.data); // Debugging
 
-    if (res.data.success) {
-      setOrders(res.data.data.orders || []);
-      setTotalPages(res.data.data.totalPages || 1);
+      if (res.data.success) {
+        setOrders(res.data.data.orders || []);
+        setTotalPages(res.data.data.totalPages || 1);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  console.log("useEffect triggered");
-  fetchOrders();
-}, [page, limit]);
-
+  useEffect(() => {
+    console.log("useEffect triggered");
+    fetchOrders();
+  }, [page, limit]);
 
   const navigate = useNavigate();
 
@@ -1018,8 +1015,6 @@ useEffect(() => {
     setSelectedTable(tableNumber);
     setActiveTab('register');
     setShowTableModal(false); // Close the table selection modal
-
-    // Switch to register tab after selecting table
   };
 
   // Function to handle order selection
@@ -1051,7 +1046,6 @@ useEffect(() => {
       status: "pending"
     };
 
-    setAllOrders([...allOrders, newOrder]);
     navigate("/staff/billingpayment");
   };
 
@@ -1137,7 +1131,6 @@ useEffect(() => {
     }
   ];
 
-
   const onJumpToOrders = () => {
     setActiveTab("register");
   };
@@ -1178,7 +1171,6 @@ useEffect(() => {
                   <span className="text-muted small">
                     {selectedTable ? `Table ${selectedTable}` : 'No Table Selected'}
                   </span>
-
                 </div>
                 <div className="d-flex gap-2">
                   <button
@@ -1249,19 +1241,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Calculator Keypad */}
-                {/* <div className="d-grid gap-1 mb-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                  {['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '-', 'C', '0', '.', '+'].map((key) => (
-                    <button
-                      key={key}
-                      className={`btn btn-sm fw-bold p-1 ${key === 'C' ? 'btn-danger' : ['÷', '×', '-', '+'].includes(key) ? 'btn-info' : 'btn-light'}`}
-                      style={{ height: '30px', fontSize: '12px', lineHeight: '12px' }}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                </div> */}
-
                 {/* Order Type & Course */}
                 <div className="d-flex gap-2 mb-2">
                   <button
@@ -1276,22 +1255,21 @@ useEffect(() => {
                       }`}
                   >
                     <span
-  onClick={() => {
-    if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
-      setShowTableModal(true);
-    }
-  }}
-  style={{ cursor: "pointer" }}
->
-  <i
-    className={`fa ${
-      orderType === "dineIn"
-        ? "fa-cutlery"
-        : orderType === "takeOut"
-        ? "fa-shopping-bag"
-        : "fa-motorcycle"
-    } me-2 small`}
-  ></i>
+                      onClick={() => {
+                        if (orderType === "dineIn" && orderItems.length > 0 && !selectedTable) {
+                          setShowTableModal(true);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <i
+                        className={`fa ${orderType === "dineIn"
+                            ? "fa-cutlery"
+                            : orderType === "takeOut"
+                              ? "fa-shopping-bag"
+                              : "fa-motorcycle"
+                          } me-2 small`}
+                      ></i>
 
                       {orderType === "dineIn"
                         ? "Dine In"
@@ -1299,7 +1277,6 @@ useEffect(() => {
                           ? "Take Out"
                           : "Delivery"}
                     </span>
-
                   </button>
 
                   <div className="dropdown">
@@ -1336,7 +1313,6 @@ useEffect(() => {
 
                 {/* Action Buttons */}
                 <div className="d-flex gap-2">
-
                   {orderType === 'dineIn' &&
                     <button
                       onClick={() => {
@@ -1360,22 +1336,10 @@ useEffect(() => {
                   <Link to='/staff/kotqueue' className='text-decoration-none'>
                     <button
                       className="btn btn-warning btn-sm flex-grow-1"
-                    // onClick={() => setActiveTab('orders')}
                     >
                       Send
                     </button>
                   </Link>
-
-                  {/* <Link to="/staff/billingpayment">
-                    <button
-                      className="btn btn-warning btn-sm flex-grow-1"
-                      onClick={handlePayment}
-                    >
-                      <i className="fa fa-credit-card me-1 small"></i>Pay
-                      Order
-                    </button>
-                  </Link> */}
-
                 </div>
               </div>
             </div>
@@ -1438,27 +1402,25 @@ useEffect(() => {
           </div>
         )}
 
-
-
- <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Select a Table</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="d-flex flex-wrap gap-2">
-            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-              <Button
-                key={table}
-                variant="outline-dark"
-                className="flex-grow-1"
-                onClick={() => handleTableSelect(table)}
-              >
-                {table}
-              </Button>
-            ))}
-          </div>
-        </Modal.Body>
-      </Modal>
+        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Select a Table</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="d-flex flex-wrap gap-2">
+              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+                <Button
+                  key={table}
+                  variant="outline-dark"
+                  className="flex-grow-1"
+                  onClick={() => handleTableSelect(table)}
+                >
+                  {table}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+        </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (
@@ -1466,7 +1428,7 @@ useEffect(() => {
             <TableManagement
               onTableSelect={handleTableSelect}
               onJumpToOrders={onJumpToOrders}
-              onSelectTable={setSelectedTable} // ye prop bhej rahe
+              onSelectTable={setSelectedTable}
             />
           </div>
         )}
@@ -1486,7 +1448,7 @@ useEffect(() => {
                         <th>Items</th>
                         <th>Total</th>
                         <th>Time</th>
-                        <th>Status</th> {/* ✅ Added */}
+                        <th>Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -1509,7 +1471,7 @@ useEffect(() => {
                             <td>#{order.order_number}</td>
                             <td>{order.table_name} ({order.table_number})</td>
                             <td>{order.customer_name}</td>
-                            <td>—</td> {/* ✅ items agar API se aayenge to map karna hoga */}
+                            <td>—</td>
                             <td>${parseFloat(order.total_amount).toFixed(2)}</td>
                             <td>{new Date(order.created_at).toLocaleTimeString()}</td>
                             <td>
@@ -1518,7 +1480,8 @@ useEffect(() => {
                               </span>
                             </td>
                             <td>
-                              <Link to="/staff/billingpayment">
+                              {/* Fixed: Use order.id instead of order_number from useParams */}
+                              <Link to={`/staff/billingpayment/${order.id}`}>
                                 <button className="btn btn-success btn-sm flex-grow-1">
                                   <i className="fa fa-credit-card me-1 small"></i>Pay
                                 </button>
@@ -1528,14 +1491,11 @@ useEffect(() => {
                         ))
                       )}
                     </tbody>
-
                   </table>
                 </div>
-
               </div>
             </div>
           </div>
-
         )}
       </div>
 
@@ -1700,8 +1660,6 @@ useEffect(() => {
                       </button>
                     </div>
                   ))}
-
-
                 </div>
               </div>
               <div className="modal-footer">
