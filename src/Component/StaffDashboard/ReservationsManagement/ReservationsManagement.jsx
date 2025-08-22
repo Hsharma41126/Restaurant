@@ -615,10 +615,9 @@ const ReservationsManagement = () => {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(5);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(5); // Show 5 reservations per page
+
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -737,8 +736,10 @@ const ReservationsManagement = () => {
     } catch (err) {
       console.error("Error creating reservation:", err);
       alert(err?.response?.data?.message || "❌ Failed to create reservation.");
-    } 
+    }
   };
+
+  // Handle status change
 
   // Handle status change
   const handleStatusChange = async (id, newStatus) => {
@@ -761,6 +762,22 @@ const ReservationsManagement = () => {
       alert("Failed to update reservation status.");
     }
   };
+
+  // ✅ Reservation ko filter karo based on date + status
+  const filteredReservations = reservations?.filter((res) => {
+    // const resDate = res.reservation_date.split("T")[0];
+
+    const statusMatch =
+      activeFilter === "all" ? true : res.status === activeFilter;
+
+    // return resDate === today && statusMatch;
+    return statusMatch;
+  }) || [];
+
+
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredReservations.length / limit);
 
   // ✅ Fetch reservations dynamically
   const fetchReservations = async () => {
@@ -790,6 +807,17 @@ const ReservationsManagement = () => {
   useEffect(() => {
     fetchReservations();
   }, [page, activeFilter]);
+
+  // Filter for today's reservations based on created_at
+
+
+
+
+  // Slice data for current page
+  const indexOfLast = page * limit;
+  const indexOfFirst = indexOfLast - limit;
+  const currentReservations = filteredReservations.slice(indexOfFirst, indexOfLast);
+
 
   // Stats for today's summary
   const todayStats = {
@@ -1108,8 +1136,8 @@ const ReservationsManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reservations.length > 0 ? (
-                    reservations.map((reservation) => (
+                  {currentReservations.length > 0 ? (
+                    currentReservations.map((reservation) => (
                       <tr key={reservation.id}>
                         <td className="fw-bold">{reservation.customer_name}</td>
                         <td>{reservation.customer_phone}</td>
