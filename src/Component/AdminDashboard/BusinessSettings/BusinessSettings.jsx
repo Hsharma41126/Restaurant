@@ -1068,7 +1068,7 @@ const BusinessSettings = () => {
                   <h2 className="fs-5 fw-semibold text-dark">Business Hours</h2>
                 </div>
 
-                <div className="d-flex flex-column gap-3">
+               <div className="d-flex flex-column gap-3">
                   {/* Monday - Friday */}
                   <div className="d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center">
@@ -1219,7 +1219,7 @@ const BusinessSettings = () => {
                       </Form.Select>
                     </div>
                   </div>
-                </div>
+                </div> 
               </div>
 
               <div className="mt-4 pt-3 border-top small text-muted">
