@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import axiosInstance from "../utils/axiosInstance";
 import { apiUrl } from "../utils/config";
 
 const ForgotPassword = () => {
@@ -11,34 +10,27 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      const response = await fetch(
-        `${apiUrl}/users/forget-password`,
-      
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-    );
-      
-      if (response.data.success || response.data.message) {
-        alert(response.data.message || "Reset link sent successfully!");
+      const response = await fetch(`${apiUrl}/users/forget-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(data.message || "Reset link sent successfully!");
         setIsSubmitted(true);
       } else {
-        alert("Reset link sent (no message from server)");
-        setIsSubmitted(true);
+        alert(data.message || "Error sending reset link.");
       }
     } catch (error) {
       console.error("Error:", error);
-      if (error.response && error.response.data && error.response.data.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("Error sending reset link. Please try again.");
-      }
+      alert("Error sending reset link. Please try again.");
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import axiosInstance from "../utils/axiosInstance";
 import { apiUrl } from "../utils/config";
 
 const ResetPassword = () => {
@@ -10,7 +9,7 @@ const ResetPassword = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Extract token from query params
+  // Extract token from query params (?token=xxxx)
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get("token");
 
@@ -23,22 +22,25 @@ const ResetPassword = () => {
     }
 
     setIsLoading(true);
-    
-    try {
-      const response = await fetch(`${apiUrl}/users/reset-password`, {
-   method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-       body:JSON.stringify({
-          token: token,
-          newPassword: password,
-          confirmPassword: confirmPassword,
-        }),
-      });
 
-      const data = await response.json()
-      ;
+    try {
+   const response = await fetch(`${apiUrl}/users/reset-password`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    token: token, // body me token bhej rahe hain
+    newPassword: password,
+    confirmPassword: confirmPassword,
+  }),
+  credentials: "include",
+  mode: "cors",
+});
+
+
+
+      const data = await response.json();
 
       if (response.ok) {
         alert("Password has been reset successfully!");
@@ -47,8 +49,8 @@ const ResetPassword = () => {
         alert(data.message || "Failed to reset password");
       }
     } catch (error) {
+      console.error("Error resetting password:", error);
       alert("An error occurred while resetting the password.");
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +63,7 @@ const ResetPassword = () => {
         style={{ maxWidth: "500px", borderRadius: "2rem" }}
       >
         <div className="p-5 text-center">
-          {/* Logo and Title - matching forgot password page */}
+          {/* Logo and Title */}
           <div className="d-flex justify-content-center align-items-center mb-4">
             <img
               src="https://i.postimg.cc/mZHz3k1Q/Whats-App-Image-2025-07-23-at-12-38-03-add5b5dd-removebg-preview-1.png"
@@ -72,9 +74,7 @@ const ResetPassword = () => {
           </div>
 
           <h2 className="h5 text-secondary mt-3">Reset Your Password</h2>
-          <p className="text-muted mb-4">
-            Enter your new password below.
-          </p>
+          <p className="text-muted mb-4">Enter your new password below.</p>
 
           <form onSubmit={handleSubmit}>
             {/* Password Input */}
@@ -125,7 +125,11 @@ const ResetPassword = () => {
           </form>
 
           <div className="text-center mt-3">
-            <Link to="/" className="text-decoration-none fw-semibold" style={{ color: "#1f2937" }}>
+            <Link
+              to="/"
+              className="text-decoration-none fw-semibold"
+              style={{ color: "#1f2937" }}
+            >
               Back to Login
             </Link>
           </div>
