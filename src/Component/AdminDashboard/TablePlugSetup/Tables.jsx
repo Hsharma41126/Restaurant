@@ -1809,6 +1809,7 @@ const Tables = () => {
         setShowTableActions(false);
 
         alert("Table deleted successfully!");
+        window.location.reload();
       } catch (error) {
         console.error("Error deleting table:", error);
         alert("Failed to delete table. Please try again.");
@@ -1826,6 +1827,7 @@ const Tables = () => {
         setGroups((prev) => prev.filter((group) => group.id !== groupId));
 
         alert("Group deleted successfully!");
+        window.location.reload();
       } catch (error) {
         console.error("❌ Error deleting group:", error);
         alert("Failed to delete group!");
@@ -1900,9 +1902,21 @@ const Tables = () => {
       >
         {getCategoryIcon(table.table_type)}
       </div>
-      <div style={{ fontWeight: "bold", color: "#333", marginBottom: "3px" }}>
+      <div
+        style={{
+          fontWeight: "bold",
+          color: "#333",
+          marginBottom: "3px",
+          maxWidth: "100%",        // parent ke andar hi rahe
+          overflow: "hidden",      // overflow hide kare
+          textOverflow: "ellipsis", // ... dikhaye agar bahar jaaye
+          whiteSpace: "nowrap",    // single line me rakhe
+        }}
+        title={table.table_name}   // hover par full name dikhane ke liye
+      >
         {table.table_name}
       </div>
+
       <div style={{ fontSize: "14px", color: "#666" }}>
         Status: {table.status}
       </div>
@@ -1969,11 +1983,13 @@ const Tables = () => {
         res = await axiosInstance.put(`/tables/tablegroups/${groupForm.id}`, payload);
         console.log("✅ Group updated:", res.data);
         alert("Group updated successfully!");
+        window.location.reload();
       } else {
         // ✅ Create new group
         res = await axiosInstance.post(`/tables/groups`, payload);
         console.log("✅ Group created:", res.data);
         alert("Group created successfully!");
+        window.location.reload();
       }
 
       // ✅ Reset form & close modal after success
@@ -2075,19 +2091,19 @@ const Tables = () => {
         hourly_rate: editingTable ? editingTable.hourly_rate : "0",
       };
 
-      console.log("🚀 Submitting payload:", payload);
-
       let res;
       if (editingTable) {
         // ✅ PUT request for editing
         res = await axiosInstance.put(`tables/${editingTable.id}`, payload);
         console.log("✅ Table Updated:", res.data);
         alert("Table updated successfully!");
+        window.location.reload();
       } else {
         // ✅ POST request for adding new
         res = await axiosInstance.post(`tables`, payload);
         console.log("✅ Table Added:", res.data);
         alert("Table added successfully!");
+        window.location.reload();
       }
 
       setTableModalOpen(false);
@@ -2901,7 +2917,12 @@ const Tables = () => {
                             hourlyRate: group.hourly_rate,
                             fixedRate: group.fixed_rate,
                             discount: group.discout,
-                            selectedTables: group.selected_pool,
+                            // selectedTables: group.selected_pool,
+                            selectedTables: group.selected_pool
+                              ? String(group.selected_pool)
+                                .split(",")              // "48,6" -> ["48","6"]
+                                .map((id) => Number(id)) // ["48","6"] -> [48, 6]
+                              : [],
                           });
                           setGroupModalOpen(true);
                         }}

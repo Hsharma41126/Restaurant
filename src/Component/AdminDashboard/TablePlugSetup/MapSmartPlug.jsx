@@ -299,24 +299,24 @@ const API_BASE = "https://restaurant-backend-production-a63a.up.railway.app/api"
 const MapSmartPlug = () => {
     const [tables, setTables] = useState([]);
     const [plugs, setPlugs] = useState([]);
-    const [plugStatus, setPlugStatus] = useState({});
     const [loading, setLoading] = useState(false);
-    const [actionLoading, setActionLoading] = useState({}); // track plug on/off request
+    const [actionLoading, setActionLoading] = useState({});
+
+    // Filter
     const [plugFilters, setPlugFilters] = useState({
-        Snooker: true,
-        Pool: true,
-        PlayStation: true,
-        Food: false,
+        snooker: true,
+        pool: true,
+        playstation: true,
+        food: false,
     });
 
-    // dropdown
+    // Form states
     const [plugTableDropdownOpen, setPlugTableDropdownOpen] = useState(false);
     const [tableForm, setTableForm] = useState({
         name: "",
         plugId: "",
     });
 
-    // fetch tables + plugs on load
     useEffect(() => {
         fetchTables();
         fetchPlugs();
@@ -326,11 +326,9 @@ const MapSmartPlug = () => {
         try {
             setLoading(true);
             const res = await axiosInstance.get(`/tables`);
-
-            console.log("API response:", res.data);
-
             const tables = res.data?.data?.tables || [];
-            setTables(tables);
+
+            setTables(tables || []);
         } catch (err) {
             console.error("Error fetching tables", err);
         } finally {
@@ -343,18 +341,21 @@ const MapSmartPlug = () => {
             const res = await axiosInstance.get("/plugs");
             const plugsData = res.data?.data?.plugs || [];
             setPlugs(plugsData || []);
-            // map plug status
-            const statusMap = {};
-            res.data.forEach((plug) => {
-                statusMap[plug.id] = plug.status || "offline";
-            });
-            setPlugStatus(statusMap);
         } catch (err) {
             console.error("Error fetching plugs", err);
         }
     };
 
-    // toggle plug filter
+    // Handle form changes
+    const handleTableFormChange = (e) => {
+        const { name, value } = e.target;
+        setTableForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // filters
     const togglePlugFilter = (type) => {
         setPlugFilters((prev) => ({
             ...prev,
@@ -362,45 +363,32 @@ const MapSmartPlug = () => {
         }));
     };
 
-    // get filtered tables with plugs
+    // only show tables that have plug mapped
     const getFilteredTables = () => {
         return tables.filter(
             (table) =>
-                table.type !== "Food" &&
-                plugFilters[table.type] &&
-                table.plugId // only show if plug mapped
+                table.plug_id &&
+                plugFilters[table.table_type?.toLowerCase()]
         );
     };
 
-    // assign plug to table
-    const mapPlug = () => {
-        if (!tableForm.name || !tableForm.plugId) return;
-        const updated = tables.map((t) =>
-            t.name === tableForm.name ? { ...t, plugId: tableForm.plugId } : t
-        );
-        setTables(updated);
-
-        // also set status from plugs api if exists
-        const plug = plugs.find((p) => p.id === tableForm.plugId);
-        setPlugStatus((prev) => ({
-            ...prev,
-            [tableForm.plugId]: plug ? plug.status : "offline",
-        }));
-
-        setTableForm({ name: "", plugId: "" });
-    };
-
-    // turn on/off plug
+    // toggle plug ON/OFF
     const togglePlug = async (plugId, action) => {
         try {
             setActionLoading((prev) => ({ ...prev, [plugId]: true }));
-            await axios.post(`${API_BASE}/plugs/${plugId}/power`, {
-                action,
-            });
-            setPlugStatus((prev) => ({
-                ...prev,
-                [plugId]: action === "on" ? "online" : "offline",
-            }));
+            await axiosInstance.post(`/plugs/${plugId}/power`, { action });
+
+            // Update plug status locally
+            const updatedPlugs = plugs.map((plug) =>
+                plug.id === plugId
+                    ? {
+                        ...plug,
+                        power_state: action,
+                        status: action === "on" ? "online" : "offline",
+                    }
+                    : plug
+            );
+            setPlugs(updatedPlugs);
         } catch (err) {
             console.error("Error controlling plug", err);
         } finally {
@@ -426,7 +414,7 @@ const MapSmartPlug = () => {
                     </div>
                 ) : (
                     <div className="row g-4">
-                        {/* Left: Mapping Form */}
+                        {/* LEFT FORM (mapping if needed) */}
                         <div className="col-12 col-lg-6">
                             <h4 className="fw-medium text-dark mb-3">Assign Smart Plug</h4>
                             <div className="mb-3">
@@ -445,24 +433,22 @@ const MapSmartPlug = () => {
                                     {plugTableDropdownOpen && (
                                         <div className="position-absolute top-100 start-0 end-0 bg-white border rounded mt-1 shadow-lg z-3">
                                             <div className="py-1">
-                                                {tables
-                                                    .filter((table) => table.type !== "Food")
-                                                    .map((table) => (
-                                                        <button
-                                                            key={table.id}
-                                                            type="button"
-                                                            className="w-100 text-start btn btn-light"
-                                                            onClick={() => {
-                                                                setTableForm((prev) => ({
-                                                                    ...prev,
-                                                                    name: table.name,
-                                                                }));
-                                                                setPlugTableDropdownOpen(false);
-                                                            }}
-                                                        >
-                                                            {table.name}
-                                                        </button>
-                                                    ))}
+                                                {tables.map((table) => (
+                                                    <button
+                                                        key={table.id}
+                                                        type="button"
+                                                        className="w-100 text-start btn btn-light"
+                                                        onClick={() => {
+                                                            setTableForm((prev) => ({
+                                                                ...prev,
+                                                                name: table.table_name,
+                                                            }));
+                                                            setPlugTableDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        {table.table_name}
+                                                    </button>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
@@ -470,31 +456,31 @@ const MapSmartPlug = () => {
                             </div>
 
                             <div className="mb-4">
-                                <label className="form-label">Smart Plug ID</label>
-                                <input
-                                    type="text"
+                                <label className="form-label">Smart Plug</label>
+                                <select
+                                    name="plugId"
+                                    value={tableForm.plugId || ""}
+                                    onChange={handleTableFormChange}
                                     className="form-control"
-                                    placeholder="Enter plug ID"
-                                    value={tableForm.plugId}
-                                    onChange={(e) =>
-                                        setTableForm((prev) => ({
-                                            ...prev,
-                                            plugId: e.target.value,
-                                        }))
-                                    }
-                                />
+                                >
+                                    <option value="">-- Select Plug --</option>
+                                    {plugs.map((plug) => (
+                                        <option key={plug.id} value={plug.plug_id}>
+                                            {plug.plug_id} ({plug.name})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <button
                                 type="button"
                                 className="w-100 btn btn-warning text-dark fw-medium"
-                                onClick={mapPlug}
                             >
                                 Map Smart Plug
                             </button>
                         </div>
 
-                        {/* Right: Plug Control */}
+                        {/* RIGHT CONTROL PANEL */}
                         <div className="col-12 col-lg-6">
                             <div className="d-flex justify-content-between align-items-center mb-3">
                                 <h4 className="fw-medium text-dark mb-0">Smart Plug Control</h4>
@@ -503,14 +489,12 @@ const MapSmartPlug = () => {
                                         size="sm"
                                         variant="outline-secondary"
                                         type="button"
-                                        id="plugFilterDropdown"
                                         data-bs-toggle="dropdown"
-                                        aria-expanded="false"
                                     >
                                         <FaFilter /> <span>Filter</span>
                                     </Button>
                                     <ul className="dropdown-menu">
-                                        {["Snooker", "Pool", "PlayStation"].map((type) => (
+                                        {["snooker", "pool", "playstation"].map((type) => (
                                             <li key={type}>
                                                 <div className="dropdown-item">
                                                     <div className="form-check">
@@ -525,7 +509,7 @@ const MapSmartPlug = () => {
                                                             className="form-check-label"
                                                             htmlFor={`filter${type}`}
                                                         >
-                                                            {type} Tables
+                                                            {type.toUpperCase()} Tables
                                                         </label>
                                                     </div>
                                                 </div>
@@ -536,80 +520,93 @@ const MapSmartPlug = () => {
                             </div>
 
                             <div className="d-flex flex-column gap-3">
-                                {getFilteredTables().map((table) => (
-                                    <div key={table.id} className="border rounded p-3">
-                                        <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <div>
-                                                <div className="fw-medium text-dark">{table.name}</div>
-                                                <div className="text-muted small">
-                                                    Plug ID: {table.plugId}
+                                {plugs.map((plug) => {
+                                    const connectedTables = tables.filter(
+                                        (t) => t.plug_id === plug.plug_id
+                                    );
+
+                                    return (
+                                        <div key={plug.id} className="border rounded p-3">
+                                            {/* PLUG HEADER */}
+                                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                                <div>
+                                                    <div className="fw-medium text-dark">{plug.name}</div>
+                                                    <div className="text-muted small">Plug ID: {plug.plug_id}</div>
+                                                    <div className="text-muted small">
+                                                        IP: {plug.ip_address} | MAC: {plug.mac_address}
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <div
+                                                        className={`rounded-circle ${plug.status === "online" ? "bg-success" : "bg-danger"
+                                                            }`}
+                                                        style={{ width: "12px", height: "12px" }}
+                                                    />
+                                                    <span
+                                                        className={`small fw-medium ${plug.status === "online" ? "text-success" : "text-danger"
+                                                            }`}
+                                                    >
+                                                        {plug.status?.toUpperCase()}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="d-flex align-items-center gap-2">
-                                                <div
-                                                    className={`rounded-circle ${plugStatus[table.plugId] === "online"
-                                                        ? "bg-success"
-                                                        : "bg-danger"
+
+                                            {/* ON / OFF BUTTONS */}
+                                            <div className="d-flex gap-3 mb-3">
+                                                <button
+                                                    className={`btn flex-grow-1 ${plug.power_state === "on" ? "btn-success" : "btn-outline-success"
                                                         }`}
-                                                    style={{ width: "12px", height: "12px" }}
-                                                />
-                                                <span
-                                                    className={`small fw-medium ${plugStatus[table.plugId] === "online"
-                                                        ? "text-success"
-                                                        : "text-danger"
-                                                        }`}
+                                                    onClick={() => togglePlug(plug.id, "on")}
+                                                    disabled={plug.power_state === "on" || actionLoading[plug.id]}
                                                 >
-                                                    {plugStatus[table.plugId] === "online"
-                                                        ? "ONLINE"
-                                                        : "OFFLINE"}
-                                                </span>
+                                                    {actionLoading[plug.id] ? (
+                                                        <Spinner size="sm" />
+                                                    ) : (
+                                                        <>
+                                                            <FaPlay /> Turn ON
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    className={`btn flex-grow-1 ${plug.power_state === "off" ? "btn-danger" : "btn-outline-danger"
+                                                        }`}
+                                                    onClick={() => togglePlug(plug.id, "off")}
+                                                    disabled={plug.power_state === "off" || actionLoading[plug.id]}
+                                                >
+                                                    {actionLoading[plug.id] ? (
+                                                        <Spinner size="sm" />
+                                                    ) : (
+                                                        <>
+                                                            <FaStop /> Turn OFF
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            {/* CONNECTED TABLES */}
+                                            <div>
+                                                <div className="fw-medium mb-2">Connected Tables:</div>
+                                                {connectedTables.length > 0 ? (
+                                                    <ul className="list-unstyled mb-0">
+                                                        {connectedTables.map((t) => (
+                                                            <li key={t.id} className="small text-muted">
+                                                                • {t.table_name} ({t.table_type})
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <div className="text-muted small fst-italic">
+                                                        No tables mapped to this plug
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="d-flex gap-3">
-                                            <button
-                                                className={`btn flex-grow-1 ${plugStatus[table.plugId] === "online"
-                                                    ? "btn-success"
-                                                    : "btn-secondary"
-                                                    }`}
-                                                onClick={() => togglePlug(table.plugId, "on")}
-                                                disabled={
-                                                    plugStatus[table.plugId] === "online" ||
-                                                    actionLoading[table.plugId]
-                                                }
-                                            >
-                                                {actionLoading[table.plugId] ? (
-                                                    <Spinner size="sm" />
-                                                ) : (
-                                                    <>
-                                                        <FaPlay /> Turn ON
-                                                    </>
-                                                )}
-                                            </button>
-                                            <button
-                                                className={`btn flex-grow-1 ${plugStatus[table.plugId] === "offline"
-                                                    ? "btn-danger"
-                                                    : "btn-secondary"
-                                                    }`}
-                                                onClick={() => togglePlug(table.plugId, "off")}
-                                                disabled={
-                                                    plugStatus[table.plugId] === "offline" ||
-                                                    actionLoading[table.plugId]
-                                                }
-                                            >
-                                                {actionLoading[table.plugId] ? (
-                                                    <Spinner size="sm" />
-                                                ) : (
-                                                    <>
-                                                        <FaStop /> Turn OFF
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {getFilteredTables().length === 0 && (
+                                    );
+                                })}
+
+                                {plugs.length === 0 && (
                                     <div className="border rounded p-4 text-center text-muted">
-                                        No tables with smart plugs configured
+                                        No plugs available
                                     </div>
                                 )}
                             </div>
