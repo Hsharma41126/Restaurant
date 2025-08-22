@@ -1756,221 +1756,8 @@ const Tables = () => {
   });
 
   // Tables and groups (initial demo data)
-  const [tables, setTables] = useState([
-    {
-      id: 1,
-      name: "Table 1",
-      type: "food",
-      status: "occupied",
-      guests: 4,
-      order: "Order #1234",
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 2,
-      name: "Table 2",
-      type: "food",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 3,
-      name: "Table 3",
-      type: "food",
-      status: "occupied",
-      guests: 2,
-      order: "Order #1235",
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 4,
-      name: "Table 4",
-      type: "food",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 5,
-      name: "Table 5",
-      type: "food",
-      status: "reserved",
-      guests: 6,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 6,
-      name: "Table 6",
-      type: "food",
-      status: "occupied",
-      guests: 3,
-      order: "Order #1236",
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 101,
-      name: "pool 1",
-      type: "pool",
-      status: "occupied",
-      guests: 2,
-      order: "Order #P101",
-      plugId: "PLUG_101",
-      group: "",
-    },
-    {
-      id: 102,
-      name: "pool 2",
-      type: "pool",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: "PLUG_102",
-      group: "",
-    },
-    {
-      id: 103,
-      name: "pool 3",
-      type: "pool",
-      status: "reserved",
-      guests: 4,
-      order: null,
-      plugId: "PLUG_103",
-      group: "",
-    },
-    {
-      id: 104,
-      name: "pool 4",
-      type: "pool",
-      status: "reserved",
-      guests: 4,
-      order: null,
-      plugId: "PLUG_104",
-      group: "",
-    },
-    {
-      id: 105,
-      name: "pool 5",
-      type: "pool",
-      status: "reserved",
-      guests: 4,
-      order: null,
-      plugId: "PLUG_105",
-      group: "",
-    },
-    {
-      id: 106,
-      name: "pool 6",
-      type: "pool",
-      status: "reserved",
-      guests: 4,
-      order: null,
-      plugId: "PLUG_106",
-      group: "",
-    },
-    {
-      id: 7,
-      name: "Table 7",
-      type: "food",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 8,
-      name: "Table 8",
-      type: "food",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 9,
-      name: "Table 9",
-      type: "food",
-      status: "occupied",
-      guests: 2,
-      order: "Order #1237",
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 10,
-      name: "Table 10",
-      type: "food",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 11,
-      name: "Table 11",
-      type: "food",
-      status: "available",
-      guests: 0,
-      order: null,
-      plugId: null,
-      group: "",
-    },
-    {
-      id: 12,
-      name: "Table 12",
-      type: "food",
-      status: "occupied",
-      guests: 5,
-      order: "Order #1238",
-      plugId: null,
-      group: "",
-    },
-  ]);
-
-  const [groupTables, setGroupTables] = useState([
-    {
-      id: 201,
-      name: "largetable 1",
-      type: "largetable",
-      seats: 8,
-      status: "available",
-      guests: 0,
-      order: null,
-      group: "",
-    },
-    {
-      id: 202,
-      name: "largetable 2",
-      type: "largetable",
-      seats: 8,
-      status: "available",
-      guests: 0,
-      order: null,
-      group: "",
-    },
-    {
-      id: 203,
-      name: "largetable 3",
-      type: "largetable",
-      seats: 8,
-      status: "available",
-      guests: 0,
-      order: null,
-      group: "",
-    },
-  ]);
+  const [tables, setTables] = useState([]);
+  const [groupTables, setGroupTables] = useState([]);
 
   const [selectedTable, setSelectedTable] = useState(null);
   const [showTableActions, setShowTableActions] = useState(false);
@@ -1989,66 +1776,62 @@ const Tables = () => {
     setGroupForm((prev) => ({ ...prev, [name]: value }));
   };
 
-const handleTableSelection = (tableId) => {
-  setGroupForm((prev) => {
-    const currentSelectedTables = Array.isArray(prev.selectedTables) ? prev.selectedTables : [];
+  const handleTableSelection = (tableId) => {
+    setGroupForm((prev) => {
+      const currentSelectedTables = Array.isArray(prev.selectedTables) ? prev.selectedTables : [];
 
-    return {
-      ...prev,
-      selectedTables: currentSelectedTables.includes(tableId)
-        ? currentSelectedTables.filter((id) => id !== tableId)
-        : [...currentSelectedTables, tableId],
-    };
-  });
-};
+      return {
+        ...prev,
+        selectedTables: currentSelectedTables.includes(tableId)
+          ? currentSelectedTables.filter((id) => id !== tableId)
+          : [...currentSelectedTables, tableId],
+      };
+    });
+  };
 
+  const handleDeleteTable = async (tableId) => {
+    if (window.confirm("Are you sure you want to delete this table?")) {
+      try {
+        // Call API to delete the table
+        await axiosInstance.delete(
+          `/tables/${tableId}`
+        );
 
- 
+        // Update state after successful deletion
+        setTables((prev) => prev.filter((table) => table.id !== tableId));
+        setGroupTables((prev) => prev.filter((table) => table.id !== tableId));
+        setGroups((prev) =>
+          prev.map((group) => ({
+            ...group,
+            selectedTables: group.selectedTables.filter((id) => id !== tableId),
+          }))
+        );
+        setShowTableActions(false);
 
-const handleDeleteTable = async (tableId) => {
-  if (window.confirm("Are you sure you want to delete this table?")) {
-    try {
-      // Call API to delete the table
-      await axiosInstance.delete(
-        `/tables/${tableId}`
-      );
-
-      // Update state after successful deletion
-      setTables((prev) => prev.filter((table) => table.id !== tableId));
-      setGroupTables((prev) => prev.filter((table) => table.id !== tableId));
-      setGroups((prev) =>
-        prev.map((group) => ({
-          ...group,
-          selectedTables: group.selectedTables.filter((id) => id !== tableId),
-        }))
-      );
-      setShowTableActions(false);
-
-      alert("Table deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting table:", error);
-      alert("Failed to delete table. Please try again.");
+        alert("Table deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting table:", error);
+        alert("Failed to delete table. Please try again.");
+      }
     }
-  }
-};
+  };
 
-const handleDeleteGroup = async (groupId) => {
-  if (window.confirm("Are you sure you want to delete this group?")) {
-    try {
-      // ✅ Call DELETE API
-      await axiosInstance.delete(`/tables/tablegroups/${groupId}`);
+  const handleDeleteGroup = async (groupId) => {
+    if (window.confirm("Are you sure you want to delete this group?")) {
+      try {
+        // ✅ Call DELETE API
+        await axiosInstance.delete(`/tables/tablegroups/${groupId}`);
 
-      // ✅ Remove group from state after successful delete
-      setGroups((prev) => prev.filter((group) => group.id !== groupId));
+        // ✅ Remove group from state after successful delete
+        setGroups((prev) => prev.filter((group) => group.id !== groupId));
 
-      alert("Group deleted successfully!");
-    } catch (error) {
-      console.error("❌ Error deleting group:", error);
-      alert("Failed to delete group!");
+        alert("Group deleted successfully!");
+      } catch (error) {
+        console.error("❌ Error deleting group:", error);
+        alert("Failed to delete group!");
+      }
     }
-  }
-};
-
+  };
 
   const handleTableClick = (table, event) => {
     event.stopPropagation();
@@ -2164,59 +1947,52 @@ const handleDeleteGroup = async (groupId) => {
   // add group api call
 
   // ✅ Group Submit Function
+  const handleGroupSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const payload = {
+        name: groupForm.name,
+        description: groupForm.description || "Group for selected tables",
+        hourly_rate: groupForm.hourlyRate,
+        fixed_rate: groupForm.fixedRate,
+        discout: groupForm.discount,
+        selected_pool: Array.isArray(groupForm.selectedTables)
+          ? groupForm.selectedTables.join(",")
+          : groupForm.selectedTables, // fallback if it's already a string
+      };
 
 
+      let res;
+      if (editingGroup) {
+        // ✅ Update existing group
+        res = await axiosInstance.put(`/tables/tablegroups/${groupForm.id}`, payload);
+        console.log("✅ Group updated:", res.data);
+        alert("Group updated successfully!");
+      } else {
+        // ✅ Create new group
+        res = await axiosInstance.post(`/tables/groups`, payload);
+        console.log("✅ Group created:", res.data);
+        alert("Group created successfully!");
+      }
 
-
-const handleGroupSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-  const payload = {
-  name: groupForm.name,
-  description: groupForm.description || "Group for selected tables",
-  hourly_rate: groupForm.hourlyRate,
-  fixed_rate: groupForm.fixedRate,
-  discout: groupForm.discount,
-  selected_pool: Array.isArray(groupForm.selectedTables)
-    ? groupForm.selectedTables.join(",")
-    : groupForm.selectedTables, // fallback if it's already a string
-};
-
-
-    let res;
-    if (editingGroup) {
-      // ✅ Update existing group
-      res = await axiosInstance.put(`/tables/tablegroups/${groupForm.id}`, payload);
-      console.log("✅ Group updated:", res.data);
-      alert("Group updated successfully!");
-    } else {
-      // ✅ Create new group
-      res = await axiosInstance.post(`/tables/groups`, payload);
-      console.log("✅ Group created:", res.data);
-      alert("Group created successfully!");
+      // ✅ Reset form & close modal after success
+      setGroupModalOpen(false);
+      setGroupForm({
+        id: null,
+        name: "",
+        description: "",
+        hourlyRate: "",
+        fixedRate: "",
+        discount: "",
+        selectedTables: [],
+      });
+      setEditingGroup(null);
+    } catch (error) {
+      console.error("❌ Error creating/updating group:", error);
+      alert(editingGroup ? "Failed to update group!" : "Failed to create group!");
     }
-
-    // ✅ Reset form & close modal after success
-    setGroupModalOpen(false);
-    setGroupForm({
-      id: null,
-      name: "",
-      description: "",
-      hourlyRate: "",
-      fixedRate: "",
-      discount: "",
-      selectedTables: [],
-    });
-    setEditingGroup(null);
-  } catch (error) {
-    console.error("❌ Error creating/updating group:", error);
-    alert(editingGroup ? "Failed to update group!" : "Failed to create group!");
-  }
-};
-
-
-
+  };
 
   const [groups, setGroups] = useState([]);
   const [tableForm, setTableForm] = useState({
@@ -2241,15 +2017,10 @@ const handleGroupSubmit = async (e) => {
   }, []);
 
   // ✅ Handle Change
-
-  
-  
-// table post api function
+  // table post api function
 
   const [plugs, setPlugs] = useState([]);
 
-  // 🔹 API call for plugs
- 
   // 🔹 API call for plugs
   const fetchPlugs = async () => {
     try {
@@ -2275,61 +2046,59 @@ const handleGroupSubmit = async (e) => {
     const { name, value } = e.target;
     setTableForm((prev) => ({ ...prev, [name]: value }));
   };
-const handleEditTable = (table) => {
-  setEditingTable(table);
-  setTableForm({
-    name: table.table_name,
-    type: table.table_type,
-    group: table.group_id,
-    seats: table.capacity,
-    plugId: table.plug_id,
-    status: table.status,
-  });
-  setTableModalOpen(true);
-};
+  const handleEditTable = (table) => {
+    setEditingTable(table);
+    setTableForm({
+      name: table.table_name,
+      type: table.table_type,
+      group: table.group_id,
+      seats: table.capacity,
+      plugId: table.plug_id,
+      status: table.status,
+    });
+    setTableModalOpen(true);
+  };
 
-const handleTableSubmit = async (e) => {
-  e.preventDefault();
+  const handleTableSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    const payload = {
-      table_number: editingTable ? editingTable.table_number : randomnumber(), // Keep old number if editing
-      table_name: tableForm.name || editingTable?.table_name,
-      table_type: tableForm.type || editingTable?.table_type,
-      group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
-      capacity: tableForm.seats || editingTable?.capacity || 4,
-      plug_id: tableForm.plugId || editingTable?.plug_id || null,
-      status: tableForm.status || editingTable?.status || "available",
-      location: editingTable ? editingTable.location : "Main Hall",
-      hourly_rate: editingTable ? editingTable.hourly_rate : "0",
-    };
+    try {
+      const payload = {
+        table_number: editingTable ? editingTable.table_number : randomnumber(), // Keep old number if editing
+        table_name: tableForm.name || editingTable?.table_name,
+        table_type: tableForm.type || editingTable?.table_type,
+        group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
+        capacity: tableForm.seats || editingTable?.capacity || 4,
+        plug_id: tableForm.plugId || editingTable?.plug_id || null,
+        status: tableForm.status || editingTable?.status || "available",
+        location: editingTable ? editingTable.location : "Main Hall",
+        hourly_rate: editingTable ? editingTable.hourly_rate : "0",
+      };
 
-    console.log("🚀 Submitting payload:", payload);
+      console.log("🚀 Submitting payload:", payload);
 
-    let res;
-    if (editingTable) {
-      // ✅ PUT request for editing
-      res = await axiosInstance.put(`tables/${editingTable.id}`, payload);
-      console.log("✅ Table Updated:", res.data);
-      alert("Table updated successfully!");
-    } else {
-      // ✅ POST request for adding new
-      res = await axiosInstance.post(`tables`, payload);
-      console.log("✅ Table Added:", res.data);
-      alert("Table added successfully!");
+      let res;
+      if (editingTable) {
+        // ✅ PUT request for editing
+        res = await axiosInstance.put(`tables/${editingTable.id}`, payload);
+        console.log("✅ Table Updated:", res.data);
+        alert("Table updated successfully!");
+      } else {
+        // ✅ POST request for adding new
+        res = await axiosInstance.post(`tables`, payload);
+        console.log("✅ Table Added:", res.data);
+        alert("Table added successfully!");
+      }
+
+      setTableModalOpen(false);
+      setEditingTable(null); // Clear editing state
+      setTableForm({}); // Reset form
+      fetchTables(); // Refresh UI
+    } catch (err) {
+      console.error("❌ Error saving table:", err.response?.data || err.message);
+      alert("Failed to save table");
     }
-
-    setTableModalOpen(false);
-    setEditingTable(null); // Clear editing state
-    setTableForm({}); // Reset form
-    fetchTables(); // Refresh UI
-  } catch (err) {
-    console.error("❌ Error saving table:", err.response?.data || err.message);
-    alert("Failed to save table");
-  }
-};
-
-
+  };
 
   // render table data according to data api cards
   const fetchTables = async () => {
@@ -2341,8 +2110,22 @@ const handleTableSubmit = async (e) => {
       // ✅ सही path से tables निकालना
       const tables = res.data?.data?.tables || [];
 
-      const electricTables = tables.filter((t) => t.plug_id !== null);
-      const nonElectricTables = tables.filter((t) => t.plug_id === null);
+      const electricTables = tables.filter((t) => (t.plug_id !== null || t.table_type == "snooker" || t.table_type == "playstation" || t.table_type == "pool"));
+      const nonElectricTables = tables.filter((t) => t.plug_id === null && t.table_type == "dining" || t.table_type == "largetable");
+
+
+      //       const electricTables = tables.filter(
+      //   (t) =>
+      //     t.plug_id !== null &&
+      //     ["pool", "snooker", "game"].includes(t.category?.toLowerCase())
+      // );
+
+      // const nonElectricTables = tables.filter(
+      //   (t) =>
+      //     t.plug_id === null &&
+      //     ["table", "large table"].includes(t.category?.toLowerCase())
+      // );
+
 
       setTablesByCategory([
         { category: "electric", tables: electricTables },
@@ -2354,17 +2137,16 @@ const handleTableSubmit = async (e) => {
   };
 
   useEffect(() => {
-    
+
     fetchTables();
   }, []);
 
   const getCategoryColor = (type) =>
     type === "playstation" ? "#007bff" : "#28a745";
 
+  // {quickJumpInput && (api call to fetch table by ID)}
 
-// {quickJumpInput && (api call to fetch table by ID)}
-
- const [quickJumpInput, setQuickJumpInput] = useState("");
+  const [quickJumpInput, setQuickJumpInput] = useState("");
 
   const handleJump = async () => {
     const num = parseInt(quickJumpInput, 10);
@@ -2407,16 +2189,6 @@ const handleTableSubmit = async (e) => {
   };
 
 
-
-
-
-
-
-
-
-
-
-
   // main UI
   return (
     <div>
@@ -2439,46 +2211,46 @@ const handleTableSubmit = async (e) => {
             gap: "10px",
           }}
         >
-     <div
-      style={{
-        display: "flex",
-        gap: "10px",
-        alignItems: "center",
-        flexWrap: "wrap",
-        flex: "1 1 300px",
-      }}
-    >
-      <label style={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
-        Quick Jump to Table:
-      </label>
-      <input
-        type="number"
-        value={quickJumpInput}
-        onChange={(e) => setQuickJumpInput(e.target.value)}
-        placeholder="Enter table ID"
-        style={{
-          padding: "5px 10px",
-          border: "1px solid #ddd",
-          borderRadius: "4px",
-          width: "150px",
-          maxWidth: "100%",
-        }}
-      />
-      <button
-        onClick={handleJump}
-        style={{
-          backgroundColor: "#28a745",
-          color: "white",
-          border: "none",
-          padding: "5px 15px",
-          borderRadius: "4px",
-          cursor: "pointer",
-          flexShrink: 0,
-        }}
-      >
-        Jump
-      </button>
-    </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              flexWrap: "wrap",
+              flex: "1 1 300px",
+            }}
+          >
+            <label style={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
+              Quick Jump to Table:
+            </label>
+            <input
+              type="number"
+              value={quickJumpInput}
+              onChange={(e) => setQuickJumpInput(e.target.value)}
+              placeholder="Enter table ID"
+              style={{
+                padding: "5px 10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                width: "150px",
+                maxWidth: "100%",
+              }}
+            />
+            <button
+              onClick={handleJump}
+              style={{
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                padding: "5px 15px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              Jump
+            </button>
+          </div>
           <div
             style={{
               display: "flex",
@@ -2735,11 +2507,10 @@ const handleTableSubmit = async (e) => {
                           }));
                         }}
                         style={{
-                          border: `2px solid ${
-                            tableForm.type === tableType.type
-                              ? tableType.color
-                              : "#ddd"
-                          }`,
+                          border: `2px solid ${tableForm.type === tableType.type
+                            ? tableType.color
+                            : "#ddd"
+                            }`,
                           borderRadius: "8px",
                           padding: "12px",
                           textAlign: "center",
@@ -3192,7 +2963,7 @@ const handleTableSubmit = async (e) => {
                         fontWeight: "bold",
                       }}
                     >
-                      💰 ${group.hourly_rate}/hr
+                      ${group.hourly_rate}/hr
                     </div>
                     <div
                       style={{
@@ -3204,7 +2975,7 @@ const handleTableSubmit = async (e) => {
                         fontWeight: "bold",
                       }}
                     >
-                      🎯 ${group.fixed_rate} fixed
+                      ${group.fixed_rate} fixed
                     </div>
                     <div
                       style={{
@@ -3216,7 +2987,7 @@ const handleTableSubmit = async (e) => {
                         fontWeight: "bold",
                       }}
                     >
-                      📊 {group.selected_pool} tables
+                      {group.selected_pool} tables
                     </div>
                     {group.discout > 0 && (
                       <div
@@ -3229,260 +3000,260 @@ const handleTableSubmit = async (e) => {
                           fontWeight: "bold",
                         }}
                       >
-                        🎁 {group.discout}% off
+                        {group.discout}% off
                       </div>
                     )}
                   </div>
 
                   {/* Visual representation of tables in group */}
-                <div
-  style={{
-    border: "1px dashed #ffc107",
-    borderRadius: "8px",
-    padding: "15px",
-    minHeight: "150px",
-    backgroundColor: "#ffffff",
-    position: "relative",
-  }}
->
-  <div
-    style={{
-      fontSize: "12px",
-      fontWeight: "bold",
-      color: "#f57f17",
-      marginBottom: "10px",
-      textAlign: "center",
-    }}
-  >
-    GROUP LAYOUT
-  </div>
+                  <div
+                    style={{
+                      border: "1px dashed #ffc107",
+                      borderRadius: "8px",
+                      padding: "15px",
+                      minHeight: "150px",
+                      backgroundColor: "#ffffff",
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        color: "#f57f17",
+                        marginBottom: "10px",
+                        textAlign: "center",
+                      }}
+                    >
+                      GROUP LAYOUT
+                    </div>
 
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      gap: "8px",
-      justifyContent: "center",
-      alignItems: "center",
-      position: "relative",
-      zIndex: 2,
-    }}
-  >
-    {group.tables && group.tables.length > 0 ? (
-      group.tables.map((table, index) => {
-        const getTableIcon = (type) => {
-          switch (type) {
-            case "pool":
-              return "🎱";
-            case "snooker":
-              return "🎯";
-            case "playstation":
-              return "🎮";
-            case "largetable":
-              return "🪑";
-            default:
-              return "🍽️";
-          }
-        };
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        position: "relative",
+                        zIndex: 2,
+                      }}
+                    >
+                      {group.tables && group.tables.length > 0 ? (
+                        group.tables.map((table, index) => {
+                          const getTableIcon = (type) => {
+                            switch (type) {
+                              case "pool":
+                                return "🎱";
+                              case "snooker":
+                                return "🎯";
+                              case "playstation":
+                                return "🎮";
+                              case "largetable":
+                                return "🪑";
+                              default:
+                                return "🍽️";
+                            }
+                          };
 
-        const getTableColor = (type) => {
-          switch (type) {
-            case "pool":
-              return "#4caf50"; // Green
-            case "snooker":
-              return "#2196f3"; // Blue
-            case "playstation":
-              return "#9c27b0"; // Purple
-            case "largetable":
-              return "#795548"; // Brown
-            default:
-              return "#ff9800"; // Orange
-          }
-        };
+                          const getTableColor = (type) => {
+                            switch (type) {
+                              case "pool":
+                                return "#4caf50"; // Green
+                              case "snooker":
+                                return "#2196f3"; // Blue
+                              case "playstation":
+                                return "#9c27b0"; // Purple
+                              case "largetable":
+                                return "#795548"; // Brown
+                              default:
+                                return "#ff9800"; // Orange
+                            }
+                          };
 
-        return (
-          <div
-            key={table.id || index}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              margin: "5px",
-              position: "relative",
-              zIndex: 2,
-            }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: table.table_type === "food" ? "50%" : "8px",
-                backgroundColor: getTableColor(table.table_type || "food"),
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "18px",
-                border: "2px solid white",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                position: "relative",
-              }}
-            >
-              {getTableIcon(table.table_type || "food")}
+                          return (
+                            <div
+                              key={table.id || index}
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                margin: "5px",
+                                position: "relative",
+                                zIndex: 2,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  borderRadius: table.table_type === "food" ? "50%" : "8px",
+                                  backgroundColor: getTableColor(table.table_type || "food"),
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "18px",
+                                  border: "2px solid white",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                  position: "relative",
+                                }}
+                              >
+                                {getTableIcon(table.table_type || "food")}
 
-              {table.status === "occupied" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "-3px",
-                    right: "-3px",
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    backgroundColor: "#f44336", // Red
-                    border: "2px solid white",
-                  }}
-                ></div>
-              )}
+                                {table.status === "occupied" && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "-3px",
+                                      right: "-3px",
+                                      width: "12px",
+                                      height: "12px",
+                                      borderRadius: "50%",
+                                      backgroundColor: "#f44336", // Red
+                                      border: "2px solid white",
+                                    }}
+                                  ></div>
+                                )}
 
-              {table.status === "reserved" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "-3px",
-                    right: "-3px",
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    backgroundColor: "#ff9800", // Orange
-                    border: "2px solid white",
-                  }}
-                ></div>
-              )}
-            </div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: "bold",
-                color: "#666",
-                marginTop: "4px",
-                textAlign: "center",
-                lineHeight: "1",
-              }}
-            >
-              {table.table_name || "Table"}
-            </div>
-          </div>
-        );
-      })
-    ) : (
-      <div style={{ fontSize: "12px", color: "#888" }}>No tables added</div>
-    )}
-  </div>
+                                {table.status === "reserved" && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "-3px",
+                                      right: "-3px",
+                                      width: "12px",
+                                      height: "12px",
+                                      borderRadius: "50%",
+                                      backgroundColor: "#ff9800", // Orange
+                                      border: "2px solid white",
+                                    }}
+                                  ></div>
+                                )}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "10px",
+                                  fontWeight: "bold",
+                                  color: "#666",
+                                  marginTop: "4px",
+                                  textAlign: "center",
+                                  lineHeight: "1",
+                                }}
+                              >
+                                {table.table_name || "Table"}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div style={{ fontSize: "12px", color: "#888" }}>No tables added</div>
+                      )}
+                    </div>
 
-  {/* Connection lines */}
-  <svg
-    style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      pointerEvents: "none",
-      zIndex: 1,
-    }}
-  >
-    {group.tables &&
-      group.tables.map((_, index) => {
-        if (index === group.tables.length - 1) return null;
-        const startX = 50 + index * 60;
-        const startY = 80;
-        const endX = 50 + (index + 1) * 60;
-        const endY = 80;
+                    {/* Connection lines */}
+                    <svg
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        pointerEvents: "none",
+                        zIndex: 1,
+                      }}
+                    >
+                      {group.tables &&
+                        group.tables.map((_, index) => {
+                          if (index === group.tables.length - 1) return null;
+                          const startX = 50 + index * 60;
+                          const startY = 80;
+                          const endX = 50 + (index + 1) * 60;
+                          const endY = 80;
 
-        return (
-          <line
-            key={index}
-            x1={`${startX}px`}
-            y1={`${startY}px`}
-            x2={`${endX}px`}
-            y2={`${endY}px`}
-            stroke="#ffc107"
-            strokeWidth="2"
-            strokeDasharray="5,5"
-            opacity="0.6"
-          />
-        );
-      })}
-  </svg>
-</div>
+                          return (
+                            <line
+                              key={index}
+                              x1={`${startX}px`}
+                              y1={`${startY}px`}
+                              x2={`${endX}px`}
+                              y2={`${endY}px`}
+                              stroke="#ffc107"
+                              strokeWidth="2"
+                              strokeDasharray="5,5"
+                              opacity="0.6"
+                            />
+                          );
+                        })}
+                    </svg>
+                  </div>
 
 
                   {/* Group summary stats at bottom */}
-          <div
-  style={{
-    marginTop: "15px",
-    padding: "10px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "6px",
-    fontSize: "12px",
-  }}
->
-  {/* ✅ Total Revenue Potential */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: "4px",
-    }}
-  >
-    <span>
-      <strong>Total Revenue Potential:</strong>
-    </span>
-    <span style={{ fontWeight: "bold", color: "#4caf50" }}>
-      ${(group.hourlyRate * selectedTables.length).toFixed(2)}/hr
-    </span>
-  </div>
+                  <div
+                    style={{
+                      marginTop: "15px",
+                      padding: "10px",
+                      backgroundColor: "#f8f9fa",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                    }}
+                  >
+                    {/* ✅ Total Revenue Potential */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <span>
+                        <strong>Total Revenue Potential:</strong>
+                      </span>
+                      <span style={{ fontWeight: "bold", color: "#4caf50" }}>
+                        ${(group.hourlyRate * selectedTables.length).toFixed(2)}/hr
+                      </span>
+                    </div>
 
-  {/* ✅ Fixed Revenue */}
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: "4px",
-    }}
-  >
-    <span>
-      <strong>Fixed Revenue:</strong>
-    </span>
-    <span style={{ fontWeight: "bold", color: "#2196f3" }}>
-      ${(group.fixedRate * selectedTables.length).toFixed(2)}
-    </span>
-  </div>
+                    {/* ✅ Fixed Revenue */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <span>
+                        <strong>Fixed Revenue:</strong>
+                      </span>
+                      <span style={{ fontWeight: "bold", color: "#2196f3" }}>
+                        ${(group.fixedRate * selectedTables.length).toFixed(2)}
+                      </span>
+                    </div>
 
-  {/* ✅ Discounted Revenue (Only if discount > 0) */}
-  {Number(group.discout) > 0 && (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        color: "#e91e63", // Pink/Red for discount
-      }}
-    >
-      <span>
-        <strong>After Discount ({group.discount}%):</strong>
-      </span>
-      <span style={{ fontWeight: "bold", color: "#e91e63" }}>
-        $
-        {(
-          group.hourlyRate *
-          selectedTables.length *
-          (1 - Number(group.discout) / 100)
-        ).toFixed(2)}
-        /hr
-      </span>
-    </div>
-  )}
-</div>
+                    {/* ✅ Discounted Revenue (Only if discount > 0) */}
+                    {Number(group.discout) > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          color: "#e91e63", // Pink/Red for discount
+                        }}
+                      >
+                        <span>
+                          <strong>After Discount ({group.discount}%):</strong>
+                        </span>
+                        <span style={{ fontWeight: "bold", color: "#e91e63" }}>
+                          $
+                          {(
+                            group.hourlyRate *
+                            selectedTables.length *
+                            (1 - Number(group.discout) / 100)
+                          ).toFixed(2)}
+                          /hr
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                 </div>
               );
@@ -3492,377 +3263,377 @@ const handleTableSubmit = async (e) => {
       )}
 
       {/* Group Management Modal */}
-   {groupModalOpen && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1050,
-    }}
-  >
-    <div
-      style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        width: "90%",
-        maxWidth: "600px",
-        maxHeight: "90vh",
-        overflow: "auto",
-      }}
-    >
-      <div
-        style={{
-          padding: "20px",
-          borderBottom: "1px solid #ddd",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h5 style={{ margin: 0 }}>
-          {editingGroup ? "Edit Group" : "Create Group"}
-        </h5>
-        <button
-          onClick={() => setGroupModalOpen(false)}
+      {groupModalOpen && (
+        <div
           style={{
-            background: "none",
-            border: "none",
-            fontSize: "24px",
-            cursor: "pointer",
-            padding: 0,
-            color: "#666",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
           }}
         >
-          ×
-        </button>
-      </div>
-
-      <form onSubmit={handleGroupSubmit}>
-        <div style={{ padding: "20px" }}>
-          {/* Group Name */}
-          <div style={{ marginBottom: "15px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "5px",
-                fontWeight: "bold",
-              }}
-            >
-              Group Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={groupForm.name}
-              onChange={handleGroupFormChange}
-              placeholder="Enter group name"
-              required
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-              }}
-            />
-          </div>
-
-          {/* Select Tables */}
-          <div style={{ marginBottom: "15px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "5px",
-                fontWeight: "bold",
-              }}
-            >
-              Select Tables
-            </label>
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              width: "90%",
+              maxWidth: "600px",
+              maxHeight: "90vh",
+              overflow: "auto",
+            }}
+          >
             <div
               style={{
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                maxHeight: "200px",
-                overflow: "auto",
-              }}
-            >
-              {tablesByCategory.map(
-                (cat) =>
-                  cat.tables.length > 0 && (
-                    <div key={cat.category} style={{ marginBottom: "10px" }}>
-                      <div
-                        style={{
-                          backgroundColor: "#f8f9fa",
-                          padding: "8px 15px",
-                          fontWeight: "bold",
-                          borderBottom: "1px solid #dee2e6",
-                        }}
-                      >
-                        {cat.category === "electric"
-                          ? "🔌 Electric Tables"
-                          : "🛋️ Non-Electric Tables"}
-                      </div>
-                      <div style={{ padding: "10px 15px" }}>
-                        {cat.tables.map((table) => (
-                          <div
-                            key={table.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              id={`table-${table.id}`}
-                              checked={Array.isArray(groupForm.selectedTables) && groupForm.selectedTables.includes(table.id)}
-
-                              onChange={() => handleTableSelection(table.id)}
-                            />
-                            <label
-                              htmlFor={`table-${table.id}`}
-                              style={{ cursor: "pointer" }}
-                            >
-                              {table.table_name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-              )}
-            </div>
-          </div>
-
-          {/* Selected Tables */}
-        {Array.isArray(groupForm.selectedTables) && groupForm.selectedTables.length > 0 && (
-  <div style={{ marginBottom: "15px" }}>
-    <label
-      style={{
-        display: "block",
-        marginBottom: "5px",
-        fontWeight: "bold",
-      }}
-    >
-      Selected Tables
-    </label>
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "4px",
-        padding: "10px",
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "8px",
-      }}
-    >
-      {groupForm.selectedTables.map((id) => {
-        // Find table by ID from allTableData or tablesByCategory
-        let table =
-          allTableData.find((t) => t.id === Number(id)) ||
-          tablesByCategory
-            .flatMap((cat) => cat.tables)
-            .find((t) => t.id === Number(id));
-
-        return (
-          table && (
-            <span
-              key={table.id}
-              style={{
-                backgroundColor: "#ffc107",
-                color: "black",
-                padding: "4px 8px",
-                borderRadius: "12px",
-                fontSize: "12px",
-                fontWeight: "bold",
+                padding: "20px",
+                borderBottom: "1px solid #ddd",
                 display: "flex",
+                justifyContent: "space-between",
                 alignItems: "center",
-                gap: "6px",
               }}
             >
-              {table.table_name || table.name}
+              <h5 style={{ margin: 0 }}>
+                {editingGroup ? "Edit Group" : "Create Group"}
+              </h5>
               <button
-                type="button"
+                onClick={() => setGroupModalOpen(false)}
                 style={{
-                  marginLeft: "4px",
                   background: "none",
                   border: "none",
-                  color: "#dc3545",
-                  fontWeight: "bold",
-                  fontSize: "16px",
+                  fontSize: "24px",
                   cursor: "pointer",
-                  borderRadius: "50%",
-                  padding: "0 4px",
-                  lineHeight: 1,
-                }}
-                title="Remove"
-                onClick={() => {
-                  setGroupForm((prev) => ({
-                    ...prev,
-                    selectedTables: prev.selectedTables.filter(
-                      (tid) => tid !== id
-                    ),
-                  }));
+                  padding: 0,
+                  color: "#666",
                 }}
               >
                 ×
               </button>
-            </span>
-          )
-        );
-      })}
-    </div>
-  </div>
-)}
+            </div>
+
+            <form onSubmit={handleGroupSubmit}>
+              <div style={{ padding: "20px" }}>
+                {/* Group Name */}
+                <div style={{ marginBottom: "15px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Group Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={groupForm.name}
+                    onChange={handleGroupFormChange}
+                    placeholder="Enter group name"
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+
+                {/* Select Tables */}
+                <div style={{ marginBottom: "15px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Select Tables
+                  </label>
+                  <div
+                    style={{
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                      maxHeight: "200px",
+                      overflow: "auto",
+                    }}
+                  >
+                    {tablesByCategory.map(
+                      (cat) =>
+                        cat.tables.length > 0 && (
+                          <div key={cat.category} style={{ marginBottom: "10px" }}>
+                            <div
+                              style={{
+                                backgroundColor: "#f8f9fa",
+                                padding: "8px 15px",
+                                fontWeight: "bold",
+                                borderBottom: "1px solid #dee2e6",
+                              }}
+                            >
+                              {cat.category === "electric"
+                                ? "Electric Tables"
+                                : "Non-Electric Tables"}
+                            </div>
+                            <div style={{ padding: "10px 15px" }}>
+                              {cat.tables.map((table) => (
+                                <div
+                                  key={table.id}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    marginBottom: "8px",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id={`table-${table.id}`}
+                                    checked={Array.isArray(groupForm.selectedTables) && groupForm.selectedTables.includes(table.id)}
+
+                                    onChange={() => handleTableSelection(table.id)}
+                                  />
+                                  <label
+                                    htmlFor={`table-${table.id}`}
+                                    style={{ cursor: "pointer" }}
+                                  >
+                                    {table.table_name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                    )}
+                  </div>
+                </div>
+
+                {/* Selected Tables */}
+                {Array.isArray(groupForm.selectedTables) && groupForm.selectedTables.length > 0 && (
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Selected Tables
+                    </label>
+                    <div
+                      style={{
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                        padding: "10px",
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                      }}
+                    >
+                      {groupForm.selectedTables.map((id) => {
+                        // Find table by ID from allTableData or tablesByCategory
+                        let table =
+                          allTableData.find((t) => t.id === Number(id)) ||
+                          tablesByCategory
+                            .flatMap((cat) => cat.tables)
+                            .find((t) => t.id === Number(id));
+
+                        return (
+                          table && (
+                            <span
+                              key={table.id}
+                              style={{
+                                backgroundColor: "#ffc107",
+                                color: "black",
+                                padding: "4px 8px",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              {table.table_name || table.name}
+                              <button
+                                type="button"
+                                style={{
+                                  marginLeft: "4px",
+                                  background: "none",
+                                  border: "none",
+                                  color: "#dc3545",
+                                  fontWeight: "bold",
+                                  fontSize: "16px",
+                                  cursor: "pointer",
+                                  borderRadius: "50%",
+                                  padding: "0 4px",
+                                  lineHeight: 1,
+                                }}
+                                title="Remove"
+                                onClick={() => {
+                                  setGroupForm((prev) => ({
+                                    ...prev,
+                                    selectedTables: prev.selectedTables.filter(
+                                      (tid) => tid !== id
+                                    ),
+                                  }));
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
 
-          {/* Rates */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "15px",
-              marginBottom: "15px",
-            }}
-          >
-            <div>
-              <label
+                {/* Rates */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "15px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Hourly Rate ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="hourlyRate"
+                      value={groupForm.hourlyRate}
+                      onChange={handleGroupFormChange}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Fixed Rate ($)
+                    </label>
+                    <input
+                      type="number"
+                      name="fixedRate"
+                      value={groupForm.fixedRate}
+                      onChange={handleGroupFormChange}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Discount */}
+                <div style={{ marginBottom: "15px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Discounted Rate (%)
+                    <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                      {" "}
+                      Optional
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    name="discount"
+                    value={groupForm.discount}
+                    onChange={handleGroupFormChange}
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div
                 style={{
-                  display: "block",
-                  marginBottom: "5px",
-                  fontWeight: "bold",
+                  padding: "20px",
+                  borderTop: "1px solid #ddd",
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-end",
                 }}
               >
-                Hourly Rate ($)
-              </label>
-              <input
-                type="number"
-                name="hourlyRate"
-                value={groupForm.hourlyRate}
-                onChange={handleGroupFormChange}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "5px",
-                  fontWeight: "bold",
-                }}
-              >
-                Fixed Rate ($)
-              </label>
-              <input
-                type="number"
-                name="fixedRate"
-                value={groupForm.fixedRate}
-                onChange={handleGroupFormChange}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Discount */}
-          <div style={{ marginBottom: "15px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "5px",
-                fontWeight: "bold",
-              }}
-            >
-              Discounted Rate (%)
-              <span style={{ color: "#6c757d", fontWeight: "normal" }}>
-                {" "}
-                Optional
-              </span>
-            </label>
-            <input
-              type="number"
-              name="discount"
-              value={groupForm.discount}
-              onChange={handleGroupFormChange}
-              placeholder="0"
-              min="0"
-              max="100"
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-              }}
-            />
+                <button
+                  type="button"
+                  onClick={() => setGroupModalOpen(false)}
+                  style={{
+                    padding: "10px 20px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    backgroundColor: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "4px",
+                    backgroundColor: "#ffc107",
+                    color: "black",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  {editingGroup ? "Update Group" : "Create Group"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-
-        {/* Buttons */}
-        <div
-          style={{
-            padding: "20px",
-            borderTop: "1px solid #ddd",
-            display: "flex",
-            gap: "10px",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setGroupModalOpen(false)}
-            style={{
-              padding: "10px 20px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              backgroundColor: "white",
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            style={{
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: "4px",
-              backgroundColor: "#ffc107",
-              color: "black",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            {editingGroup ? "Update Group" : "Create Group"}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}  
+      )}
 
 
       {/* Custom CSS */}
