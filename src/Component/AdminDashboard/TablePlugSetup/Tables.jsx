@@ -1682,14 +1682,15 @@
 
 
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import { apiUrl } from "../../../utils/config";
 import axios from "axios";
 import axiosInstance from "../../../utils/axiosInstance";
+import { RiEditLine } from "react-icons/ri";
 
 const categoryOrder = {
-  electric: ["playstation", "pool"],
-  nonElectric: ["food", "snooker", "largetable"],
+  electric: ["playstation", "pool", "snooker"],
+  nonElectric: ["dining", "largetable"],
 };
 
 const getCategoryIcon = (type) => {
@@ -1700,7 +1701,6 @@ const getCategoryIcon = (type) => {
       return "🎯";
     case "playstation":
       return "🎮";
-
     case "largetable":
       return "🪑";
     default:
@@ -1711,8 +1711,8 @@ const getCategoryIcon = (type) => {
 const getCategoryColor = (type) => {
   switch (type) {
     case "largetable":
-      return "#ffc107";
-    case "food":
+      return "#8d2606ff";
+    case "dining":
       return "#fd7e14";
     case "pool":
       return "#17a2b8";
@@ -1720,13 +1720,17 @@ const getCategoryColor = (type) => {
       return "#28a745";
     case "playstation":
       return "#6f42c1";
+    case "food":
+      return "#fd7e14";
+    case "all":
+      return "#ffc107";
     default:
       return "#adb5bd";
   }
 };
 
 const statusColors = {
-  available: "#9E9E9E",
+  available: "#9e9e9eff",
   occupied: "#4CAF50",
   reserved: "#FFC107",
   inactive: "#f44336",
@@ -1734,8 +1738,6 @@ const statusColors = {
 
 const Tables = () => {
   // State management
-
-
   const [tablesByCategory, setTablesByCategory] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showPanel, setShowPanel] = useState(!isMobile);
@@ -1755,12 +1757,17 @@ const Tables = () => {
     discount: "",
   });
 
-  // Tables and groups (initial demo data)
+  // Tables and groups
   const [tables, setTables] = useState([]);
   const [groupTables, setGroupTables] = useState([]);
+  const [groups, setGroups] = useState([]);
 
   const [selectedTable, setSelectedTable] = useState(null);
   const [showTableActions, setShowTableActions] = useState(false);
+
+  // Filter states - initialize with all types selected
+  const [electricFilter, setElectricFilter] = useState(["pool", "snooker", "playstation"]);
+  const [nonElectricFilter, setNonElectricFilter] = useState(["dining", "largetable"]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -1792,12 +1799,7 @@ const Tables = () => {
   const handleDeleteTable = async (tableId) => {
     if (window.confirm("Are you sure you want to delete this table?")) {
       try {
-        // Call API to delete the table
-        await axiosInstance.delete(
-          `/tables/${tableId}`
-        );
-
-        // Update state after successful deletion
+        await axiosInstance.delete(`/tables/${tableId}`);
         setTables((prev) => prev.filter((table) => table.id !== tableId));
         setGroupTables((prev) => prev.filter((table) => table.id !== tableId));
         setGroups((prev) =>
@@ -1807,7 +1809,6 @@ const Tables = () => {
           }))
         );
         setShowTableActions(false);
-
         alert("Table deleted successfully!");
         window.location.reload();
       } catch (error) {
@@ -1820,12 +1821,8 @@ const Tables = () => {
   const handleDeleteGroup = async (groupId) => {
     if (window.confirm("Are you sure you want to delete this group?")) {
       try {
-        // ✅ Call DELETE API
         await axiosInstance.delete(`/tables/tablegroups/${groupId}`);
-
-        // ✅ Remove group from state after successful delete
         setGroups((prev) => prev.filter((group) => group.id !== groupId));
-
         alert("Group deleted successfully!");
         window.location.reload();
       } catch (error) {
@@ -1852,20 +1849,8 @@ const Tables = () => {
   }, [showTableActions]);
 
   // UI HELPERS
-
-  // For table display, merge normal and large tables
   const allTableData = [...tables, ...groupTables];
-  // const tablesByCategory = Object.keys(categoryOrder).map((category) => ({
-  //   category,
-  //   tables: allTableData.filter((table) =>
-  //     categoryOrder[category].includes(table.type)
-  //   ),
-  // }));
 
-  // Quick jump
-
-
-  // Card renderer for category
   const renderTableCard = (table) => (
     <div
       key={table.id}
@@ -1958,9 +1943,7 @@ const Tables = () => {
       )}
     </div>
   );
-  // add group api call
 
-  // ✅ Group Submit Function
   const handleGroupSubmit = async (e) => {
     e.preventDefault();
 
@@ -1973,26 +1956,22 @@ const Tables = () => {
         discout: groupForm.discount,
         selected_pool: Array.isArray(groupForm.selectedTables)
           ? groupForm.selectedTables.join(",")
-          : groupForm.selectedTables, // fallback if it's already a string
+          : groupForm.selectedTables,
       };
-
 
       let res;
       if (editingGroup) {
-        // ✅ Update existing group
         res = await axiosInstance.put(`/tables/tablegroups/${groupForm.id}`, payload);
         console.log("✅ Group updated:", res.data);
         alert("Group updated successfully!");
         window.location.reload();
       } else {
-        // ✅ Create new group
         res = await axiosInstance.post(`/tables/groups`, payload);
         console.log("✅ Group created:", res.data);
         alert("Group created successfully!");
         window.location.reload();
       }
 
-      // ✅ Reset form & close modal after success
       setGroupModalOpen(false);
       setGroupForm({
         id: null,
@@ -2010,20 +1989,17 @@ const Tables = () => {
     }
   };
 
-  const [groups, setGroups] = useState([]);
   const [tableForm, setTableForm] = useState({
     group: "",
   });
 
-  // ✅ Fetch Tables from API
-  // ✅ API se groups fetch
+  // Fetch Groups from API
   useEffect(() => {
     const fetchGroups = async () => {
       try {
         const res = await axiosInstance.get(`tables/groups/all`);
         console.log("Groups API Data:", res.data);
-
-        setGroups(res.data.data.groups); // API array directly set
+        setGroups(res.data.data.groups);
       } catch (error) {
         console.error("❌ Error fetching groups:", error);
       }
@@ -2032,12 +2008,8 @@ const Tables = () => {
     fetchGroups();
   }, []);
 
-  // ✅ Handle Change
-  // table post api function
-
   const [plugs, setPlugs] = useState([]);
 
-  // 🔹 API call for plugs
   const fetchPlugs = async () => {
     try {
       const res = await axiosInstance.get("/plugs");
@@ -2062,6 +2034,7 @@ const Tables = () => {
     const { name, value } = e.target;
     setTableForm((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleEditTable = (table) => {
     setEditingTable(table);
     setTableForm({
@@ -2080,7 +2053,7 @@ const Tables = () => {
 
     try {
       const payload = {
-        table_number: editingTable ? editingTable.table_number : randomnumber(), // Keep old number if editing
+        table_number: editingTable ? editingTable.table_number : randomnumber(),
         table_name: tableForm.name || editingTable?.table_name,
         table_type: tableForm.type || editingTable?.table_type,
         group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
@@ -2093,13 +2066,11 @@ const Tables = () => {
 
       let res;
       if (editingTable) {
-        // ✅ PUT request for editing
         res = await axiosInstance.put(`tables/${editingTable.id}`, payload);
         console.log("✅ Table Updated:", res.data);
         alert("Table updated successfully!");
         window.location.reload();
       } else {
-        // ✅ POST request for adding new
         res = await axiosInstance.post(`tables`, payload);
         console.log("✅ Table Added:", res.data);
         alert("Table added successfully!");
@@ -2107,41 +2078,30 @@ const Tables = () => {
       }
 
       setTableModalOpen(false);
-      setEditingTable(null); // Clear editing state
-      setTableForm({}); // Reset form
-      fetchTables(); // Refresh UI
+      setEditingTable(null);
+      setTableForm({});
+      fetchTables();
     } catch (err) {
       console.error("❌ Error saving table:", err.response?.data || err.message);
       alert("Failed to save table");
     }
   };
 
-  // render table data according to data api cards
   const fetchTables = async () => {
     try {
       const res = await axiosInstance.get(`/tables`);
-
       console.log("API response:", res.data);
 
-      // ✅ सही path से tables निकालना
       const tables = res.data?.data?.tables || [];
 
-      const electricTables = tables.filter((t) => (t.plug_id !== null || t.table_type == "snooker" || t.table_type == "playstation" || t.table_type == "pool"));
-      const nonElectricTables = tables.filter((t) => t.plug_id === null && t.table_type == "dining" || t.table_type == "largetable");
+      // Apply filters to tables
+      const electricTables = tables.filter((t) =>
+        electricFilter.includes(t.table_type)
+      );
 
-
-      //       const electricTables = tables.filter(
-      //   (t) =>
-      //     t.plug_id !== null &&
-      //     ["pool", "snooker", "game"].includes(t.category?.toLowerCase())
-      // );
-
-      // const nonElectricTables = tables.filter(
-      //   (t) =>
-      //     t.plug_id === null &&
-      //     ["table", "large table"].includes(t.category?.toLowerCase())
-      // );
-
+      const nonElectricTables = tables.filter((t) =>
+        nonElectricFilter.includes(t.table_type)
+      );
 
       setTablesByCategory([
         { category: "electric", tables: electricTables },
@@ -2153,14 +2113,8 @@ const Tables = () => {
   };
 
   useEffect(() => {
-
     fetchTables();
-  }, []);
-
-  const getCategoryColor = (type) =>
-    type === "playstation" ? "#007bff" : "#28a745";
-
-  // {quickJumpInput && (api call to fetch table by ID)}
+  }, [electricFilter, nonElectricFilter]);
 
   const [quickJumpInput, setQuickJumpInput] = useState("");
 
@@ -2169,26 +2123,18 @@ const Tables = () => {
     if (isNaN(num)) return;
 
     try {
-      // API hit karo
       const res = await axiosInstance.get(`/tables/${num}`);
       if (res.data?.success && res.data?.data?.table) {
         const table = res.data.data.table;
-
-        // Table element ko page me dhundho
         const tableElement = document.getElementById(`table-${table.id}`);
         if (tableElement) {
-          // purane highlights hatao
           document.querySelectorAll(".table-highlight").forEach((el) => {
             el.classList.remove("table-highlight", "animate-pulse");
           });
 
-          // highlight add karo
           tableElement.classList.add("table-highlight", "animate-pulse");
-
-          // smooth scroll
           tableElement.scrollIntoView({ behavior: "smooth", block: "center" });
 
-          // 2 sec baad highlight hatao
           setTimeout(() => {
             tableElement.classList.remove("table-highlight", "animate-pulse");
           }, 2000);
@@ -2204,8 +2150,73 @@ const Tables = () => {
     }
   };
 
+  // Toggle filter functions - FIXED
+  const toggleElectricFilter = (type) => {
+    if (type === "all") {
+      // If "all" is clicked, show all electric tables
+      setElectricFilter(["pool", "snooker", "playstation"]);
+    } else {
+      setElectricFilter(prev => {
+        // If this is the last active filter, don't remove it
+        if (prev.length === 1 && prev.includes(type)) {
+          return prev;
+        }
+        
+        // Otherwise toggle the filter
+        return prev.includes(type)
+          ? prev.filter(t => t !== type)
+          : [...prev, type];
+      });
+    }
+  };
 
-  // main UI
+  const toggleNonElectricFilter = (type) => {
+    if (type === "all") {
+      // If "all" is clicked, show all non-electric tables
+      setNonElectricFilter(["dining", "largetable"]);
+    } else {
+      setNonElectricFilter(prev => {
+        // If this is the last active filter, don't remove it
+        if (prev.length === 1 && prev.includes(type)) {
+          return prev;
+        }
+        
+        // Otherwise toggle the filter
+        return prev.includes(type)
+          ? prev.filter(t => t !== type)
+          : [...prev, type];
+      });
+    }
+  };
+
+  // Check if all filters of a category are selected
+  const areAllElectricFiltersSelected = electricFilter.length === 3;
+  const areAllNonElectricFiltersSelected = nonElectricFilter.length === 2;
+
+  // Filter button component
+  const FilterButton = ({ type, active, onClick, icon, label }) => (
+    <button
+      onClick={() => onClick(type)}
+      style={{
+        padding: "8px 12px",
+        margin: "0 5px 5px 0",
+        borderRadius: "20px",
+        border: "none",
+        backgroundColor: active ? getCategoryColor(type) : "#efece9ff",
+        color: active ? "white" : "#575249ff",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: "5px",
+        fontSize: "14px",
+        fontWeight: "bold",
+      }}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+
   return (
     <div>
       {/* Quick Jump */}
@@ -2321,34 +2332,106 @@ const Tables = () => {
           marginBottom: "30px",
         }}
       >
-        {tablesByCategory.map((cat) =>
-          cat.tables.length ? (
+        {tablesByCategory.map((cat) => {
+          // Only show category if it has tables and at least one filter is selected
+          if (cat.tables.length === 0 ||
+            (cat.category === "electric" && electricFilter.length === 0) ||
+            (cat.category === "non-electric" && nonElectricFilter.length === 0)) {
+            return null;
+          }
+
+          return (
             <div key={cat.category} style={{ marginBottom: "30px" }}>
-              <h2
-                style={{
-                  background: getCategoryColor(
-                    cat.category === "electric" ? "playstation" : "food"
-                  ),
-                  color: "#fff",
-                  padding: "10px 25px",
-                  borderRadius: "8px",
-                  marginBottom: "13px",
-                  fontSize: "20px",
-                  fontWeight: "bold",
-                  textAlign: "left",
-                  display: "inline-block",
-                }}
-              >
-                {cat.category === "electric"
-                  ? "🔌 Electric Tables"
-                  : "🛋️ Non-Electric Tables"}
-              </h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                <h2
+                  style={{
+                    background: getCategoryColor(
+                      cat.category === "electric" ? "playstation" : "food"
+                    ),
+                    color: "#fff",
+                    padding: "10px 25px",
+                    borderRadius: "8px",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    textAlign: "left",
+                    display: "inline-block",
+                    margin: 0,
+                  }}
+                >
+                  {cat.category === "electric"
+                    ? "Electric Tables"
+                    : "Non-Electric Tables"}
+                </h2>
+
+                {/* Filter buttons */}
+                <div style={{ display: "flex", flexWrap: "wrap" }}>
+                  {cat.category === "electric" && (
+                    <>
+                      <FilterButton
+                        type="all"
+                        active={areAllElectricFiltersSelected}
+                        onClick={toggleElectricFilter}
+                        icon=""
+                        label="All"
+                      />
+                      <FilterButton
+                        type="pool"
+                        active={electricFilter.includes("pool")}
+                        onClick={toggleElectricFilter}
+                        icon=""
+                        label="Pool"
+                      />
+                      <FilterButton
+                        type="snooker"
+                        active={electricFilter.includes("snooker")}
+                        onClick={toggleElectricFilter}
+                        icon=""
+                        label="Snooker"
+                      />
+                      <FilterButton
+                        type="playstation"
+                        active={electricFilter.includes("playstation")}
+                        onClick={toggleElectricFilter}
+                        icon=""
+                        label="PlayStation"
+                      />
+                    </>
+                  )}
+
+                  {cat.category === "non-electric" && (
+                    <>
+                      <FilterButton
+                        type="all"
+                        active={areAllNonElectricFiltersSelected}
+                        onClick={toggleNonElectricFilter}
+                        icon=""
+                        label="All"
+                      />
+                      <FilterButton
+                        type="dining"
+                        active={nonElectricFilter.includes("dining")}
+                        onClick={toggleNonElectricFilter}
+                        icon=""
+                        label="Dining"
+                      />
+                      <FilterButton
+                        type="largetable"
+                        active={nonElectricFilter.includes("largetable")}
+                        onClick={toggleNonElectricFilter}
+                        icon=""
+                        label="Large Table"
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div style={{ display: "flex", flexWrap: "wrap" }}>
                 {cat.tables.map(renderTableCard)}
               </div>
             </div>
-          ) : null
-        )}
+          );
+        })}
       </div>
 
       {/* Table Modal */}
@@ -2719,7 +2802,7 @@ const Tables = () => {
               fontSize: "16px",
             }}
           >
-            🏷️ {selectedTable.name}
+            {selectedTable.name}
             <div
               style={{
                 fontSize: "12px",
@@ -2753,7 +2836,7 @@ const Tables = () => {
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
               }}
             >
-              <span style={{ fontSize: "16px" }}>✏️</span>
+              <span style={{ fontSize: "16px" }}></span>
               Edit Table
             </button>
             <button
@@ -2777,7 +2860,7 @@ const Tables = () => {
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
               }}
             >
-              <span style={{ fontSize: "16px" }}>🗑️</span>
+              <span style={{ fontSize: "16px" }}></span>
               Delete Table
             </button>
             <button
@@ -2942,7 +3025,7 @@ const Tables = () => {
                         }}
                         title="Edit Group"
                       >
-                        ✏️
+                        <RiEditLine className="" />
                       </button>
                       <button
                         onClick={() => handleDeleteGroup(group.id)}
@@ -3388,6 +3471,7 @@ const Tables = () => {
                       (cat) =>
                         cat.tables.length > 0 && (
                           <div key={cat.category} style={{ marginBottom: "10px" }}>
+
                             <div
                               style={{
                                 backgroundColor: "#f8f9fa",
@@ -3400,6 +3484,8 @@ const Tables = () => {
                                 ? "Electric Tables"
                                 : "Non-Electric Tables"}
                             </div>
+
+
                             <div style={{ padding: "10px 15px" }}>
                               {cat.tables.map((table) => (
                                 <div
