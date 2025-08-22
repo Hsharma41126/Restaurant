@@ -2052,17 +2052,34 @@ const Tables = () => {
     e.preventDefault();
 
     try {
-      const payload = {
-        table_number: editingTable ? editingTable.table_number : randomnumber(),
-        table_name: tableForm.name || editingTable?.table_name,
-        table_type: tableForm.type || editingTable?.table_type,
-        group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
-        capacity: tableForm.seats || editingTable?.capacity || 4,
-        plug_id: tableForm.plugId || editingTable?.plug_id || null,
-        status: tableForm.status || editingTable?.status || "available",
-        location: editingTable ? editingTable.location : "Main Hall",
-        hourly_rate: editingTable ? editingTable.hourly_rate : "0",
-      };
+      let payload = {};
+
+      if (!editingTable) {
+        payload = {
+          table_number: editingTable ? editingTable.table_number : randomnumber(),
+          table_name: tableForm.name || editingTable?.table_name,
+          table_type: tableForm.type || editingTable?.table_type,
+          group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
+          capacity: tableForm.seats || editingTable?.capacity || 4,
+          plug_id: tableForm.plugId || editingTable?.plug_id || null,
+          status: tableForm.status || editingTable?.status || "available",
+          location: editingTable ? editingTable.location : "Main Hall",
+          hourly_rate: editingTable ? editingTable.hourly_rate : "0",
+          count: parseInt(tableForm.count)
+        };
+      } else {
+        payload = {
+          table_number: editingTable ? editingTable.table_number : randomnumber(),
+          table_name: tableForm.name || editingTable?.table_name,
+          table_type: tableForm.type || editingTable?.table_type,
+          group_id: parseInt(tableForm.group || editingTable?.group_id, 10),
+          capacity: tableForm.seats || editingTable?.capacity || 4,
+          plug_id: tableForm.plugId || editingTable?.plug_id || null,
+          status: tableForm.status || editingTable?.status || "available",
+          location: editingTable ? editingTable.location : "Main Hall",
+          hourly_rate: editingTable ? editingTable.hourly_rate : "0",
+        };
+      }
 
       let res;
       if (editingTable) {
@@ -2161,7 +2178,7 @@ const Tables = () => {
         if (prev.length === 1 && prev.includes(type)) {
           return prev;
         }
-        
+
         // Otherwise toggle the filter
         return prev.includes(type)
           ? prev.filter(t => t !== type)
@@ -2180,7 +2197,7 @@ const Tables = () => {
         if (prev.length === 1 && prev.includes(type)) {
           return prev;
         }
-        
+
         // Otherwise toggle the filter
         return prev.includes(type)
           ? prev.filter(t => t !== type)
@@ -2537,7 +2554,6 @@ const Tables = () => {
                     value={tableForm.name || ""}
                     onChange={handleTableFormChange}
                     placeholder="Enter table name"
-                    required
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -2583,7 +2599,7 @@ const Tables = () => {
                         color: "#6f42c1",
                       },
                       {
-                        type: "food",
+                        type: "dining",
                         icon: "🍽️",
                         color: "#fd7e14",
                       },
@@ -2660,8 +2676,33 @@ const Tables = () => {
                   </div>
                 )}
 
+                {!editingTable && <div style={{ marginBottom: "15px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Number Of Tables
+                  </label>
+                  <input
+                    type="text"
+                    name="count"
+                    value={tableForm.count || ""}
+                    onChange={handleTableFormChange}
+                    placeholder="Enter Count Of Table"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>}
+
                 {/* Smart Plug ID dropdown */}
-                {tableForm.type !== "food" && tableForm.type !== "largetable" && (
+                {tableForm.type !== "food" && tableForm.type !== "dining" && tableForm.type !== "largetable" && !tableForm.count && (
                   <div style={{ marginBottom: "15px" }}>
                     <label
                       style={{
