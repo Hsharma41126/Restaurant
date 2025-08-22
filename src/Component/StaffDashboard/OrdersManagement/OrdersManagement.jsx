@@ -814,14 +814,14 @@
 
 
 
-
 import React, { useState, useEffect } from 'react';
 import './OrderManagement.css';
 import TableManagement from './TableManagement';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Modal, Button } from 'react-bootstrap';
 import axiosInstance from "../../../utils/axiosInstance";
+
 const OrdersManagement = () => {
   // State management
   const [activeTab, setActiveTab] = useState('register');
@@ -1004,6 +1004,28 @@ const OrdersManagement = () => {
     fetchOrders();
   }, [page, limit]);
 
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setLoadingCustomers(true);
+      try {
+        // Replace with your actual API endpoint
+        const res = await axiosInstance.get('/users?page=1&limit=10&role=user');
+        if (res.data.data.users) {
+          setCustomers(res.data.data.users);
+        }
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+      } finally {
+        setLoadingCustomers(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   const navigate = useNavigate();
 
@@ -1079,8 +1101,6 @@ const OrdersManagement = () => {
     setSelectedTable(tableNumber);
     setActiveTab('register');
     setShowTableModal(false); // Close the table selection modal
-
-    // Switch to register tab after selecting table
   };
 
   // Function to handle order selection
@@ -1112,7 +1132,6 @@ const OrdersManagement = () => {
       status: "pending"
     };
 
-    setAllOrders([...allOrders, newOrder]);
     navigate("/staff/billingpayment");
   };
 
@@ -1198,7 +1217,6 @@ const OrdersManagement = () => {
     }
   ];
 
-
   const onJumpToOrders = () => {
     setActiveTab("register");
   };
@@ -1239,14 +1257,13 @@ const OrdersManagement = () => {
                   <span className="text-muted small">
                     {selectedTable ? `Table ${selectedTable}` : 'No Table Selected'}
                   </span>
-
                 </div>
                 <div className="d-flex gap-2">
                   <button
                     onClick={() => setIsCustomerModalOpen(true)}
                     className="btn btn-light flex-grow-1 text-start btn-sm"
                   >
-                    <i className="fa fa-user me-2"></i>Customer
+                    <i className="fa fa-user-plus me-2"></i>Add Customer
                   </button>
                   <button
                     onClick={() => setIsNoteModalOpen(true)}
@@ -1310,19 +1327,6 @@ const OrdersManagement = () => {
                   </div>
                 </div>
 
-                {/* Calculator Keypad */}
-                {/* <div className="d-grid gap-1 mb-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                  {['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '-', 'C', '0', '.', '+'].map((key) => (
-                    <button
-                      key={key}
-                      className={`btn btn-sm fw-bold p-1 ${key === 'C' ? 'btn-danger' : ['÷', '×', '-', '+'].includes(key) ? 'btn-info' : 'btn-light'}`}
-                      style={{ height: '30px', fontSize: '12px', lineHeight: '12px' }}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                </div> */}
-
                 {/* Order Type & Course */}
                 <div className="d-flex gap-2 mb-2">
                   <button
@@ -1359,7 +1363,6 @@ const OrdersManagement = () => {
                           ? "Take Out"
                           : "Delivery"}
                     </span>
-
                   </button>
 
                   <div className="dropdown">
@@ -1396,7 +1399,6 @@ const OrdersManagement = () => {
 
                 {/* Action Buttons */}
                 <div className="d-flex gap-2">
-
                   {orderType === 'dineIn' &&
                     <button
                       onClick={() => {
@@ -1420,22 +1422,10 @@ const OrdersManagement = () => {
                   <Link to='/staff/kotqueue' className='text-decoration-none'>
                     <button
                       className="btn btn-warning btn-sm flex-grow-1"
-                    // onClick={() => setActiveTab('orders')}
                     >
                       Send
                     </button>
                   </Link>
-
-                  {/* <Link to="/staff/billingpayment">
-                    <button
-                      className="btn btn-warning btn-sm flex-grow-1"
-                      onClick={handlePayment}
-                    >
-                      <i className="fa fa-credit-card me-1 small"></i>Pay
-                      Order
-                    </button>
-                  </Link> */}
-
                 </div>
               </div>
             </div>
@@ -1563,25 +1553,25 @@ const OrdersManagement = () => {
 
 
 
-        <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Select a Table</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div className="d-flex flex-wrap gap-2">
-              {["T1", "T2", "T3", "T4", "T5"].map((table) => (
-                <Button
-                  key={table}
-                  variant="outline-dark"
-                  className="flex-grow-1"
-                  onClick={() => handleTableSelect(table)}
-                >
-                  {table}
-                </Button>
-              ))}
-            </div>
-          </Modal.Body>
-        </Modal>
+ <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Select a Table</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="d-flex flex-wrap gap-2">
+            {["T1", "T2", "T3", "T4", "T5"].map((table) => (
+              <Button
+                key={table}
+                variant="outline-dark"
+                className="flex-grow-1"
+                onClick={() => handleTableSelect(table)}
+              >
+                {table}
+              </Button>
+            ))}
+          </div>
+        </Modal.Body>
+      </Modal>
 
         {/* Tables Screen */}
         {activeTab === 'tables' && (
@@ -1589,7 +1579,7 @@ const OrdersManagement = () => {
             <TableManagement
               onTableSelect={handleTableSelect}
               onJumpToOrders={onJumpToOrders}
-              onSelectTable={setSelectedTable} // ye prop bhej rahe
+              onSelectTable={setSelectedTable}
             />
           </div>
         )}
@@ -1609,7 +1599,7 @@ const OrdersManagement = () => {
                         <th>Items</th>
                         <th>Total</th>
                         <th>Time</th>
-                        <th>Status</th> {/* ✅ Added */}
+                        <th>Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -1632,7 +1622,7 @@ const OrdersManagement = () => {
                             <td>#{order.order_number}</td>
                             <td>{order.table_name} ({order.table_number})</td>
                             <td>{order.customer_name}</td>
-                            <td>—</td> {/* ✅ items agar API se aayenge to map karna hoga */}
+                            <td>—</td>
                             <td>${parseFloat(order.total_amount).toFixed(2)}</td>
                             <td>{new Date(order.created_at).toLocaleTimeString()}</td>
                             <td>
@@ -1641,7 +1631,8 @@ const OrdersManagement = () => {
                               </span>
                             </td>
                             <td>
-                              <Link to="/staff/billingpayment">
+                              {/* Fixed: Use order.id instead of order_number from useParams */}
+                              <Link to={`/staff/billingpayment/${order.id}`}>
                                 <button className="btn btn-success btn-sm flex-grow-1">
                                   <i className="fa fa-credit-card me-1 small"></i>Pay
                                 </button>
@@ -1651,14 +1642,11 @@ const OrdersManagement = () => {
                         ))
                       )}
                     </tbody>
-
                   </table>
                 </div>
-
               </div>
             </div>
           </div>
-
         )}
       </div>
 
@@ -1678,6 +1666,45 @@ const OrdersManagement = () => {
                 ></button>
               </div>
               <div className="modal-body">
+                {/* Customer Dropdown */}
+                <div className="mb-3">
+                  <label className="form-label">Select Customer</label>
+                  <select
+                    className="form-select"
+                    value={selectedCustomer ? selectedCustomer.id : ""}
+                    onChange={(e) => {
+                      const customerId = e.target.value;
+                      if (customerId) {
+                        const customer = customers.find(c => c.id === parseInt(customerId));
+                        setSelectedCustomer(customer);
+                        setCustomerInfo({
+                          ...customerInfo,
+                          name: customer.name,
+                          phone: customer.phone
+                        });
+                      } else {
+                        setSelectedCustomer(null);
+                        setCustomerInfo({
+                          ...customerInfo,
+                          name: '',
+                          phone: ''
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Select Customer</option>
+                    {loadingCustomers ? (
+                      <option disabled>Loading customers...</option>
+                    ) : (
+                      customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} ({customer.phone})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
                 <div className="mb-3">
                   <label className="form-label">Name</label>
                   <input
@@ -1823,8 +1850,6 @@ const OrdersManagement = () => {
                       </button>
                     </div>
                   ))}
-
-
                 </div>
               </div>
               <div className="modal-footer">

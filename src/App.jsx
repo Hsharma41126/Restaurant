@@ -146,7 +146,7 @@ function App() {
                       <Route path="ordermanagement" element={<OrdersManagement />} />
                       <Route path="kotqueue" element={<KOTQueue />} />
                       <Route path="reservationsmanagement" element={<ReservationsManagement />} />
-                      <Route path="billingpayment" element={<BillingPayment />} />
+                      <Route path="billingpayment/:id" element={<BillingPayment />} />
                       <Route path="alertsnotifications" element={<AlertsNotifications />} />
                     </Routes>
                   </ProtectedRoute>

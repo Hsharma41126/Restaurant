@@ -43,7 +43,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         { name: "Orders ​", path: "/staff/ordermanagement", icon: faBriefcase },
         { name: "KOT Queue ​", path: "/staff/kotqueue", icon: faFileAlt },
         { name: "Reservations", path: "/staff/reservationsmanagement", icon: faBriefcase },
-        { name: "Billing ​", path: "/staff/billingpayment", icon: faFileAlt },
+        // { name: "Billing ​", path: "/staff/billingpayment", icon: faFileAlt },
         { name: "Alerts", path: "/staff/alertsnotifications", icon: faDesktopAlt },
     ];
 
