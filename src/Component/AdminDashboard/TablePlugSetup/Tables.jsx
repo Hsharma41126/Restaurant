@@ -2920,8 +2920,8 @@ const Tables = () => {
                             // selectedTables: group.selected_pool,
                             selectedTables: group.selected_pool
                               ? String(group.selected_pool)
-                                .split(",")              // "48,6" -> ["48","6"]
-                                .map((id) => Number(id)) // ["48","6"] -> [48, 6]
+                                .split(",")
+                                .map((id) => Number(id))
                               : [],
                           });
                           setGroupModalOpen(true);
