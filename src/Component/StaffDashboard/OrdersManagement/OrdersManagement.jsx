@@ -845,6 +845,16 @@ const OrdersManagement = () => {
   const [selectedSides, setSelectedSides] = useState([]);
   const [isSidesModalOpen, setIsSidesModalOpen] = useState(false);
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
+<<<<<<< HEAD
+=======
+  // const [allOrders, setAllOrders] = useState([]);
+
+  const [orders, setOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+>>>>>>> 6da853121f51ce759dccf352bdeb8bfa5756afbc
 
   const [orders, setOrders] = useState([]);
   const [page, setPage] = useState(1);
@@ -935,11 +945,42 @@ const OrdersManagement = () => {
       setLoading(false);
     }
   };
+<<<<<<< HEAD
 
   useEffect(() => {
     console.log("useEffect triggered");
     fetchOrders();
   }, [page, limit]);
+=======
+
+  useEffect(() => {
+    console.log("useEffect triggered");
+    fetchOrders();
+  }, [page, limit]);
+
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setLoadingCustomers(true);
+      try {
+        // Replace with your actual API endpoint
+        const res = await axiosInstance.get('/users?page=1&limit=10&role=user');
+        if (res.data.data.users) {
+          setCustomers(res.data.data.users);
+        }
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+      } finally {
+        setLoadingCustomers(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+>>>>>>> 6da853121f51ce759dccf352bdeb8bfa5756afbc
 
   const navigate = useNavigate();
 
@@ -1177,7 +1218,7 @@ const OrdersManagement = () => {
                     onClick={() => setIsCustomerModalOpen(true)}
                     className="btn btn-light flex-grow-1 text-start btn-sm"
                   >
-                    <i className="fa fa-user me-2"></i>Customer
+                    <i className="fa fa-user-plus me-2"></i>Add Customer
                   </button>
                   <button
                     onClick={() => setIsNoteModalOpen(true)}
@@ -1264,10 +1305,17 @@ const OrdersManagement = () => {
                     >
                       <i
                         className={`fa ${orderType === "dineIn"
+<<<<<<< HEAD
                             ? "fa-cutlery"
                             : orderType === "takeOut"
                               ? "fa-shopping-bag"
                               : "fa-motorcycle"
+=======
+                          ? "fa-cutlery"
+                          : orderType === "takeOut"
+                            ? "fa-shopping-bag"
+                            : "fa-motorcycle"
+>>>>>>> 6da853121f51ce759dccf352bdeb8bfa5756afbc
                           } me-2 small`}
                       ></i>
 
@@ -1402,6 +1450,11 @@ const OrdersManagement = () => {
           </div>
         )}
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 6da853121f51ce759dccf352bdeb8bfa5756afbc
         <Modal show={showTableModal} onHide={() => setShowTableModal(false)} centered>
           <Modal.Header closeButton>
             <Modal.Title>Select a Table</Modal.Title>
@@ -1515,6 +1568,45 @@ const OrdersManagement = () => {
                 ></button>
               </div>
               <div className="modal-body">
+                {/* Customer Dropdown */}
+                <div className="mb-3">
+                  <label className="form-label">Select Customer</label>
+                  <select
+                    className="form-select"
+                    value={selectedCustomer ? selectedCustomer.id : ""}
+                    onChange={(e) => {
+                      const customerId = e.target.value;
+                      if (customerId) {
+                        const customer = customers.find(c => c.id === parseInt(customerId));
+                        setSelectedCustomer(customer);
+                        setCustomerInfo({
+                          ...customerInfo,
+                          name: customer.name,
+                          phone: customer.phone
+                        });
+                      } else {
+                        setSelectedCustomer(null);
+                        setCustomerInfo({
+                          ...customerInfo,
+                          name: '',
+                          phone: ''
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Select Customer</option>
+                    {loadingCustomers ? (
+                      <option disabled>Loading customers...</option>
+                    ) : (
+                      customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} ({customer.phone})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
                 <div className="mb-3">
                   <label className="form-label">Name</label>
                   <input
