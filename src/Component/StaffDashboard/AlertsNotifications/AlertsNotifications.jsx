@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const AlertsNotifications = () => {
   const [notifications, setNotifications] = useState({
@@ -130,6 +131,7 @@ const AlertsNotifications = () => {
       }
     }
   `;
+
 
   return (
     <div className="container-fluid p-3">

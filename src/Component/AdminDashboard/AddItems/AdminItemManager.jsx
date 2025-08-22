@@ -591,132 +591,139 @@ const SAddCategories = () => {
           </div>
         </div>
       ) : viewMode === "table" || currentLevel === 'items' ? (
-        <div className="card shadow-sm border-0">
-          <div className="card-body">
-            <div className="table-responsive">
-              <table className="table table-bordered table-hover align-middle text-nowrap mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    {currentLevel === 'items' && <th>Printer</th>}
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.length === 0 ? (
-                    <tr>
-                      <td colSpan={currentLevel === 'items' ? "4" : "3"} className="text-center text-muted py-4">
-                        {`No ${currentLevel} Found`}
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedData.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        onClick={(e) => {
-                          if (!e.target.closest("button, .no-row-click")) {
-                            if (currentLevel === 'categories') {
-                              handleViewSubcategories(item);
-                            } else if (currentLevel === 'subcategories') {
-                              handleViewItems(item);
-                            }
+       <div className="card shadow-sm border-0">
+  <div className="card-body">
+    <div className="table-responsive">
+      <table className="table table-bordered table-hover align-middle text-nowrap mb-0">
+        <thead className="table-light">
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            {currentLevel === 'items' && <th>Printer</th>}
+            {currentLevel === 'items' && <th>Price</th>}
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedData.length === 0 ? (
+            <tr>
+              <td colSpan={currentLevel === 'items' ? "5" : "3"} className="text-center text-muted py-4">
+                {`No ${currentLevel} Found`}
+              </td>
+            </tr>
+          ) : (
+            paginatedData.map((item, index) => (
+              <tr
+                key={item.id}
+                onClick={(e) => {
+                  if (!e.target.closest("button, .no-row-click")) {
+                    if (currentLevel === 'categories') {
+                      handleViewSubcategories(item);
+                    } else if (currentLevel === 'subcategories') {
+                      handleViewItems(item);
+                    }
+                  }
+                }}
+                style={{ cursor: currentLevel !== 'items' ? "pointer" : "default" }}
+              >
+                <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                <td>
+                  {currentLevel === 'categories' && item.category_name}
+                  {currentLevel === 'subcategories' && item.subcategory_name}
+                  {currentLevel === 'items' && item.item_name} {/* Fixed this line */}
+                </td>
+                {currentLevel === 'items' && 
+                <td>{item.printer_name}</td>}
+                {currentLevel === 'items' && 
+                <td>{item.price}</td>}
+                <td className="no-row-click">
+                  <div className="d-flex gap-2">
+                    <button 
+                      className="btn btn-sm btn-outline-warning" 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if (currentLevel === 'categories') handleEditCategory(item);
+                        else if (currentLevel === 'subcategories') handleEditSubcategory(item);
+                        else handleEditItem(item);
+                      }}
+                    >
+                      <FaEdit size={14} />
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-outline-danger" 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if (currentLevel === 'categories') handleDeleteCategory(item.id);
+                        else if (currentLevel === 'subcategories') handleDeleteSubcategory(item.id);
+                        else handleDeleteItem(item.id);
+                      }}
+                    >
+                      <FaTrash size={14} />
+                    </button>
+                    {currentLevel !== 'items' && (
+                      <button 
+                        className="btn btn-sm btn-outline-success" 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (currentLevel === 'categories') {
+                            setSelectedCategory(item);
+                            setShowSubcategoryModal(true);
+                          } else if (currentLevel === 'subcategories') {
+                            setSelectedSubcategory(item);
+                            setShowItemModal(true);
                           }
                         }}
-                        style={{ cursor: currentLevel !== 'items' ? "pointer" : "default" }}
                       >
-                        <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                        <td>{item.category_name || item.subcategory_name || item.item_name}</td>
-                        {currentLevel === 'items' && <td>{item.printer_name
-}</td>}
-                        <td className="no-row-click">
-                          <div className="d-flex gap-2">
-                            <button 
-                              className="btn btn-sm btn-outline-warning" 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                if (currentLevel === 'categories') handleEditCategory(item);
-                                else if (currentLevel === 'subcategories') handleEditSubcategory(item);
-                                else handleEditItem(item);
-                              }}
-                            >
-                              <FaEdit size={14} />
-                            </button>
-                            <button 
-                              className="btn btn-sm btn-outline-danger" 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                if (currentLevel === 'categories') handleDeleteCategory(item.id);
-                                else if (currentLevel === 'subcategories') handleDeleteSubcategory(item.id);
-                                else handleDeleteItem(item.id);
-                              }}
-                            >
-                              <FaTrash size={14} />
-                            </button>
-                            {currentLevel !== 'items' && (
-                              <button 
-                                className="btn btn-sm btn-outline-success" 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  if (currentLevel === 'categories') {
-                                    setSelectedCategory(item);
-                                    setShowSubcategoryModal(true);
-                                  } else if (currentLevel === 'subcategories') {
-                                    setSelectedSubcategory(item);
-                                    setShowItemModal(true);
-                                  }
-                                }}
-                              >
-                                <FaPlus size={14} />
-                              </button>
-                            )}
-                            {currentLevel !== 'items' && (
-                              <button 
-                                className="btn btn-sm btn-outline-info" 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  if (currentLevel === 'categories') handleViewSubcategories(item);
-                                  else if (currentLevel === 'subcategories') handleViewItems(item);
-                                }}
-                              >
-                                <FaEye size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        <FaPlus size={14} />
+                      </button>
+                    )}
+                    {currentLevel !== 'items' && (
+                      <button 
+                        className="btn btn-sm btn-outline-info" 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (currentLevel === 'categories') handleViewSubcategories(item);
+                          else if (currentLevel === 'subcategories') handleViewItems(item);
+                        }}
+                      >
+                        <FaEye size={14} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
 
-            {/* Pagination */}
-            <div className="d-flex justify-content-between align-items-center mt-3 small text-muted">
-              <div>
-                Showing {currentData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
-                {Math.min(currentPage * pageSize, currentData.length)} of {currentData.length} results
-              </div>
-              <div>
-                <nav>
-                  <ul className="pagination pagination-sm mb-0">
-                    <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                      <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>Previous</button>
-                    </li>
-                    {[...Array(totalPages)].map((_, i) => (
-                      <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-                        <button className="page-link" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
-                      </li>
-                    ))}
-                    <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                      <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>Next</button>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
-            </div>
-          </div>
-        </div>
+    {/* Pagination */}
+    <div className="d-flex justify-content-between align-items-center mt-3 small text-muted">
+      <div>
+        Showing {currentData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{" "}
+        {Math.min(currentPage * pageSize, currentData.length)} of {currentData.length} results
+      </div>
+      <div>
+        <nav>
+          <ul className="pagination pagination-sm mb-0">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>Previous</button>
+            </li>
+            {[...Array(totalPages)].map((_, i) => (
+              <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                <button className="page-link" onClick={() => handlePageChange(i + 1)}>{i + 1}</button>
+              </li>
+            ))}
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+              <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>Next</button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
       ) : (
         /* Kanban View for Categories and Subcategories */
         <div className="row">
