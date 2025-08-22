@@ -20,14 +20,14 @@ const Login = () => {
    const setRole = (role) => {
     setRoleSelected(role);
     if (role === "admin") {
-      setEmail("admingautam@gmail.com");
-      setPassword("admingautam@123");
+      setEmail("admin@gmail.com");
+      setPassword("admin@123");
     } else if (role === "staff") {
       setEmail("dinesh@gmail.com");
       setPassword("dinesh@123");
     } else if (role === "user") {
-      setEmail("user@gmail.com");
-      setPassword("user@1234");
+      setEmail("admingautam@gmail.com");
+      setPassword("admingautam@123");
     }
   };
 

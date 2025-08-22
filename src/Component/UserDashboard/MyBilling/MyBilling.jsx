@@ -343,7 +343,6 @@ const MyBilling = () => {
   const fetchBillData = async () => {
     try {
       setLoading(true);
-      // const response = await axiosInstance.get(`/billing/session/${sessionId}`);
       const response = await axiosInstance.get(`/billing/session/${sessionId}`, 
         {
           headers: {
@@ -363,9 +362,13 @@ const MyBilling = () => {
           });
           setPaymentSuccess(true);
         }
+      } else {
+        // If API returns success: false but no error
+        setError('No billing data available');
       }
     } catch (err) {
-      setError('Failed to fetch billing data');
+      // For any error (network error, 404, etc.), show "No billing data available"
+      setError('No billing data available');
       console.error('Error fetching bill data:', err);
     } finally {
       setLoading(false);
@@ -453,7 +456,7 @@ const MyBilling = () => {
   if (error) {
     return (
       <div className="p-3 d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-info" role="alert">
           {error}
         </div>
       </div>
@@ -537,7 +540,7 @@ const MyBilling = () => {
             <section className="mb-3 mb-md-4">
               <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3">
                 <h2 className="fs-5 fs-md-4 fw-bold text-dark m-0">My Orders</h2>
-                {billData.orders.length > 0 && (
+                {billData.orders && billData.orders.length > 0 && (
                   <button 
                     className="btn btn-link text-warning p-0 d-flex align-items-center gap-1 gap-md-2"
                     onClick={toggleOrderDetails}
@@ -551,38 +554,46 @@ const MyBilling = () => {
                 )}
               </div>
               
-              {showOrderDetails && billData.orders.length > 0 && (
-                <div className="mb-3">
-                  <div className="row g-2 mb-3">
-                    {billData.orders.map((order, index) => (
-                      <div className="col-12" key={index}>
-                        <div className="d-flex justify-content-between align-items-center p-2 p-md-3 bg-light rounded mb-2">
-                          <div className="d-flex align-items-center gap-2 gap-md-3">
-                            <div style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🍔</div>
-                            <div>
-                              <div className="fw-medium">Order #{order.order_number}</div>
-                              <div className="text-muted small">{order.items_summary}</div>
+              {billData.orders && billData.orders.length > 0 ? (
+                <>
+                  {showOrderDetails && (
+                    <div className="mb-3">
+                      <div className="row g-2 mb-3">
+                        {billData.orders.map((order, index) => (
+                          <div className="col-12" key={index}>
+                            <div className="d-flex justify-content-between align-items-center p-2 p-md-3 bg-light rounded mb-2">
+                              <div className="d-flex align-items-center gap-2 gap-md-3">
+                                <div style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🍔</div>
+                                <div>
+                                  <div className="fw-medium">Order #{order.order_number}</div>
+                                  <div className="text-muted small">{order.items_summary}</div>
+                                </div>
+                              </div>
+                              <span className="fw-semibold">${parseFloat(order.total_amount).toFixed(2)}</span>
                             </div>
                           </div>
-                          <span className="fw-semibold">${parseFloat(order.total_amount).toFixed(2)}</span>
+                        ))}
+                      </div>
+                      
+                      <div className="border-top pt-2 pt-md-3">
+                        <div className="d-flex justify-content-between">
+                          <span className="fw-semibold text-dark">Orders Subtotal</span>
+                          <span className="fw-bold text-dark">${parseFloat(billData.totals.order_subtotal).toFixed(2)}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="border-top pt-2 pt-md-3">
-                    <div className="d-flex justify-content-between">
-                      <span className="fw-semibold text-dark">Orders Subtotal</span>
-                      <span className="fw-bold text-dark">${parseFloat(billData.totals.order_subtotal).toFixed(2)}</span>
                     </div>
+                  )}
+                  
+                  <div className="d-flex justify-content-between">
+                    <span className="fw-semibold text-dark">Orders Subtotal</span>
+                    <span className="fw-bold text-dark">${parseFloat(billData.totals.order_subtotal).toFixed(2)}</span>
                   </div>
+                </>
+              ) : (
+                <div className="text-center py-3">
+                  <p className="text-muted">No orders placed during this session</p>
                 </div>
               )}
-              
-              <div className="d-flex justify-content-between">
-                <span className="fw-semibold text-dark">Orders Subtotal</span>
-                <span className="fw-bold text-dark">${parseFloat(billData.totals.order_subtotal).toFixed(2)}</span>
-              </div>
             </section>
 
             {/* Summary */}
@@ -592,7 +603,7 @@ const MyBilling = () => {
                   <div className="d-flex justify-content-between">
                     <span className="text-dark">Subtotal</span>
                     <span className="fw-medium">
-                      ${(parseFloat(billData.session.session_cost) + parseFloat(billData.totals.order_subtotal)).toFixed(2)}
+                      ${(parseFloat(billData.session.session_cost) + parseFloat(billData.totals.order_subtotal || 0)).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -615,7 +626,7 @@ const MyBilling = () => {
                       ${
                         (
                           parseFloat(billData.session.session_cost) + 
-                          parseFloat(billData.totals.order_subtotal) + 
+                          parseFloat(billData.totals.order_subtotal || 0) + 
                           parseFloat(billData.totals.tax_amount || 0) + 
                           2.50 // Service fee
                         ).toFixed(2)
@@ -686,7 +697,7 @@ const MyBilling = () => {
                             ${
                               (
                                 parseFloat(billData.session.session_cost) + 
-                                parseFloat(billData.totals.order_subtotal) + 
+                                parseFloat(billData.totals.order_subtotal || 0) + 
                                 parseFloat(billData.totals.tax_amount || 0) + 
                                 2.50 // Service fee
                               ).toFixed(2)
@@ -730,7 +741,7 @@ const MyBilling = () => {
                   {
                     (
                       parseFloat(billData.session.session_cost) + 
-                      parseFloat(billData.totals.order_subtotal) + 
+                      parseFloat(billData.totals.order_subtotal || 0) + 
                       parseFloat(billData.totals.tax_amount || 0) + 
                       2.50 // Service fee
                     ).toFixed(2)
@@ -745,4 +756,4 @@ const MyBilling = () => {
   );
 };
 
-export default MyBilling;
+export default MyBilling;  
