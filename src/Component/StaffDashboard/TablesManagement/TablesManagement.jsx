@@ -2450,8 +2450,1081 @@
 // export default TablesManagement;
 
 
+// import React, { useState, useEffect } from 'react';
+// import { RiDashboardLine, RiTableLine, RiBarChartLine, RiSettingsLine, RiUserLine, RiNotificationLine, RiGridLine, RiListCheck, RiBilliardsLine, RiGamepadLine, RiRestaurantLine, RiStopLine, RiPlayLine, RiArrowDownSLine, RiCloseLine, RiPauseLine, RiPlayCircleLine } from 'react-icons/ri';
+// import { FaPlaystation } from 'react-icons/fa';
+// import { Modal, Button, Form, Dropdown } from 'react-bootstrap';
+// import { useNavigate } from 'react-router-dom';
+// import MemberSelect from './MemberSelect';
+// import { apiUrl } from '../../../utils/config';
+
+// const TablesManagement = () => {
+//     const navigate = useNavigate()
+//     const [showFoodModal, setShowFoodModal] = useState(false);
+//     const [loading, setLoading] = useState(true);
+//     const [error, setError] = useState(null);
+
+//     // State declarations
+//     const [showTableModal, setShowTableModal] = useState(false);
+//     const [selectedSession, setSelectedSession] = useState(null);
+//     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+//     const [confirmToggleSession, setConfirmToggleSession] = useState(null);
+//     const [showToggleConfirm, setShowToggleConfirm] = useState(false);
+//     const [showStartSessionModal, setShowStartSessionModal] = useState(false);
+
+//     const [members, setMembers] = useState([]);
+//     const [selectedMember, setSelectedMember] = useState(null);
+//     const [menuItems, setMenuItems] = useState([
+//         { id: 1, name: 'Burger', options: ['No Cheese', 'Extra Cheese', 'No Pickles'] },
+//         { id: 2, name: 'Pizza', options: ['Thin Crust', 'Thick Crust', 'Extra Sauce'] },
+//         { id: 3, name: 'Salad', options: ['No Dressing', 'Extra Dressing', 'Add Chicken'] }
+//     ]);
+//     const [selectedItems, setSelectedItems] = useState([]);
+//     const [itemOptions, setItemOptions] = useState({});
+//     const [currentTime, setCurrentTime] = useState('');
+//     const [tableTypeFilter, setTableTypeFilter] = useState('all');
+//     const [viewMode, setViewMode] = useState('grid');
+//     const [timeLimit, setTimeLimit] = useState();  // in minutes
+//     const [amount, setAmount] = useState();        // in $
+//     const hourlyRate = 10; // Default hourly rate if not provided
+
+//     const [sessions, setSessions] = useState([]);
+//     const [availableTables, setAvailableTables] = useState([]);
+//     const [selectedTableForStart, setSelectedTableForStart] = useState(null);
+//     const [currentUser, setCurrentUser] = useState(null);
+
+//     // Load current user data
+//     useEffect(() => {
+//         const userData = JSON.parse(localStorage.getItem("user"));
+//         setCurrentUser(userData);
+//     }, []);
+
+//     // Fetch members from API
+//     useEffect(() => {
+//         const fetchMembers = async () => {
+//             try {
+//                 const response = await fetch(`${apiUrl}/users?role=user`, {
+//                     method: 'GET',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                     }
+//                 });
+
+//                 if (!response.ok) {
+//                     throw new Error(`HTTP error! status: ${response.status}`);
+//                 }
+
+//                 const data = await response.json();
+
+//                 if (data.success) {
+//                     // Transform API data to match component structure
+//                     const formattedMembers = data.data.users.map(user => ({
+//                         id: user.id,
+//                         name: user.name,
+//                         discount: parseFloat(user.discount_percentage) || 0,
+//                         phone: user.phone,
+//                         email: user.email,
+//                         status: user.status,
+//                         role: user.role
+//                     }));
+
+//                     setMembers(formattedMembers);
+//                 } else {
+//                     throw new Error(data.message || 'Failed to fetch members');
+//                 }
+//             } catch (err) {
+//                 console.error('Error fetching members:', err);
+//                 // Fallback to sample data if API fails
+//                 setMembers([
+//                     { id: 1, name: 'John Doe', discount: 10, phone: '123-456-7890' },
+//                     { id: 2, name: 'Jane Smith', discount: 5, phone: '123-456-7891' },
+//                     { id: 3, name: 'Mike Johnson', discount: 15, phone: '123-456-7892' },
+//                     { id: 4, name: 'Sarah Williams', discount: 0, phone: '123-456-7893' }
+//                 ]);
+//             }
+//         };
+
+//         fetchMembers();
+//     }, []);
+
+//     // Fetch sessions from API
+//     useEffect(() => {
+//         const fetchSessions = async () => {
+//             try {
+//                 setLoading(true);
+//                 const response = await fetch(`${apiUrl}/sessions`, {
+//                     method: 'GET',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                     }
+//                 });
+
+//                 if (!response.ok) {
+//                     throw new Error(`HTTP error! status: ${response.status}`);
+//                 }
+
+//                 const data = await response.json();
+
+//                 if (data.success) {
+//                     setSessions(data.data.sessions || []);
+//                 } else {
+//                     throw new Error(data.message || 'Failed to fetch sessions');
+//                 }
+//             } catch (err) {
+//                 console.error('Error fetching sessions:', err);
+//                 setError(err.message);
+//                 // Fallback to sample data if API fails
+//                 setSessions([
+//                     {
+//                         id: 5,
+//                         session_id: "SES-1755757269519-190",
+//                         table_id: 28,
+//                         user_id: 11,
+//                         customer_name: "new user",
+//                         customer_phone: "9878458596",
+//                         start_time: "2025-08-21 06:21:09",
+//                         end_time: null,
+//                         duration_minutes: 0,
+//                         hourly_rate: "12.00",
+//                         session_cost: "0.00",
+//                         status: "active",
+//                         amount: null,
+//                         time_limit: null,
+//                         table_number: "P20",
+//                         table_name: "Pool Table 3",
+//                         table_type: "pool",
+//                         user_name: "govind singh"
+//                     }
+//                 ]);
+//             } finally {
+//                 setLoading(false);
+//             }
+//         };
+
+//         fetchSessions();
+//     }, []);
+
+//     // Fetch available tables for starting new session
+//     const fetchAvailableTables = async () => {
+//         try {
+//             const response = await fetch(`${apiUrl}/tables?status=available`, {
+//                 method: 'GET',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                 }
+//             });
+
+//             if (response.ok) {
+//                 const data = await response.json();
+//                 if (data.success) {
+//                     setAvailableTables(data.data.tables || []);
+//                 }
+//             }
+//         } catch (err) {
+//             console.error('Error fetching available tables:', err);
+//         }
+//     };
+
+//     // Handler for session click
+//     const handleSessionClick = (session) => {
+//         setSelectedSession(session);
+//         setShowTableModal(true);
+//         setSelectedItems([]);
+//         setItemOptions({});
+//     };
+
+//     // Handler for closing session
+//     const handleCloseSession = () => {
+//         setShowCloseConfirm(true);
+//     };
+
+//     // Confirm close and print
+//     const confirmCloseAndPrint = async () => {
+//         try {
+//             // API call to close session
+//             const response = await fetch(`${apiUrl}/sessions/${selectedSession.id}/end`, {
+//                 method: 'PATCH',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                 },
+//             });
+
+//             if (response.ok) {
+//                 const data = await response.json();
+
+//                 // Update local state
+//                 setSessions(prevSessions =>
+//                     prevSessions.filter(session => session.id !== selectedSession.id)
+//                 );
+
+//                 alert(`Printing bill for ${selectedSession.table_name}\nTotal: ${data.totalAmount}`);
+//             } else {
+//                 throw new Error('Failed to close session');
+//             }
+//         } catch (err) {
+//             console.error('Error closing session:', err);
+//             alert('Error closing session. Please try again.');
+//         } finally {
+//             setShowCloseConfirm(false);
+//             setShowTableModal(false);
+//         }
+//     };
+
+//     // Start new session
+//     const startNewSession = async () => {
+//         if (!selectedTableForStart) {
+//             alert('Please select a table');
+//             return;
+//         }
+
+//         try {
+//             // Get current user data
+//             const userId = currentUser?.id;
+
+//             const customerName = selectedMember ? selectedMember.name : 'Guest';
+//             const customerPhone = selectedMember ? selectedMember.phone : '';
+
+//             // API call to start session
+//             const response = await fetch(`${apiUrl}/sessions/start`, {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                 },
+//                 body: JSON.stringify({
+//                     table_id: parseInt(selectedTableForStart.id),
+//                     customer_name: customerName,
+//                     customer_phone: customerPhone,
+//                     user_id: userId.toString(),
+//                     amount: amount || 0,
+//                     time_limit: timeLimit?.toString() || "30"
+//                 })
+//             });
+
+//             if (response.ok) {
+//                 const data = await response.json();
+
+//                 // Add new session to the list
+//                 if (data.success) {
+//                     setSessions(prevSessions => [...prevSessions, data.data.session]);
+//                 }
+
+//                 alert('Session started successfully!');
+//                 setShowStartSessionModal(false);
+//             } else {
+//                 const errorData = await response.json();
+//                 throw new Error(errorData.message || 'Failed to start session');
+//             }
+//         } catch (err) {
+//             console.error('Error starting session:', err);
+//             alert(`Error starting session: ${err.message}`);
+//         }
+//     };
+
+//     // Pause session
+//     const pauseSession = async (sessionId) => {
+//         try {
+//             const response = await fetch(`${apiUrl}/sessions/${sessionId}/pause`, {
+//                 method: 'PATCH',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                 },
+//             });
+
+//             if (response.ok) {
+//                 // Update session status locally
+//                 setSessions(prevSessions =>
+//                     prevSessions.map(session =>
+//                         session.id === sessionId
+//                             ? { ...session, status: 'paused' }
+//                             : session
+//                     )
+//                 );
+//             } else {
+//                 throw new Error('Failed to pause session');
+//             }
+//         } catch (err) {
+//             console.error('Error pausing session:', err);
+//             alert('Error pausing session. Please try again.');
+//         }
+//     };
+
+//     // Resume session
+//     const resumeSession = async (sessionId) => {
+//         try {
+//             const response = await fetch(`${apiUrl}/sessions/${sessionId}/resume`, {
+//                 method: 'PATCH',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                 },
+//             });
+
+//             if (response.ok) {
+//                 // Update session status locally
+//                 setSessions(prevSessions =>
+//                     prevSessions.map(session =>
+//                         session.id === sessionId
+//                             ? { ...session, status: 'active' }
+//                             : session
+//                     )
+//                 );
+//             } else {
+//                 throw new Error('Failed to resume session');
+//             }
+//         } catch (err) {
+//             console.error('Error resuming session:', err);
+//             alert('Error resuming session. Please try again.');
+//         }
+//     };
+
+//     // End session
+//     const endSession = async (sessionId) => {
+//         try {
+//             const response = await fetch(`${apiUrl}/sessions/${sessionId}/end`, {
+//                 method: 'PATCH',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${localStorage.getItem("token")}`
+//                 },
+//             });
+
+//             if (response.ok) {
+//                 // Remove session from list
+//                 setSessions(prevSessions =>
+//                     prevSessions.filter(session => session.id !== sessionId)
+//                 );
+//             } else {
+//                 throw new Error('Failed to end session');
+//             }
+//         } catch (err) {
+//             console.error('Error ending session:', err);
+//             alert('Error ending session. Please try again.');
+//         }
+//     };
+
+//     // Add item to order
+//     const addItemToOrder = (item) => {
+//         setSelectedItems([...selectedItems, item]);
+//         setItemOptions({ ...itemOptions, [item.id]: [] });
+//     };
+
+//     // Remove item from order
+//     const removeItemFromOrder = (itemId) => {
+//         setSelectedItems(selectedItems.filter(item => item.id !== itemId));
+
+//         const newOptions = { ...itemOptions };
+//         delete newOptions[itemId];
+//         setItemOptions(newOptions);
+//     };
+
+//     // Update item options
+//     const handleOptionChange = (itemId, option, isChecked) => {
+//         setItemOptions(prev => {
+//             const currentOptions = prev[itemId] || [];
+//             const newOptions = isChecked
+//                 ? [...currentOptions, option]
+//                 : currentOptions.filter(opt => opt !== option);
+
+//             return { ...prev, [itemId]: newOptions };
+//         });
+//     };
+
+//     // Update current time
+//     useEffect(() => {
+//         const updateClock = () => {
+//             const now = new Date();
+//             const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+//             setCurrentTime(timeString);
+//         };
+
+//         updateClock();
+//         const interval = setInterval(updateClock, 1000);
+//         return () => clearInterval(interval);
+//     }, []);
+
+//     // Filter sessions by table type
+//     const filteredSessions = sessions.filter(session =>
+//         tableTypeFilter === 'all' || session.table_type === tableTypeFilter
+//     );
+
+//     // Get table icon based on type
+//     const getTableIcon = (type) => {
+//         switch (type) {
+//             case 'snooker':
+//                 return <RiBilliardsLine className="text-success fs-6" />;
+//             case 'pool':
+//                 return <RiBilliardsLine className="text-primary fs-6" />;
+//             case 'playstation':
+//                 return <FaPlaystation className="text-purple fs-6" />;
+//             case 'restaurant':
+//                 return <RiRestaurantLine className="text-warning fs-6" />;
+//             default:
+//                 return <RiTableLine className="text-secondary fs-6" />;
+//         }
+//     };
+
+//     // Get table icon background based on type
+//     const getTableIconBg = (type) => {
+//         switch (type) {
+//             case 'snooker':
+//                 return 'bg-success bg-opacity-10';
+//             case 'pool':
+//                 return 'bg-primary bg-opacity-10';
+//             case 'playstation':
+//                 return 'bg-purple bg-opacity-10';
+//             case 'restaurant':
+//                 return 'bg-warning bg-opacity-10';
+//             default:
+//                 return 'bg-secondary bg-opacity-10';
+//         }
+//     };
+
+//     // Get session status badge class
+//     const getStatusBadgeClass = (status) => {
+//         switch (status) {
+//             case 'active':
+//                 return 'bg-success bg-opacity-10 text-success';
+//             case 'paused':
+//                 return 'bg-warning bg-opacity-10 text-warning';
+//             case 'ended':
+//                 return 'bg-secondary bg-opacity-10 text-secondary';
+//             default:
+//                 return 'bg-info bg-opacity-10 text-info';
+//         }
+//     };
+
+//     // Render member select dropdown
+//     const renderMemberSelect = () => (
+//         <MemberSelect
+//             members={members}
+//             selectedMember={selectedMember}
+//             setSelectedMember={setSelectedMember}
+//             setMembers={setMembers}
+//         />
+//     );
+
+//     // Render menu items for restaurant
+//     const renderMenuItems = () => (
+//         <div className="mb-3">
+//             <h5>Menu Items</h5>
+//             <div className="d-flex flex-wrap gap-2 mb-3">
+//                 {menuItems.map(item => (
+//                     <Button
+//                         key={item.id}
+//                         variant="outline-primary"
+//                         size="sm"
+//                         onClick={() => addItemToOrder(item)}
+//                     >
+//                         {item.name}
+//                     </Button>
+//                 ))}
+//             </div>
+
+//             {selectedItems.length > 0 && (
+//                 <div className="border rounded p-3">
+//                     <h6>Selected Items</h6>
+//                     {selectedItems.map(item => (
+//                         <div key={item.id} className="mb-2 border-bottom pb-2">
+//                             <div className="d-flex justify-content-between align-items-center">
+//                                 <div className="fw-medium">{item.name}</div>
+//                                 <Button
+//                                     variant="link"
+//                                     size="sm"
+//                                     className="text-danger p-0"
+//                                     onClick={() => removeItemFromOrder(item.id)}
+//                                 >
+//                                     <RiCloseLine />
+//                                 </Button>
+//                             </div>
+
+//                             {item.options.length > 0 && (
+//                                 <div className="mt-1">
+//                                     <small className="text-muted d-block mb-1">Options:</small>
+//                                     <div className="d-flex flex-wrap gap-2">
+//                                         {item.options.map(option => (
+//                                             <Form.Check
+//                                                 key={option}
+//                                                 type="checkbox"
+//                                                 label={option}
+//                                                 checked={(itemOptions[item.id] || []).includes(option)}
+//                                                 onChange={(e) => handleOptionChange(item.id, option, e.target.checked)}
+//                                             />
+//                                         ))}
+//                                     </div>
+//                                 </div>
+//                             )}
+//                         </div>
+//                     ))}
+//                 </div>
+//             )}
+//         </div>
+//     );
+
+//     if (loading) {
+//         return <div className="p-3 text-center">Loading sessions...</div>;
+//     }
+
+//     if (error) {
+//         return <div className="p-3 text-center text-danger">Error: {error}</div>;
+//     }
+
+//     return (
+//         <div className="p-3">
+//             {/* Main Content */}
+//             <div className="d-flex flex-column flex-grow-1 overflow-hidden">
+//                 {/* Header */}
+//                 <header className="">
+//                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+//                         <div>
+//                             <h1 className="fs-3 fw-bold text-dark">Sessions Management</h1>
+//                             <p className="mb-0 text-muted">Monitor and control all active sessions</p>
+//                         </div>
+//                         <div className="d-flex align-items-center gap-3 gap-md-4">
+//                             <Button
+//                                 variant="success"
+//                                 onClick={() => {
+//                                     fetchAvailableTables();
+//                                     setShowStartSessionModal(true);
+//                                 }}
+//                             >
+//                                 <RiPlayLine className="me-2" />
+//                                 Start New Session
+//                             </Button>
+//                             <div className="text-end">
+//                                 <p className="mb-0 small text-muted">Current Time</p>
+//                                 <p className="mb-0 fs-5 fw-semibold">{currentTime}</p>
+//                             </div>
+//                         </div>
+//                     </div>
+//                 </header>
+
+//                 {/* Filter Bar */}
+//                 <div className="mt-3">
+//                     <div className="d-flex gap-2 flex-wrap">
+//                         {["All", "Pool", "Playstation", "Snooker", "Restaurant"].map((type) => (
+//                             <button
+//                                 key={type}
+//                                 type="button"
+//                                 onClick={() => setTableTypeFilter(type.toLowerCase())}
+//                                 className={`px-3 py-1 border fw-medium ${tableTypeFilter === type.toLowerCase()
+//                                     ? "border-dark text-dark rounded"
+//                                     : "border-secondary text-muted rounded"
+//                                     }`}
+//                                 style={{
+//                                     backgroundColor:
+//                                         tableTypeFilter === type.toLowerCase() ? "#facc15" : "transparent",
+//                                     minWidth: "110px",
+//                                     textAlign: "center",
+//                                     borderWidth: "2px",
+//                                 }}
+//                             >
+//                                 {type}
+//                             </button>
+//                         ))}
+//                     </div>
+//                 </div>
+
+//                 {/* Sessions Content */}
+//                 <div className="flex-grow-1 mt-3">
+//                     {viewMode === 'grid' ? (
+//                         <div className="row g-2 g-md-3">
+//                             {filteredSessions.map(session => (
+//                                 <div key={session.id} className="col-6 col-sm-4 col-md-3 col-lg-2" onClick={() => handleSessionClick(session)}
+//                                     style={{ cursor: 'pointer' }}>
+//                                     <div className="bg-white rounded-3 shadow-sm border overflow-hidden h-100 d-flex flex-column">
+//                                         <div className={`h-1 ${session.status === 'active' ? 'bg-success' : session.status === 'paused' ? 'bg-warning' : 'bg-secondary'}`}></div>
+//                                         <div className="p-2 p-md-3 flex-grow-1 d-flex flex-column">
+//                                             <div className="d-flex align-items-center justify-content-between mb-2">
+//                                                 <div className="d-flex align-items-center gap-2">
+//                                                     <div className={`rounded-3 d-flex align-items-center justify-content-center ${getTableIconBg(session.table_type)}`} style={{ width: '32px', height: '32px' }}>
+//                                                         {getTableIcon(session.table_type)}
+//                                                     </div>
+//                                                     <div>
+//                                                         <h3 className="mb-0 fw-semibold fs-6">{session.table_name}</h3>
+//                                                         <p className="mb-0 small text-muted text-capitalize">{session.table_type}</p>
+//                                                     </div>
+//                                                 </div>
+//                                                 <span className={`px-2 py-1 rounded-pill small fw-medium ${getStatusBadgeClass(session.status)}`}>
+//                                                     {session.status === 'active' ? 'Active' : session.status === 'paused' ? 'Paused' : 'Ended'}
+//                                                 </span>
+//                                             </div>
+
+//                                             <div className="flex-grow-1">
+//                                                 {session.customer_name && (
+//                                                     <div className="d-flex align-items-center justify-content-between mb-1">
+//                                                         <span className="small text-muted">Customer</span>
+//                                                         <span className="fw-medium small">{session.customer_name}</span>
+//                                                     </div>
+//                                                 )}
+//                                                 <div className="d-flex align-items-center justify-content-between mb-1">
+//                                                     <span className="small text-muted">Started</span>
+//                                                     <span className="font-monospace fw-bold small">
+//                                                         {new Date(session.start_time).toLocaleTimeString()}
+//                                                     </span>
+//                                                 </div>
+//                                                 <div className="d-flex align-items-center justify-content-between mb-1">
+//                                                     <span className="small text-muted">Cost</span>
+//                                                     <span className="fw-bold text-primary small">${session.session_cost}</span>
+//                                                 </div>
+
+//                                                 {session.table_type === 'restaurant' && (
+//                                                     <div className="mt-2 text-center mb-2 w-80">
+//                                                         <button
+//                                                             type="button"
+//                                                             className="btn btn-sm btn-primary"
+//                                                             onClick={(e) => {
+//                                                                 e.stopPropagation();
+//                                                                 setSelectedSession(session);
+//                                                                 setShowFoodModal(true);
+//                                                             }}
+//                                                         >
+//                                                             🍽 Order
+//                                                         </button>
+//                                                     </div>
+//                                                 )}
+//                                             </div>
+
+//                                             <div className="d-grid gap-1 gap-md-2">
+//                                                 <div className="d-flex gap-1">
+//                                                     {session.status === 'active' && (
+//                                                         <Button
+//                                                             variant="warning"
+//                                                             size="sm"
+//                                                             className="flex-grow-1"
+//                                                             onClick={(e) => {
+//                                                                 e.stopPropagation();
+//                                                                 pauseSession(session.id);
+//                                                             }}
+//                                                         >
+//                                                             <RiPauseLine className="fs-6" />
+//                                                         </Button>
+//                                                     )}
+//                                                     {session.status === 'paused' && (
+//                                                         <Button
+//                                                             variant="success"
+//                                                             size="sm"
+//                                                             className="flex-grow-1"
+//                                                             onClick={(e) => {
+//                                                                 e.stopPropagation();
+//                                                                 resumeSession(session.id);
+//                                                             }}
+//                                                         >
+//                                                             <RiPlayCircleLine className="fs-6" />
+//                                                         </Button>
+//                                                     )}
+//                                                     <Button
+//                                                         variant="danger"
+//                                                         size="sm"
+//                                                         className="flex-grow-1"
+//                                                         onClick={(e) => {
+//                                                             e.stopPropagation();
+//                                                             setSelectedSession(session);
+//                                                             setShowCloseConfirm(true);
+//                                                         }}
+//                                                     >
+//                                                         <RiStopLine className="fs-6" />
+//                                                     </Button>
+//                                                     <Button
+//                                                         variant="outline-secondary"
+//                                                         size="sm"
+//                                                         className="flex-grow-1"
+//                                                         onClick={(e) => {
+//                                                             e.stopPropagation();
+//                                                             handleSessionClick(session);
+//                                                         }}
+//                                                     >
+//                                                         Manage
+//                                                     </Button>
+//                                                 </div>
+//                                             </div>
+//                                         </div>
+//                                     </div>
+//                                 </div>
+//                             ))}
+//                         </div>
+//                     ) : (
+//                         <div className="bg-white rounded-3 shadow-sm border overflow-hidden">
+//                             <div className="table-responsive">
+//                                 <table className="table table-hover mb-0">
+//                                     <thead className="table-light">
+//                                         <tr>
+//                                             <th>Session Info</th>
+//                                             <th>Status</th>
+//                                             <th>Start Time</th>
+//                                             <th>Cost</th>
+//                                             <th className="text-end">Actions</th>
+//                                         </tr>
+//                                     </thead>
+//                                     <tbody>
+//                                         {filteredSessions.map(session => (
+//                                             <tr key={session.id} onClick={() => handleSessionClick(session)} style={{ cursor: 'pointer' }}>
+//                                                 <td>
+//                                                     <div className="d-flex align-items-center gap-2 gap-md-3">
+//                                                         <div className={`rounded-3 d-flex align-items-center justify-content-center ${getTableIconBg(session.table_type)}`} style={{ width: '40px', height: '40px' }}>
+//                                                             {getTableIcon(session.table_type)}
+//                                                         </div>
+//                                                         <div>
+//                                                             <h3 className="mb-0 fw-semibold fs-6 fs-md-5">{session.table_name}</h3>
+//                                                             <p className="mb-0 small text-muted text-capitalize">{session.table_type}</p>
+//                                                             {session.customer_name && (
+//                                                                 <p className="mb-0 small text-muted">Customer: {session.customer_name}</p>
+//                                                             )}
+//                                                         </div>
+//                                                     </div>
+//                                                 </td>
+//                                                 <td>
+//                                                     <span className={`px-2 py-1 rounded-pill small fw-medium ${getStatusBadgeClass(session.status)}`}>
+//                                                         {session.status === 'active' ? 'Active' : session.status === 'paused' ? 'Paused' : 'Ended'}
+//                                                     </span>
+//                                                 </td>
+//                                                 <td>
+//                                                     <span className="font-monospace fw-bold small">
+//                                                         {new Date(session.start_time).toLocaleTimeString()}
+//                                                     </span>
+//                                                 </td>
+//                                                 <td>
+//                                                     <span className="fw-bold text-primary">
+//                                                         ${session.session_cost}
+//                                                     </span>
+//                                                 </td>
+//                                                 <td className="text-end">
+//                                                     <div className="d-flex align-items-center gap-2 gap-md-3 justify-content-end">
+//                                                         {session.status === 'active' && (
+//                                                             <Button
+//                                                                 variant="warning"
+//                                                                 size="sm"
+//                                                                 onClick={(e) => {
+//                                                                     e.stopPropagation();
+//                                                                     pauseSession(session.id);
+//                                                                 }}
+//                                                             >
+//                                                                 <RiPauseLine className="me-1" /> Pause
+//                                                             </Button>
+//                                                         )}
+//                                                         {session.status === 'paused' && (
+//                                                             <Button
+//                                                                 variant="success"
+//                                                                 size="sm"
+//                                                                 onClick={(e) => {
+//                                                                     e.stopPropagation();
+//                                                                     resumeSession(session.id);
+//                                                                 }}
+//                                                             >
+//                                                                 <RiPlayCircleLine className="me-1" /> Resume
+//                                                             </Button>
+//                                                         )}
+//                                                         <Button
+//                                                             variant="danger"
+//                                                             size="sm"
+//                                                             onClick={(e) => {
+//                                                                 e.stopPropagation();
+//                                                                 setSelectedSession(session);
+//                                                                 setShowCloseConfirm(true);
+//                                                             }}
+//                                                         >
+//                                                             <RiStopLine className="me-1" /> End
+//                                                         </Button>
+//                                                     </div>
+//                                                 </td>
+//                                             </tr>
+//                                         ))}
+//                                     </tbody>
+//                                 </table>
+//                             </div>
+//                         </div>
+//                     )}
+//                 </div>
+
+//                 {/* Session Management Modal */}
+//                 <Modal show={showTableModal} onHide={() => setShowTableModal(false)} size="lg">
+//                     <Modal.Header closeButton>
+//                         <Modal.Title>
+//                             {selectedSession?.table_name} - {selectedSession?.table_type.toUpperCase()}
+//                             {selectedSession?.customer_name && (
+//                                 <div className="small text-muted">Customer: {selectedSession.customer_name}</div>
+//                             )}
+//                         </Modal.Title>
+//                     </Modal.Header>
+//                     <Modal.Body>
+//                         <h5 className="mb-3">Session Management</h5>
+
+//                         <div className="bg-light p-3 rounded mb-3">
+//                             <div className="row">
+//                                 <div className="col-md-6">
+//                                     <div className="mb-2">
+//                                         <span className="text-muted">Start Time:</span>
+//                                         <span className="fw-bold ms-2">
+//                                             {selectedSession && new Date(selectedSession.start_time).toLocaleString()}
+//                                         </span>
+//                                     </div>
+//                                     <div className="mb-2">
+//                                         <span className="text-muted">Status:</span>
+//                                         <span className={`fw-bold ms-2 ${getStatusBadgeClass(selectedSession?.status)}`}>
+//                                             {selectedSession?.status}
+//                                         </span>
+//                                     </div>
+//                                 </div>
+//                                 <div className="col-md-6">
+//                                     <div className="mb-2">
+//                                         <span className="text-muted">Current Cost:</span>
+//                                         <span className="fw-bold text-primary ms-2">${selectedSession?.session_cost}</span>
+//                                     </div>
+//                                     <div className="mb-2">
+//                                         <span className="text-muted">Hourly Rate:</span>
+//                                         <span className="fw-bold ms-2">${selectedSession?.hourly_rate}/hr</span>
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         </div>
+
+//                         <div className="d-flex flex-wrap gap-2 mb-3">
+//                             {selectedSession?.status === 'active' && (
+//                                 <Button
+//                                     variant="warning"
+//                                     onClick={() => pauseSession(selectedSession.id)}
+//                                 >
+//                                     <RiPauseLine className="me-2" /> Pause Session
+//                                 </Button>
+//                             )}
+//                             {selectedSession?.status === 'paused' && (
+//                                 <Button
+//                                     variant="success"
+//                                     onClick={() => resumeSession(selectedSession.id)}
+//                                 >
+//                                     <RiPlayCircleLine className="me-2" /> Resume Session
+//                                 </Button>
+//                             )}
+//                             <Button variant="info" className="mb-2">
+//                                 Transfer
+//                             </Button>
+//                             <Button variant="light" className="mb-2">
+//                                 Show Time & Bill
+//                             </Button>
+//                         </div>
+
+//                         <Button variant="danger" className="w-100" onClick={handleCloseSession}>
+//                             Close Session & Print Bill
+//                         </Button>
+//                     </Modal.Body>
+//                 </Modal>
+
+//                 {/* Start Session Modal */}
+//                 <Modal show={showStartSessionModal} onHide={() => setShowStartSessionModal(false)} size="lg">
+//                     <Modal.Header closeButton>
+//                         <Modal.Title>Start New Session</Modal.Title>
+//                     </Modal.Header>
+//                     <Modal.Body>
+//                         <Form.Group className="mb-3">
+//                             <Form.Label>Select Table</Form.Label>
+//                             <Form.Select
+//                                 value={selectedTableForStart?.id || ''}
+//                                 onChange={(e) => {
+//                                     const tableId = e.target.value;
+//                                     const table = availableTables.find(t => t.id.toString() === tableId);
+//                                     setSelectedTableForStart(table);
+//                                 }}
+//                             >
+//                                 <option value="">Select a table</option>
+//                                 {availableTables.map(table => (
+//                                     <option key={table.id} value={table.id}>
+//                                         {table.table_name} ({table.table_type}) - ${table.hourly_rate}/hr
+//                                     </option>
+//                                 ))}
+//                             </Form.Select>
+//                         </Form.Group>
+
+//                         {renderMemberSelect()}
+
+//                         {selectedTableForStart?.table_type === 'restaurant' && renderMenuItems()}
+
+//                         {/* Time/Money Inputs */}
+//                         {selectedTableForStart?.table_type !== 'restaurant' && (
+//                             <div className="mb-3">
+//                                 <label className="form-label">Set Time Limit (minutes)</label>
+//                                 <input
+//                                     type="number"
+//                                     className="form-control"
+//                                     value={timeLimit}
+//                                     onChange={(e) => {
+//                                         const minutes = Number(e.target.value);
+//                                         setTimeLimit(minutes);
+//                                         const rate = selectedTableForStart?.hourly_rate || hourlyRate;
+//                                         setAmount((minutes / 60) * rate);
+//                                     }}
+//                                     placeholder="Enter minutes"
+//                                 />
+
+//                                 <label className="form-label mt-3">Or Set by Amount ($)</label>
+//                                 <input
+//                                     type="number"
+//                                     className="form-control"
+//                                     value={amount}
+//                                     onChange={(e) => {
+//                                         const money = Number(e.target.value);
+//                                         setAmount(money);
+//                                         const rate = selectedTableForStart?.hourly_rate || hourlyRate;
+//                                         setTimeLimit((money / rate) * 60);
+//                                     }}
+//                                     placeholder="Enter amount"
+//                                 />
+
+//                                 {/* Preview */}
+//                                 <div className="mt-2">
+//                                     <small>
+//                                         {timeLimit} minutes = ${amount?.toFixed(2)}
+//                                     </small>
+//                                 </div>
+//                             </div>
+//                         )}
+
+//                         <Button
+//                             variant="success"
+//                             className="w-100 mt-3"
+//                             onClick={startNewSession}
+//                             disabled={!selectedTableForStart}
+//                         >
+//                             Start Session
+//                         </Button>
+//                     </Modal.Body>
+//                 </Modal>
+
+//                 {/* Close confirmation modal */}
+//                 <Modal show={showCloseConfirm} onHide={() => setShowCloseConfirm(false)}>
+//                     <Modal.Header closeButton>
+//                         <Modal.Title>Confirm Close Session</Modal.Title>
+//                     </Modal.Header>
+//                     <Modal.Body>
+//                         <p>Are you sure you want to close this session? This will print the bill.</p>
+//                         <div className="bg-light p-3 rounded">
+//                             <div className="d-flex justify-content-between">
+//                                 <div>
+//                                     <span className="text-muted">Table:</span>
+//                                     <span className="fw-bold ms-2">{selectedSession?.table_name}</span>
+//                                 </div>
+//                                 <div>
+//                                     <span className="text-muted">Total Cost:</span>
+//                                     <span className="fw-bold text-primary ms-2">${selectedSession?.session_cost}</span>
+//                                 </div>
+//                             </div>
+//                             {selectedSession?.customer_name && (
+//                                 <div className="mt-2">
+//                                     <span className="text-muted">Customer:</span>
+//                                     <span className="fw-bold ms-2">{selectedSession.customer_name}</span>
+//                                 </div>
+//                             )}
+//                         </div>
+//                     </Modal.Body>
+//                     <Modal.Footer>
+//                         <Button variant="secondary" onClick={() => setShowCloseConfirm(false)}>
+//                             Cancel
+//                         </Button>
+//                         <Button variant="danger" onClick={confirmCloseAndPrint}>
+//                             Confirm & Print
+//                         </Button>
+//                     </Modal.Footer>
+//                 </Modal>
+
+//                 {/* Food Order Modal */}
+//                 <Modal
+//                     show={showFoodModal}
+//                     onHide={() => setShowFoodModal(false)}
+//                     centered
+//                 >
+//                     <Modal.Header closeButton>
+//                         <Modal.Title>Order Food</Modal.Title>
+//                     </Modal.Header>
+//                     <Modal.Body>
+//                         {/* Food menu UI */}
+//                         {renderMenuItems()}
+//                     </Modal.Body>
+//                     <Modal.Footer>
+//                         <Button variant="secondary" onClick={() => setShowFoodModal(false)}>
+//                             Cancel
+//                         </Button>
+//                         <Button
+//                             variant="primary"
+//                             onClick={() => {
+//                                 if (selectedItems.length === 0) {
+//                                     alert("Please select at least one item to order.");
+//                                     return;
+//                                 }
+//                                 navigate("/staff/ordermanagement");
+//                                 setShowFoodModal(false);
+//                             }}
+//                         >
+//                             Place Order
+//                         </Button>
+//                     </Modal.Footer>
+//                 </Modal>
+
+//             </div>
+
+//             {/* Custom CSS */}
+//             <style jsx>{`
+//                 .w-sidebar {
+//                     width: 16rem;
+//                 }
+//                 .hover-bg-gray:hover {
+//                     background-color: #f8f9fa;
+//                 }
+//                 .bg-gray-100 {
+//                     background-color: #f8f9fa;
+//                 }
+//                 .text-purple {
+//                     color: #6f42c1;
+//                 }
+//                 .bg-purple {
+//                     background-color: #ddd2f1ff;
+//                 }
+//                 .toggle-switch {
+//                     width: 40px;
+//                     height: 20px;
+//                     background-color: #e9ecef;
+//                     border-radius: 20px;
+//                     position: relative;
+//                     cursor: pointer;
+//                     transition: background-color 0.3s;
+//                 }
+//                 .toggle-switch.active {
+//                     background-color: #198754;
+//                 }
+//                 .toggle-slider {
+//                     width: 16px;
+//                     height: 16px;
+//                     background-color: white;
+//                     border-radius: 50%;
+//                     position: absolute;
+//                     top: 2px;
+//                     left: 2px;
+//                     transition: transform 0.3s;
+//                     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+//                 }
+//                 .toggle-switch.active .toggle-slider {
+//                     transform: translateX(20px);
+//                 }
+//                 .x-small {
+//                     font-size: 0.75rem;
+//                 }
+//                 @media (max-width: 576px) {
+//                     .table-responsive {
+//                         font-size: 0.875rem;
+//                     }
+//                 }
+//             `}</style>
+//         </div>
+//     );
+// };
+
+// export default TablesManagement;
+
 import React, { useState, useEffect } from 'react';
-import { RiDashboardLine, RiTableLine, RiBarChartLine, RiSettingsLine, RiUserLine, RiNotificationLine, RiGridLine, RiListCheck, RiBilliardsLine, RiGamepadLine, RiRestaurantLine, RiStopLine, RiPlayLine, RiArrowDownSLine, RiCloseLine, RiPauseLine, RiPlayCircleLine } from 'react-icons/ri';
+import { RiDashboardLine, RiTableLine, RiBarChartLine, RiSettingsLine, RiUserLine, RiNotificationLine, RiGridLine, RiListCheck, RiBilliardsLine, RiGamepadLine, RiRestaurantLine, RiStopLine, RiPlayLine, RiArrowDownSLine, RiCloseLine, RiPauseLine, RiPlayCircleLine, RiPrinterLine, RiDeleteBinLine } from 'react-icons/ri';
 import { FaPlaystation } from 'react-icons/fa';
 import { Modal, Button, Form, Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
@@ -2463,7 +3536,6 @@ const TablesManagement = () => {
     const [showFoodModal, setShowFoodModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     // State declarations
     const [showTableModal, setShowTableModal] = useState(false);
     const [selectedSession, setSelectedSession] = useState(null);
@@ -2471,13 +3543,12 @@ const TablesManagement = () => {
     const [confirmToggleSession, setConfirmToggleSession] = useState(null);
     const [showToggleConfirm, setShowToggleConfirm] = useState(false);
     const [showStartSessionModal, setShowStartSessionModal] = useState(false);
-
     const [members, setMembers] = useState([]);
     const [selectedMember, setSelectedMember] = useState(null);
     const [menuItems, setMenuItems] = useState([
-        { id: 1, name: 'Burger', options: ['No Cheese', 'Extra Cheese', 'No Pickles'] },
-        { id: 2, name: 'Pizza', options: ['Thin Crust', 'Thick Crust', 'Extra Sauce'] },
-        { id: 3, name: 'Salad', options: ['No Dressing', 'Extra Dressing', 'Add Chicken'] }
+        { id: 1, name: 'Burger', price: 8.99, options: ['No Cheese', 'Extra Cheese', 'No Pickles'] },
+        { id: 2, name: 'Pizza', price: 12.99, options: ['Thin Crust', 'Thick Crust', 'Extra Sauce'] },
+        { id: 3, name: 'Salad', price: 7.99, options: ['No Dressing', 'Extra Dressing', 'Add Chicken'] }
     ]);
     const [selectedItems, setSelectedItems] = useState([]);
     const [itemOptions, setItemOptions] = useState({});
@@ -2487,11 +3558,18 @@ const TablesManagement = () => {
     const [timeLimit, setTimeLimit] = useState();  // in minutes
     const [amount, setAmount] = useState();        // in $
     const hourlyRate = 10; // Default hourly rate if not provided
-
     const [sessions, setSessions] = useState([]);
     const [availableTables, setAvailableTables] = useState([]);
     const [selectedTableForStart, setSelectedTableForStart] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
+    const [showBillModal, setShowBillModal] = useState(false);
+    const [billData, setBillData] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [sessionToDelete, setSessionToDelete] = useState(null);
+    // New states for transfer functionality
+    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [sessionToTransfer, setSessionToTransfer] = useState(null);
+    const [transferUserId, setTransferUserId] = useState('');
 
     // Load current user data
     useEffect(() => {
@@ -2510,13 +3588,10 @@ const TablesManagement = () => {
                         'Authorization': `Bearer ${localStorage.getItem("token")}`
                     }
                 });
-
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
                 const data = await response.json();
-
                 if (data.success) {
                     // Transform API data to match component structure
                     const formattedMembers = data.data.users.map(user => ({
@@ -2528,7 +3603,6 @@ const TablesManagement = () => {
                         status: user.status,
                         role: user.role
                     }));
-
                     setMembers(formattedMembers);
                 } else {
                     throw new Error(data.message || 'Failed to fetch members');
@@ -2537,14 +3611,15 @@ const TablesManagement = () => {
                 console.error('Error fetching members:', err);
                 // Fallback to sample data if API fails
                 setMembers([
-                    { id: 1, name: 'John Doe', discount: 10, phone: '123-456-7890' },
-                    { id: 2, name: 'Jane Smith', discount: 5, phone: '123-456-7891' },
-                    { id: 3, name: 'Mike Johnson', discount: 15, phone: '123-456-7892' },
-                    { id: 4, name: 'Sarah Williams', discount: 0, phone: '123-456-7893' }
+                    { id: 1, name: 'John Doe', discount: 10, phone: '123-456-7890', role: 'user' },
+                    { id: 2, name: 'Jane Smith', discount: 5, phone: '123-456-7891', role: 'user' },
+                    { id: 3, name: 'Mike Johnson', discount: 15, phone: '123-456-7892', role: 'user' },
+                    { id: 4, name: 'Sarah Williams', discount: 0, phone: '123-456-7893', role: 'user' },
+                    { id: 5, name: 'Admin User', discount: 0, phone: '123-456-7894', role: 'admin' },
+                    { id: 6, name: 'Staff User', discount: 0, phone: '123-456-7895', role: 'staff' }
                 ]);
             }
         };
-
         fetchMembers();
     }, []);
 
@@ -2560,13 +3635,10 @@ const TablesManagement = () => {
                         'Authorization': `Bearer ${localStorage.getItem("token")}`
                     }
                 });
-
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
                 const data = await response.json();
-
                 if (data.success) {
                     setSessions(data.data.sessions || []);
                 } else {
@@ -2602,7 +3674,6 @@ const TablesManagement = () => {
                 setLoading(false);
             }
         };
-
         fetchSessions();
     }, []);
 
@@ -2616,7 +3687,6 @@ const TablesManagement = () => {
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
                 }
             });
-
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
@@ -2625,6 +3695,52 @@ const TablesManagement = () => {
             }
         } catch (err) {
             console.error('Error fetching available tables:', err);
+        }
+    };
+
+    // Transfer session to another user
+    const transferSession = async (sessionId, newUserId) => {
+        try {
+            const response = await fetch(`${apiUrl}/sessions/${sessionId}/transfer`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`
+                },
+                body: JSON.stringify({
+                    user_id: newUserId.toString()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update the session in local state
+                setSessions(prevSessions =>
+                    prevSessions.map(session =>
+                        session.id === sessionId
+                            ? {
+                                ...session,
+                                user_id: newUserId,
+                                user_name: data.data.user_name || ''
+                            }
+                            : session
+                    )
+                );
+
+                alert('Session transferred successfully!');
+                return true;
+            } else {
+                throw new Error(data.message || 'Failed to transfer session');
+            }
+        } catch (err) {
+            console.error('Error transferring session:', err);
+            alert(`Error transferring session: ${err.message}`);
+            return false;
         }
     };
 
@@ -2652,16 +3768,42 @@ const TablesManagement = () => {
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
                 },
             });
-
             if (response.ok) {
                 const data = await response.json();
-
+                // Calculate end time and duration
+                const endTime = new Date();
+                const startTime = new Date(selectedSession.start_time);
+                const durationMinutes = Math.floor((endTime - startTime) / 60000);
+                // Create bill data
+                const bill = {
+                    sessionId: selectedSession.session_id,
+                    tableName: selectedSession.table_name,
+                    tableType: selectedSession.table_type,
+                    customerName: selectedSession.customer_name || 'Guest',
+                    startTime: startTime.toLocaleString(),
+                    endTime: endTime.toLocaleString(),
+                    duration: `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`,
+                    hourlyRate: parseFloat(selectedSession.hourly_rate || hourlyRate),
+                    tableCost: parseFloat(data.totalAmount || selectedSession.session_cost || 0),
+                    foodItems: selectedItems.map(item => ({
+                        name: item.name,
+                        price: item.price,
+                        options: itemOptions[item.id] || []
+                    })),
+                    subtotal: parseFloat(data.totalAmount || selectedSession.session_cost || 0) +
+                        selectedItems.reduce((sum, item) => sum + item.price, 0),
+                    tax: 0,
+                    total: 0
+                };
+                // Calculate tax and total
+                bill.tax = bill.subtotal * 0.1; // 10% tax
+                bill.total = bill.subtotal + bill.tax;
+                setBillData(bill);
+                setShowBillModal(true);
                 // Update local state
                 setSessions(prevSessions =>
                     prevSessions.filter(session => session.id !== selectedSession.id)
                 );
-
-                alert(`Printing bill for ${selectedSession.table_name}\nTotal: ${data.totalAmount}`);
             } else {
                 throw new Error('Failed to close session');
             }
@@ -2680,14 +3822,11 @@ const TablesManagement = () => {
             alert('Please select a table');
             return;
         }
-
         try {
             // Get current user data
             const userId = currentUser?.id;
-
             const customerName = selectedMember ? selectedMember.name : 'Guest';
             const customerPhone = selectedMember ? selectedMember.phone : '';
-
             // API call to start session
             const response = await fetch(`${apiUrl}/sessions/start`, {
                 method: 'POST',
@@ -2704,15 +3843,12 @@ const TablesManagement = () => {
                     time_limit: timeLimit?.toString() || "30"
                 })
             });
-
             if (response.ok) {
                 const data = await response.json();
-
                 // Add new session to the list
                 if (data.success) {
                     setSessions(prevSessions => [...prevSessions, data.data.session]);
                 }
-
                 alert('Session started successfully!');
                 setShowStartSessionModal(false);
             } else {
@@ -2735,7 +3871,6 @@ const TablesManagement = () => {
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
                 },
             });
-
             if (response.ok) {
                 // Update session status locally
                 setSessions(prevSessions =>
@@ -2764,7 +3899,6 @@ const TablesManagement = () => {
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
                 },
             });
-
             if (response.ok) {
                 // Update session status locally
                 setSessions(prevSessions =>
@@ -2793,7 +3927,6 @@ const TablesManagement = () => {
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
                 },
             });
-
             if (response.ok) {
                 // Remove session from list
                 setSessions(prevSessions =>
@@ -2808,6 +3941,35 @@ const TablesManagement = () => {
         }
     };
 
+    // Delete session
+    const deleteSession = async () => {
+        if (!sessionToDelete) return;
+        try {
+            const response = await fetch(`${apiUrl}/sessions/${sessionToDelete.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`
+                },
+            });
+            if (response.ok) {
+                // Remove session from list
+                setSessions(prevSessions =>
+                    prevSessions.filter(session => session.id !== sessionToDelete.id)
+                );
+                alert('Session deleted successfully!');
+            } else {
+                throw new Error('Failed to delete session');
+            }
+        } catch (err) {
+            console.error('Error deleting session:', err);
+            alert('Error deleting session. Please try again.');
+        } finally {
+            setShowDeleteConfirm(false);
+            setSessionToDelete(null);
+        }
+    };
+
     // Add item to order
     const addItemToOrder = (item) => {
         setSelectedItems([...selectedItems, item]);
@@ -2817,7 +3979,6 @@ const TablesManagement = () => {
     // Remove item from order
     const removeItemFromOrder = (itemId) => {
         setSelectedItems(selectedItems.filter(item => item.id !== itemId));
-
         const newOptions = { ...itemOptions };
         delete newOptions[itemId];
         setItemOptions(newOptions);
@@ -2830,9 +3991,13 @@ const TablesManagement = () => {
             const newOptions = isChecked
                 ? [...currentOptions, option]
                 : currentOptions.filter(opt => opt !== option);
-
             return { ...prev, [itemId]: newOptions };
         });
+    };
+
+    // Print bill
+    const printBill = () => {
+        window.print();
     };
 
     // Update current time
@@ -2842,7 +4007,6 @@ const TablesManagement = () => {
             const timeString = now.toLocaleTimeString('en-US', { hour12: false });
             setCurrentTime(timeString);
         };
-
         updateClock();
         const interval = setInterval(updateClock, 1000);
         return () => clearInterval(interval);
@@ -2921,18 +4085,17 @@ const TablesManagement = () => {
                         size="sm"
                         onClick={() => addItemToOrder(item)}
                     >
-                        {item.name}
+                        {item.name} - ${item.price.toFixed(2)}
                     </Button>
                 ))}
             </div>
-
             {selectedItems.length > 0 && (
                 <div className="border rounded p-3">
                     <h6>Selected Items</h6>
                     {selectedItems.map(item => (
                         <div key={item.id} className="mb-2 border-bottom pb-2">
                             <div className="d-flex justify-content-between align-items-center">
-                                <div className="fw-medium">{item.name}</div>
+                                <div className="fw-medium">{item.name} - ${item.price.toFixed(2)}</div>
                                 <Button
                                     variant="link"
                                     size="sm"
@@ -2942,7 +4105,6 @@ const TablesManagement = () => {
                                     <RiCloseLine />
                                 </Button>
                             </div>
-
                             {item.options.length > 0 && (
                                 <div className="mt-1">
                                     <small className="text-muted d-block mb-1">Options:</small>
@@ -2969,7 +4131,6 @@ const TablesManagement = () => {
     if (loading) {
         return <div className="p-3 text-center">Loading sessions...</div>;
     }
-
     if (error) {
         return <div className="p-3 text-center text-danger">Error: {error}</div>;
     }
@@ -3003,7 +4164,6 @@ const TablesManagement = () => {
                         </div>
                     </div>
                 </header>
-
                 {/* Filter Bar */}
                 <div className="mt-3">
                     <div className="d-flex gap-2 flex-wrap">
@@ -3029,7 +4189,6 @@ const TablesManagement = () => {
                         ))}
                     </div>
                 </div>
-
                 {/* Sessions Content */}
                 <div className="flex-grow-1 mt-3">
                     {viewMode === 'grid' ? (
@@ -3054,7 +4213,6 @@ const TablesManagement = () => {
                                                     {session.status === 'active' ? 'Active' : session.status === 'paused' ? 'Paused' : 'Ended'}
                                                 </span>
                                             </div>
-
                                             <div className="flex-grow-1">
                                                 {session.customer_name && (
                                                     <div className="d-flex align-items-center justify-content-between mb-1">
@@ -3072,7 +4230,6 @@ const TablesManagement = () => {
                                                     <span className="small text-muted">Cost</span>
                                                     <span className="fw-bold text-primary small">${session.session_cost}</span>
                                                 </div>
-
                                                 {session.table_type === 'restaurant' && (
                                                     <div className="mt-2 text-center mb-2 w-80">
                                                         <button
@@ -3089,7 +4246,6 @@ const TablesManagement = () => {
                                                     </div>
                                                 )}
                                             </div>
-
                                             <div className="d-grid gap-1 gap-md-2">
                                                 <div className="d-flex gap-1">
                                                     {session.status === 'active' && (
@@ -3142,6 +4298,18 @@ const TablesManagement = () => {
                                                         Manage
                                                     </Button>
                                                 </div>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    size="sm"
+                                                    className="w-100"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSessionToDelete(session);
+                                                        setShowDeleteConfirm(true);
+                                                    }}
+                                                >
+                                                    <RiDeleteBinLine className="me-1" /> Delete
+                                                </Button>
                                             </div>
                                         </div>
                                     </div>
@@ -3194,7 +4362,7 @@ const TablesManagement = () => {
                                                     </span>
                                                 </td>
                                                 <td className="text-end">
-                                                    <div className="d-flex align-items-center gap-2 gap-md-3 justify-content-end">
+                                                    <div className="d-flex align-items-center gap-2 gap-md-3 justify-content-end flex-wrap">
                                                         {session.status === 'active' && (
                                                             <Button
                                                                 variant="warning"
@@ -3230,6 +4398,17 @@ const TablesManagement = () => {
                                                         >
                                                             <RiStopLine className="me-1" /> End
                                                         </Button>
+                                                        <Button
+                                                            variant="outline-danger"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSessionToDelete(session);
+                                                                setShowDeleteConfirm(true);
+                                                            }}
+                                                        >
+                                                            <RiDeleteBinLine className="me-1" /> Delete
+                                                        </Button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -3240,7 +4419,6 @@ const TablesManagement = () => {
                         </div>
                     )}
                 </div>
-
                 {/* Session Management Modal */}
                 <Modal show={showTableModal} onHide={() => setShowTableModal(false)} size="lg">
                     <Modal.Header closeButton>
@@ -3253,7 +4431,6 @@ const TablesManagement = () => {
                     </Modal.Header>
                     <Modal.Body>
                         <h5 className="mb-3">Session Management</h5>
-
                         <div className="bg-light p-3 rounded mb-3">
                             <div className="row">
                                 <div className="col-md-6">
@@ -3282,7 +4459,6 @@ const TablesManagement = () => {
                                 </div>
                             </div>
                         </div>
-
                         <div className="d-flex flex-wrap gap-2 mb-3">
                             {selectedSession?.status === 'active' && (
                                 <Button
@@ -3300,20 +4476,26 @@ const TablesManagement = () => {
                                     <RiPlayCircleLine className="me-2" /> Resume Session
                                 </Button>
                             )}
-                            <Button variant="info" className="mb-2">
+                            <Button
+                                variant="info"
+                                className="mb-2"
+                                onClick={() => {
+                                    setSessionToTransfer(selectedSession);
+                                    setTransferUserId(selectedSession?.user_id?.toString() || '');
+                                    setShowTransferModal(true);
+                                }}
+                            >
                                 Transfer
                             </Button>
                             <Button variant="light" className="mb-2">
                                 Show Time & Bill
                             </Button>
                         </div>
-
                         <Button variant="danger" className="w-100" onClick={handleCloseSession}>
                             Close Session & Print Bill
                         </Button>
                     </Modal.Body>
                 </Modal>
-
                 {/* Start Session Modal */}
                 <Modal show={showStartSessionModal} onHide={() => setShowStartSessionModal(false)} size="lg">
                     <Modal.Header closeButton>
@@ -3338,11 +4520,8 @@ const TablesManagement = () => {
                                 ))}
                             </Form.Select>
                         </Form.Group>
-
                         {renderMemberSelect()}
-
                         {selectedTableForStart?.table_type === 'restaurant' && renderMenuItems()}
-
                         {/* Time/Money Inputs */}
                         {selectedTableForStart?.table_type !== 'restaurant' && (
                             <div className="mb-3">
@@ -3359,7 +4538,6 @@ const TablesManagement = () => {
                                     }}
                                     placeholder="Enter minutes"
                                 />
-
                                 <label className="form-label mt-3">Or Set by Amount ($)</label>
                                 <input
                                     type="number"
@@ -3373,7 +4551,6 @@ const TablesManagement = () => {
                                     }}
                                     placeholder="Enter amount"
                                 />
-
                                 {/* Preview */}
                                 <div className="mt-2">
                                     <small>
@@ -3382,7 +4559,6 @@ const TablesManagement = () => {
                                 </div>
                             </div>
                         )}
-
                         <Button
                             variant="success"
                             className="w-100 mt-3"
@@ -3393,7 +4569,6 @@ const TablesManagement = () => {
                         </Button>
                     </Modal.Body>
                 </Modal>
-
                 {/* Close confirmation modal */}
                 <Modal show={showCloseConfirm} onHide={() => setShowCloseConfirm(false)}>
                     <Modal.Header closeButton>
@@ -3429,7 +4604,92 @@ const TablesManagement = () => {
                         </Button>
                     </Modal.Footer>
                 </Modal>
+                {/* Delete confirmation modal */}
+                <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Confirm Delete Session</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>Are you sure you want to delete this session? This action cannot be undone.</p>
+                        <div className="bg-light p-3 rounded">
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    <span className="text-muted">Table:</span>
+                                    <span className="fw-bold ms-2">{sessionToDelete?.table_name}</span>
+                                </div>
+                                <div>
+                                    <span className="text-muted">Status:</span>
+                                    <span className={`fw-bold ms-2 ${getStatusBadgeClass(sessionToDelete?.status)}`}>
+                                        {sessionToDelete?.status}
+                                    </span>
+                                </div>
+                            </div>
+                            {sessionToDelete?.customer_name && (
+                                <div className="mt-2">
+                                    <span className="text-muted">Customer:</span>
+                                    <span className="fw-bold ms-2">{sessionToDelete.customer_name}</span>
+                                </div>
+                            )}
+                        </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="danger" onClick={deleteSession}>
+                            Delete Session
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+                {/* Transfer Session Modal */}
+                <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Transfer Session</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>Transfer session for <strong>{sessionToTransfer?.table_name}</strong> to another staff member:</p>
 
+                        <Form.Group className="mb-3">
+                            <Form.Label>Select Staff Member</Form.Label>
+                            <Form.Select
+                                value={transferUserId}
+                                onChange={(e) => setTransferUserId(e.target.value)}
+                            >
+                                <option value="">Select a user</option>
+                                {members
+                                    .filter(member => member.role === 'user')
+                                    .map(member => (
+                                        <option key={member.id} value={member.id}>
+                                            {member.name} ({member.role})
+                                        </option>
+                                    ))}
+                            </Form.Select>
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowTransferModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={async () => {
+                                if (!transferUserId) {
+                                    alert('Please select a staff member');
+                                    return;
+                                }
+
+                                const success = await transferSession(sessionToTransfer.id, transferUserId);
+                                if (success) {
+                                    setShowTransferModal(false);
+                                    setShowTableModal(false);
+                                }
+                            }}
+                            disabled={!transferUserId}
+                        >
+                            Transfer Session
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
                 {/* Food Order Modal */}
                 <Modal
                     show={showFoodModal}
@@ -3462,11 +4722,104 @@ const TablesManagement = () => {
                         </Button>
                     </Modal.Footer>
                 </Modal>
-
+                {/* Bill Modal */}
+                <Modal
+                    show={showBillModal}
+                    onHide={() => setShowBillModal(false)}
+                    centered
+                    size="md"
+                    dialogClassName="bill-modal"
+                >
+                    <Modal.Body className="p-4">
+                        {billData && (
+                            <div id="bill-content" className="p-3 border border-2 border-dark">
+                                <div className="text-center mb-3">
+                                    <h4 className="fw-bold">BILL RECEIPT</h4>
+                                    <p className="mb-0">Session ID: {billData.sessionId}</p>
+                                </div>
+                                <div className="mb-3">
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Table:</span>
+                                        <span className="fw-bold">{billData.tableName} ({billData.tableType})</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Customer:</span>
+                                        <span className="fw-bold">{billData.customerName}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Start Time:</span>
+                                        <span>{billData.startTime}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>End Time:</span>
+                                        <span>{billData.endTime}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Duration:</span>
+                                        <span>{billData.duration}</span>
+                                    </div>
+                                </div>
+                                <div className="mb-3">
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Table Usage:</span>
+                                        <span>${billData.tableCost.toFixed(2)}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Hourly Rate:</span>
+                                        <span>${billData.hourlyRate.toFixed(2)}/hr</span>
+                                    </div>
+                                </div>
+                                {billData.foodItems.length > 0 && (
+                                    <div className="mb-3">
+                                        <h6 className="fw-bold mb-2">Food Items:</h6>
+                                        {billData.foodItems.map((item, index) => (
+                                            <div key={index} className="mb-2">
+                                                <div className="d-flex justify-content-between">
+                                                    <span>{item.name}</span>
+                                                    <span>${item.price.toFixed(2)}</span>
+                                                </div>
+                                                {item.options.length > 0 && (
+                                                    <div className="small text-muted ms-3">
+                                                        Options: {item.options.join(', ')}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="border-top pt-2">
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Subtotal:</span>
+                                        <span>${billData.subtotal.toFixed(2)}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span>Tax (10%):</span>
+                                        <span>${billData.tax.toFixed(2)}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between fw-bold fs-5">
+                                        <span>TOTAL:</span>
+                                        <span>${billData.total.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                <div className="text-center mt-4">
+                                    <p className="small mb-0">Thank you for your business!</p>
+                                    <p className="small mb-0">{new Date().toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                        )}
+                    </Modal.Body>
+                    <Modal.Footer className="d-flex justify-content-between">
+                        <Button variant="secondary" onClick={() => setShowBillModal(false)}>
+                            Close
+                        </Button>
+                        <Button variant="primary" onClick={printBill}>
+                            <RiPrinterLine className="me-2" /> Print Bill
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             </div>
-
             {/* Custom CSS */}
-            <style jsx>{`
+            <style jsx global>{`
                 .w-sidebar {
                     width: 16rem;
                 }
@@ -3514,6 +4867,42 @@ const TablesManagement = () => {
                 @media (max-width: 576px) {
                     .table-responsive {
                         font-size: 0.875rem;
+                    }
+                }
+                .bill-modal .modal-body {
+                    background-color: #f8f9fa;
+                }
+                #bill-content {
+                    background-color: white;
+                    font-family: 'Courier New', monospace;
+                    width: 210mm;
+                    min-height: 297mm;
+                    margin: 0 auto;
+                    padding: 20mm;
+                    box-sizing: border-box;
+                }
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    #bill-content, #bill-content * {
+                        visibility: visible;
+                    }
+                    #bill-content {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        margin: 0;
+                        padding: 15mm;
+                    }
+                    .bill-modal .modal-footer,
+                    .bill-modal .modal-header {
+                        display: none !important;
+                    }
+                    @page {
+                        size: A4;
+                        margin: 0;
                     }
                 }
             `}</style>
