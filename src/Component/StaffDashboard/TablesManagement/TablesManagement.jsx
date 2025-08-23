@@ -2449,10 +2449,11 @@
 
 // export default TablesManagement;
 
+
 import React, { useState, useEffect } from 'react';
-import { RiDashboardLine, RiTableLine, RiBarChartLine, RiSettingsLine, RiUserLine, RiNotificationLine, RiGridLine, RiListCheck, RiBilliardsLine, RiGamepadLine, RiRestaurantLine, RiStopLine, RiPlayLine, RiArrowDownSLine, RiCloseLine } from 'react-icons/ri';
+import { RiDashboardLine, RiTableLine, RiBarChartLine, RiSettingsLine, RiUserLine, RiNotificationLine, RiGridLine, RiListCheck, RiBilliardsLine, RiGamepadLine, RiRestaurantLine, RiStopLine, RiPlayLine, RiArrowDownSLine, RiCloseLine, RiPauseLine, RiPlayCircleLine } from 'react-icons/ri';
 import { FaPlaystation } from 'react-icons/fa';
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import MemberSelect from './MemberSelect';
 import { apiUrl } from '../../../utils/config';
@@ -2465,10 +2466,11 @@ const TablesManagement = () => {
 
     // State declarations
     const [showTableModal, setShowTableModal] = useState(false);
-    const [selectedTable, setSelectedTable] = useState(null);
+    const [selectedSession, setSelectedSession] = useState(null);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-    const [confirmToggleTable, setConfirmToggleTable] = useState(null);
+    const [confirmToggleSession, setConfirmToggleSession] = useState(null);
     const [showToggleConfirm, setShowToggleConfirm] = useState(false);
+    const [showStartSessionModal, setShowStartSessionModal] = useState(false);
 
     const [members, setMembers] = useState([]);
     const [selectedMember, setSelectedMember] = useState(null);
@@ -2486,7 +2488,9 @@ const TablesManagement = () => {
     const [amount, setAmount] = useState();        // in $
     const hourlyRate = 10; // Default hourly rate if not provided
 
-    const [tables, setTables] = useState([]);
+    const [sessions, setSessions] = useState([]);
+    const [availableTables, setAvailableTables] = useState([]);
+    const [selectedTableForStart, setSelectedTableForStart] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
 
     // Load current user data
@@ -2544,12 +2548,12 @@ const TablesManagement = () => {
         fetchMembers();
     }, []);
 
-    // Fetch tables from API
+    // Fetch sessions from API
     useEffect(() => {
-        const fetchTables = async () => {
+        const fetchSessions = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${apiUrl}/tables`, {
+                const response = await fetch(`${apiUrl}/sessions`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2564,52 +2568,34 @@ const TablesManagement = () => {
                 const data = await response.json();
 
                 if (data.success) {
-                    // Transform API data to match component structure
-                    const formattedTables = data.data.tables.map(table => ({
-                        id: table.id.toString(),
-                        name: table.table_name,
-                        type: table.table_type,
-                        status: table.status === 'available' ? 'free' : 'running',
-                        sessionTime: '00:00:00',
-                        currentBill: '$0.00',
-                        lightOn: false,
-                        customer: null,
-                        hourlyRate: table.hourly_rate || hourlyRate,
-                        capacity: table.capacity,
-                        location: table.location
-                    }));
-
-                    setTables(formattedTables);
+                    setSessions(data.data.sessions || []);
                 } else {
-                    throw new Error(data.message || 'Failed to fetch tables');
+                    throw new Error(data.message || 'Failed to fetch sessions');
                 }
             } catch (err) {
-                console.error('Error fetching tables:', err);
+                console.error('Error fetching sessions:', err);
                 setError(err.message);
-
                 // Fallback to sample data if API fails
-                setTables([
+                setSessions([
                     {
-                        id: 'S1',
-                        name: 'Table S1',
-                        type: 'snooker',
-                        status: 'running',
-                        sessionTime: '02:34:15',
-                        currentBill: '$45.50',
-                        lightOn: true,
-                        customer: 'John Doe',
-                        hourlyRate: 15
-                    },
-                    {
-                        id: 'P1',
-                        name: 'Table P1',
-                        type: 'pool',
-                        status: 'free',
-                        sessionTime: '00:00:00',
-                        currentBill: '$0.00',
-                        lightOn: false,
-                        customer: null,
-                        hourlyRate: 10
+                        id: 5,
+                        session_id: "SES-1755757269519-190",
+                        table_id: 28,
+                        user_id: 11,
+                        customer_name: "new user",
+                        customer_phone: "9878458596",
+                        start_time: "2025-08-21 06:21:09",
+                        end_time: null,
+                        duration_minutes: 0,
+                        hourly_rate: "12.00",
+                        session_cost: "0.00",
+                        status: "active",
+                        amount: null,
+                        time_limit: null,
+                        table_number: "P20",
+                        table_name: "Pool Table 3",
+                        table_type: "pool",
+                        user_name: "govind singh"
                     }
                 ]);
             } finally {
@@ -2617,12 +2603,34 @@ const TablesManagement = () => {
             }
         };
 
-        fetchTables();
+        fetchSessions();
     }, []);
 
-    // Handler for table click
-    const handleTableClick = (table) => {
-        setSelectedTable(table);
+    // Fetch available tables for starting new session
+    const fetchAvailableTables = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/tables?status=available`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setAvailableTables(data.data.tables || []);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching available tables:', err);
+        }
+    };
+
+    // Handler for session click
+    const handleSessionClick = (session) => {
+        setSelectedSession(session);
         setShowTableModal(true);
         setSelectedItems([]);
         setItemOptions({});
@@ -2637,8 +2645,8 @@ const TablesManagement = () => {
     const confirmCloseAndPrint = async () => {
         try {
             // API call to close session
-            const response = await fetch(`${apiUrl}/tables/${selectedTable.id}/close`, {
-                method: 'POST',
+            const response = await fetch(`${apiUrl}/sessions/${selectedSession.id}/end`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
@@ -2649,22 +2657,11 @@ const TablesManagement = () => {
                 const data = await response.json();
 
                 // Update local state
-                setTables(prevTables =>
-                    prevTables.map(table =>
-                        table.id === selectedTable.id
-                            ? {
-                                ...table,
-                                status: 'free',
-                                sessionTime: '00:00:00',
-                                currentBill: '$0.00',
-                                lightOn: false,
-                                customer: null
-                            }
-                            : table
-                    )
+                setSessions(prevSessions =>
+                    prevSessions.filter(session => session.id !== selectedSession.id)
                 );
 
-                alert(`Printing bill for ${selectedTable.name}\nTotal: ${data.totalAmount}`);
+                alert(`Printing bill for ${selectedSession.table_name}\nTotal: ${data.totalAmount}`);
             } else {
                 throw new Error('Failed to close session');
             }
@@ -2679,19 +2676,17 @@ const TablesManagement = () => {
 
     // Start new session
     const startNewSession = async () => {
-        if (selectedTable.type === 'restaurant' && selectedItems.length === 0) {
-            navigate("/staff/ordermanagement")
+        if (!selectedTableForStart) {
+            alert('Please select a table');
             return;
         }
 
         try {
             // Get current user data
-            const userId = currentUser?.id || "46";
+            const userId = currentUser?.id;
 
             const customerName = selectedMember ? selectedMember.name : 'Guest';
             const customerPhone = selectedMember ? selectedMember.phone : '';
-
-            console.log(customerPhone);
 
             // API call to start session
             const response = await fetch(`${apiUrl}/sessions/start`, {
@@ -2701,7 +2696,7 @@ const TablesManagement = () => {
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
                 },
                 body: JSON.stringify({
-                    table_id: parseInt(selectedTable.id),
+                    table_id: parseInt(selectedTableForStart.id),
                     customer_name: customerName,
                     customer_phone: customerPhone,
                     user_id: userId.toString(),
@@ -2713,23 +2708,13 @@ const TablesManagement = () => {
             if (response.ok) {
                 const data = await response.json();
 
-                // Update local state
-                setTables(prevTables =>
-                    prevTables.map(table =>
-                        table.id === selectedTable.id
-                            ? {
-                                ...table,
-                                status: 'running',
-                                sessionTime: '00:00:01',
-                                currentBill: `$${amount || 0}`,
-                                lightOn: true,
-                                customer: customerName
-                            }
-                            : table
-                    )
-                );
+                // Add new session to the list
+                if (data.success) {
+                    setSessions(prevSessions => [...prevSessions, data.data.session]);
+                }
 
                 alert('Session started successfully!');
+                setShowStartSessionModal(false);
             } else {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to start session');
@@ -2737,17 +2722,14 @@ const TablesManagement = () => {
         } catch (err) {
             console.error('Error starting session:', err);
             alert(`Error starting session: ${err.message}`);
-        } finally {
-            setShowTableModal(false);
         }
     };
 
-    // Toggle light status
-    const toggleLight = async (tableId) => {
+    // Pause session
+    const pauseSession = async (sessionId) => {
         try {
-            // API call to toggle light
-            const response = await fetch(`${apiUrl}/tables/${tableId}/light`, {
-                method: 'POST',
+            const response = await fetch(`${apiUrl}/sessions/${sessionId}/pause`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem("token")}`
@@ -2755,107 +2737,74 @@ const TablesManagement = () => {
             });
 
             if (response.ok) {
-                const data = await response.json();
-
-                // Update local state
-                setTables(prevTables =>
-                    prevTables.map(table =>
-                        table.id === tableId ? { ...table, lightOn: data.lightOn } : table
+                // Update session status locally
+                setSessions(prevSessions =>
+                    prevSessions.map(session =>
+                        session.id === sessionId
+                            ? { ...session, status: 'paused' }
+                            : session
                     )
                 );
             } else {
-                throw new Error('Failed to toggle light');
+                throw new Error('Failed to pause session');
             }
         } catch (err) {
-            console.error('Error toggling light:', err);
-            alert('Error toggling light. Please try again.');
+            console.error('Error pausing session:', err);
+            alert('Error pausing session. Please try again.');
         }
     };
 
-    // Toggle session status
-    const toggleSession = async (tableId, e) => {
-        e.stopPropagation();
-
+    // Resume session
+    const resumeSession = async (sessionId) => {
         try {
-            const table = tables.find(t => t.id === tableId);
-            const isStarting = table.status === 'free';
+            const response = await fetch(`${apiUrl}/sessions/${sessionId}/resume`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`
+                },
+            });
 
-            if (isStarting) {
-                // Use the Start Session API
-                const userId = currentUser?.id || "46";
-
-                const response = await fetch(`${apiUrl}/api/sessions/start`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem("token")}`
-                    },
-                    body: JSON.stringify({
-                        table_id: parseInt(tableId),
-                        customer_name: 'Guest',
-                        customer_phone: '',
-                        user_id: userId.toString(),
-                        amount: 0,
-                        time_limit: "60"
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Update local state
-                    setTables(prevTables =>
-                        prevTables.map(table => {
-                            if (table.id === tableId) {
-                                return {
-                                    ...table,
-                                    status: 'running',
-                                    sessionTime: '00:00:01',
-                                    lightOn: true,
-                                    customer: 'Guest',
-                                    currentBill: '$0.00'
-                                };
-                            }
-                            return table;
-                        })
-                    );
-                } else {
-                    throw new Error('Failed to start session');
-                }
+            if (response.ok) {
+                // Update session status locally
+                setSessions(prevSessions =>
+                    prevSessions.map(session =>
+                        session.id === sessionId
+                            ? { ...session, status: 'active' }
+                            : session
+                    )
+                );
             } else {
-                // API call to stop session
-                const response = await fetch(`${apiUrl}/tables/${tableId}/stop`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem("token")}`
-                    },
-                });
-
-                if (response.ok) {
-                    // Update local state
-                    setTables(prevTables =>
-                        prevTables.map(table => {
-                            if (table.id === tableId) {
-                                return {
-                                    ...table,
-                                    status: 'free',
-                                    sessionTime: '00:00:00',
-                                    lightOn: false,
-                                    customer: null,
-                                    currentBill: '$0.00'
-                                };
-                            }
-                            return table;
-                        })
-                    );
-                } else {
-                    throw new Error('Failed to stop session');
-                }
+                throw new Error('Failed to resume session');
             }
         } catch (err) {
-            console.error('Error toggling session:', err);
-            alert(`Error ${isStarting ? 'starting' : 'stopping'} session. Please try again.`);
+            console.error('Error resuming session:', err);
+            alert('Error resuming session. Please try again.');
+        }
+    };
+
+    // End session
+    const endSession = async (sessionId) => {
+        try {
+            const response = await fetch(`${apiUrl}/sessions/${sessionId}/end`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`
+                },
+            });
+
+            if (response.ok) {
+                // Remove session from list
+                setSessions(prevSessions =>
+                    prevSessions.filter(session => session.id !== sessionId)
+                );
+            } else {
+                throw new Error('Failed to end session');
+            }
+        } catch (err) {
+            console.error('Error ending session:', err);
+            alert('Error ending session. Please try again.');
         }
     };
 
@@ -2899,46 +2848,9 @@ const TablesManagement = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Update session timers
-    useEffect(() => {
-        const runningTables = tables.filter(table => table.status === 'running');
-        if (runningTables.length === 0) return;
-
-        const interval = setInterval(() => {
-            setTables(prevTables =>
-                prevTables.map(table => {
-                    if (table.status === 'running') {
-                        const [hours, minutes, seconds] = table.sessionTime.split(':').map(Number);
-                        let totalSeconds = hours * 3600 + minutes * 60 + seconds + 1;
-
-                        const h = Math.floor(totalSeconds / 3600);
-                        const m = Math.floor((totalSeconds % 3600) / 60);
-                        const s = totalSeconds % 60;
-
-                        const formattedTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-
-                        // Calculate bill based on hourly rate
-                        const rate = table.hourlyRate || hourlyRate;
-                        const billIncrement = rate / 3600; // per second
-                        let bill = parseFloat(table.currentBill.replace('$', '')) + billIncrement;
-
-                        return {
-                            ...table,
-                            sessionTime: formattedTime,
-                            currentBill: `$${bill.toFixed(2)}`
-                        };
-                    }
-                    return table;
-                })
-            );
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [tables]);
-
-    // Filter tables by type
-    const filteredTables = tables.filter(table =>
-        tableTypeFilter === 'all' || table.type === tableTypeFilter
+    // Filter sessions by table type
+    const filteredSessions = sessions.filter(session =>
+        tableTypeFilter === 'all' || session.table_type === tableTypeFilter
     );
 
     // Get table icon based on type
@@ -2970,6 +2882,20 @@ const TablesManagement = () => {
                 return 'bg-warning bg-opacity-10';
             default:
                 return 'bg-secondary bg-opacity-10';
+        }
+    };
+
+    // Get session status badge class
+    const getStatusBadgeClass = (status) => {
+        switch (status) {
+            case 'active':
+                return 'bg-success bg-opacity-10 text-success';
+            case 'paused':
+                return 'bg-warning bg-opacity-10 text-warning';
+            case 'ended':
+                return 'bg-secondary bg-opacity-10 text-secondary';
+            default:
+                return 'bg-info bg-opacity-10 text-info';
         }
     };
 
@@ -3041,7 +2967,7 @@ const TablesManagement = () => {
     );
 
     if (loading) {
-        return <div className="p-3 text-center">Loading tables...</div>;
+        return <div className="p-3 text-center">Loading sessions...</div>;
     }
 
     if (error) {
@@ -3056,10 +2982,20 @@ const TablesManagement = () => {
                 <header className="">
                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div>
-                            <h1 className="fs-3 fw-bold text-dark">Tables Management</h1>
-                            <p className="mb-0 text-muted">Monitor and control all gaming tables</p>
+                            <h1 className="fs-3 fw-bold text-dark">Sessions Management</h1>
+                            <p className="mb-0 text-muted">Monitor and control all active sessions</p>
                         </div>
                         <div className="d-flex align-items-center gap-3 gap-md-4">
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    fetchAvailableTables();
+                                    setShowStartSessionModal(true);
+                                }}
+                            >
+                                <RiPlayLine className="me-2" />
+                                Start New Session
+                            </Button>
                             <div className="text-end">
                                 <p className="mb-0 small text-muted">Current Time</p>
                                 <p className="mb-0 fs-5 fw-semibold">{currentTime}</p>
@@ -3094,93 +3030,117 @@ const TablesManagement = () => {
                     </div>
                 </div>
 
-                {/* Tables Content */}
+                {/* Sessions Content */}
                 <div className="flex-grow-1 mt-3">
                     {viewMode === 'grid' ? (
                         <div className="row g-2 g-md-3">
-                            {filteredTables.map(table => (
-                                <div key={table.id} className="col-6 col-sm-4 col-md-3 col-lg-2" onClick={() => handleTableClick(table)}
+                            {filteredSessions.map(session => (
+                                <div key={session.id} className="col-6 col-sm-4 col-md-3 col-lg-2" onClick={() => handleSessionClick(session)}
                                     style={{ cursor: 'pointer' }}>
                                     <div className="bg-white rounded-3 shadow-sm border overflow-hidden h-100 d-flex flex-column">
-                                        <div className={`h-1 ${table.status === 'running' ? 'bg-danger' : 'bg-success'}`}></div>
+                                        <div className={`h-1 ${session.status === 'active' ? 'bg-success' : session.status === 'paused' ? 'bg-warning' : 'bg-secondary'}`}></div>
                                         <div className="p-2 p-md-3 flex-grow-1 d-flex flex-column">
                                             <div className="d-flex align-items-center justify-content-between mb-2">
                                                 <div className="d-flex align-items-center gap-2">
-                                                    <div className={`rounded-3 d-flex align-items-center justify-content-center ${getTableIconBg(table.type)}`} style={{ width: '32px', height: '32px' }}>
-                                                        {getTableIcon(table.type)}
+                                                    <div className={`rounded-3 d-flex align-items-center justify-content-center ${getTableIconBg(session.table_type)}`} style={{ width: '32px', height: '32px' }}>
+                                                        {getTableIcon(session.table_type)}
                                                     </div>
                                                     <div>
-                                                        <h3 className="mb-0 fw-semibold fs-6">{table.name}</h3>
-                                                        <p className="mb-0 small text-muted text-capitalize">{table.type}</p>
+                                                        <h3 className="mb-0 fw-semibold fs-6">{session.table_name}</h3>
+                                                        <p className="mb-0 small text-muted text-capitalize">{session.table_type}</p>
                                                     </div>
                                                 </div>
-                                                <span className={`px-2 py-1 rounded-pill small fw-medium ${table.status === 'running' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'}`}>
-                                                    {table.status === 'running' ? 'Running' : 'Free'}
+                                                <span className={`px-2 py-1 rounded-pill small fw-medium ${getStatusBadgeClass(session.status)}`}>
+                                                    {session.status === 'active' ? 'Active' : session.status === 'paused' ? 'Paused' : 'Ended'}
                                                 </span>
                                             </div>
 
                                             <div className="flex-grow-1">
-                                                {table.status === 'running' ? (
-                                                    <>
-                                                        {table.customer && (
-                                                            <div className="d-flex align-items-center justify-content-between mb-1">
-                                                                <span className="small text-muted">Customer</span>
-                                                                <span className="fw-medium small">{table.customer}</span>
-                                                            </div>
-                                                        )}
-                                                        <div className="d-flex align-items-center justify-content-between mb-1">
-                                                            <span className="small text-muted">Time</span>
-                                                            <span className="font-monospace fw-bold small">{table.sessionTime}</span>
-                                                        </div>
-                                                        <div className="mt-2 text-center mb-2 w-80">
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-sm btn-primary"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation(); // Prevents table card click
-                                                                    setSelectedTable(table); // ✅ Ensure table is tracked
-                                                                    setShowFoodModal(true);  // ✅ Open food modal
-                                                                }}
-                                                            >
-                                                                🍽 Order
-                                                            </button>
-                                                        </div>
+                                                {session.customer_name && (
+                                                    <div className="d-flex align-items-center justify-content-between mb-1">
+                                                        <span className="small text-muted">Customer</span>
+                                                        <span className="fw-medium small">{session.customer_name}</span>
+                                                    </div>
+                                                )}
+                                                <div className="d-flex align-items-center justify-content-between mb-1">
+                                                    <span className="small text-muted">Started</span>
+                                                    <span className="font-monospace fw-bold small">
+                                                        {new Date(session.start_time).toLocaleTimeString()}
+                                                    </span>
+                                                </div>
+                                                <div className="d-flex align-items-center justify-content-between mb-1">
+                                                    <span className="small text-muted">Cost</span>
+                                                    <span className="fw-bold text-primary small">${session.session_cost}</span>
+                                                </div>
 
-                                                    </>
-                                                ) : (
-                                                    <div className="text-center py-2 py-md-3">
-                                                        <p className="small text-muted">Ready for new session</p>
+                                                {session.table_type === 'restaurant' && (
+                                                    <div className="mt-2 text-center mb-2 w-80">
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-sm btn-primary"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedSession(session);
+                                                                setShowFoodModal(true);
+                                                            }}
+                                                        >
+                                                            🍽 Order
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
 
                                             <div className="d-grid gap-1 gap-md-2">
                                                 <div className="d-flex gap-1">
-                                                    <button
-                                                        className={`btn btn-sm flex-grow-1 ${table.status === 'running' ? 'btn-danger' : 'btn-success'}`}
+                                                    {session.status === 'active' && (
+                                                        <Button
+                                                            variant="warning"
+                                                            size="sm"
+                                                            className="flex-grow-1"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                pauseSession(session.id);
+                                                            }}
+                                                        >
+                                                            <RiPauseLine className="fs-6" />
+                                                        </Button>
+                                                    )}
+                                                    {session.status === 'paused' && (
+                                                        <Button
+                                                            variant="success"
+                                                            size="sm"
+                                                            className="flex-grow-1"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                resumeSession(session.id);
+                                                            }}
+                                                        >
+                                                            <RiPlayCircleLine className="fs-6" />
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        className="flex-grow-1"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setConfirmToggleTable(table);
-                                                            setShowToggleConfirm(true);
+                                                            setSelectedSession(session);
+                                                            setShowCloseConfirm(true);
                                                         }}
                                                     >
-                                                        {table.status === 'running' ? (
-                                                            <RiStopLine className="fs-6" />
-                                                        ) : (
-                                                            <RiPlayLine className="fs-6" />
-                                                        )}
-                                                    </button>
-
-
-                                                    <button
-                                                        className="btn btn-sm btn-outline-secondary flex-grow-1"
+                                                        <RiStopLine className="fs-6" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-secondary"
+                                                        size="sm"
+                                                        className="flex-grow-1"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleTableClick(table);
+                                                            handleSessionClick(session);
                                                         }}
                                                     >
-                                                        {table.status === 'running' ? 'Manage' : 'Start'}
-                                                    </button>
+                                                        Manage
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>
@@ -3194,69 +3154,82 @@ const TablesManagement = () => {
                                 <table className="table table-hover mb-0">
                                     <thead className="table-light">
                                         <tr>
-                                            <th>Table Info</th>
+                                            <th>Session Info</th>
                                             <th>Status</th>
-                                            <th>Session Time</th>
+                                            <th>Start Time</th>
+                                            <th>Cost</th>
                                             <th className="text-end">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredTables.map(table => (
-                                            <tr key={table.id} onClick={() => handleTableClick(table)} style={{ cursor: 'pointer' }}>
+                                        {filteredSessions.map(session => (
+                                            <tr key={session.id} onClick={() => handleSessionClick(session)} style={{ cursor: 'pointer' }}>
                                                 <td>
                                                     <div className="d-flex align-items-center gap-2 gap-md-3">
-                                                        <div className={`rounded-3 d-flex align-items-center justify-content-center ${getTableIconBg(table.type)}`} style={{ width: '40px', height: '40px' }}>
-                                                            {getTableIcon(table.type)}
+                                                        <div className={`rounded-3 d-flex align-items-center justify-content-center ${getTableIconBg(session.table_type)}`} style={{ width: '40px', height: '40px' }}>
+                                                            {getTableIcon(session.table_type)}
                                                         </div>
                                                         <div>
-                                                            <h3 className="mb-0 fw-semibold fs-6 fs-md-5">{table.name}</h3>
-                                                            <p className="mb-0 small text-muted text-capitalize">{table.type}</p>
+                                                            <h3 className="mb-0 fw-semibold fs-6 fs-md-5">{session.table_name}</h3>
+                                                            <p className="mb-0 small text-muted text-capitalize">{session.table_type}</p>
+                                                            {session.customer_name && (
+                                                                <p className="mb-0 small text-muted">Customer: {session.customer_name}</p>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <span className={`px-2 py-1 rounded-pill small fw-medium ${table.status === 'running' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'}`}>
-                                                            {table.status === 'running' ? 'Running' : 'Available'}
-                                                        </span>
-                                                        {table.status === 'running' && table.customer && (
-                                                            <span className="small text-muted d-none d-md-inline">• {table.customer}</span>
-                                                        )}
-                                                    </div>
+                                                    <span className={`px-2 py-1 rounded-pill small fw-medium ${getStatusBadgeClass(session.status)}`}>
+                                                        {session.status === 'active' ? 'Active' : session.status === 'paused' ? 'Paused' : 'Ended'}
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    <span className="font-monospace fw-bold">
-                                                        {table.status === 'running' ? table.sessionTime : 'Ready'}
+                                                    <span className="font-monospace fw-bold small">
+                                                        {new Date(session.start_time).toLocaleTimeString()}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className="fw-bold text-primary">
+                                                        ${session.session_cost}
                                                     </span>
                                                 </td>
                                                 <td className="text-end">
                                                     <div className="d-flex align-items-center gap-2 gap-md-3 justify-content-end">
-                                                        <button
-                                                            className={`btn btn-sm ${table.status === 'running' ? 'btn-danger' : 'btn-success'}`}
+                                                        {session.status === 'active' && (
+                                                            <Button
+                                                                variant="warning"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    pauseSession(session.id);
+                                                                }}
+                                                            >
+                                                                <RiPauseLine className="me-1" /> Pause
+                                                            </Button>
+                                                        )}
+                                                        {session.status === 'paused' && (
+                                                            <Button
+                                                                variant="success"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    resumeSession(session.id);
+                                                                }}
+                                                            >
+                                                                <RiPlayCircleLine className="me-1" /> Resume
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            variant="danger"
+                                                            size="sm"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                toggleSession(table.id, e);
+                                                                setSelectedSession(session);
+                                                                setShowCloseConfirm(true);
                                                             }}
                                                         >
-                                                            {table.status === 'running' ? (
-                                                                <>
-                                                                    <RiStopLine className="me-1 me-md-2" /> <span className="d-none d-md-inline">Stop</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <RiPlayLine className="me-1 me-md-2" /> <span className="d-none d-md-inline">Start</span>
-                                                                </>
-                                                            )}
-                                                        </button>
-                                                        <div
-                                                            className={`toggle-switch ${table.lightOn ? 'active' : ''}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleLight(table.id);
-                                                            }}
-                                                        >
-                                                            <div className="toggle-slider"></div>
-                                                        </div>
+                                                            <RiStopLine className="me-1" /> End
+                                                        </Button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -3268,111 +3241,156 @@ const TablesManagement = () => {
                     )}
                 </div>
 
-                {/* Table Modal */}
+                {/* Session Management Modal */}
                 <Modal show={showTableModal} onHide={() => setShowTableModal(false)} size="lg">
                     <Modal.Header closeButton>
                         <Modal.Title>
-                            {selectedTable?.name} - {selectedTable?.type.toUpperCase()}
-                            {selectedTable?.status === 'running' && selectedTable?.customer && (
-                                <div className="small text-muted">Customer: {selectedTable.customer}</div>
+                            {selectedSession?.table_name} - {selectedSession?.table_type.toUpperCase()}
+                            {selectedSession?.customer_name && (
+                                <div className="small text-muted">Customer: {selectedSession.customer_name}</div>
                             )}
                         </Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        {selectedTable?.status === 'running' ? (
-                            <>
-                                <h5 className="mb-3">Session Management</h5>
-                                <div className="d-flex flex-wrap gap-2 mb-3">
-                                    <Button variant="warning" className="mb-2">
-                                        Void
-                                    </Button>
-                                    <Button variant="info" className="mb-2">
-                                        Transfer
-                                    </Button>
-                                    <Button variant="secondary" className="mb-2">
-                                        Pause
-                                    </Button>
-                                    <Button variant="light" className="mb-2">
-                                        Show Time & Bill
-                                    </Button>
-                                </div>
+                        <h5 className="mb-3">Session Management</h5>
 
-                                <div className="bg-light p-3 rounded mb-3">
-                                    <div className="d-flex justify-content-between">
-                                        <div>
-                                            <span className="text-muted">Session Time:</span>
-                                            <span className="fw-bold ms-2">{selectedTable?.sessionTime}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-muted">Current Bill:</span>
-                                            <span className="fw-bold text-primary ms-2">{selectedTable?.currentBill}</span>
-                                        </div>
+                        <div className="bg-light p-3 rounded mb-3">
+                            <div className="row">
+                                <div className="col-md-6">
+                                    <div className="mb-2">
+                                        <span className="text-muted">Start Time:</span>
+                                        <span className="fw-bold ms-2">
+                                            {selectedSession && new Date(selectedSession.start_time).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="mb-2">
+                                        <span className="text-muted">Status:</span>
+                                        <span className={`fw-bold ms-2 ${getStatusBadgeClass(selectedSession?.status)}`}>
+                                            {selectedSession?.status}
+                                        </span>
                                     </div>
                                 </div>
+                                <div className="col-md-6">
+                                    <div className="mb-2">
+                                        <span className="text-muted">Current Cost:</span>
+                                        <span className="fw-bold text-primary ms-2">${selectedSession?.session_cost}</span>
+                                    </div>
+                                    <div className="mb-2">
+                                        <span className="text-muted">Hourly Rate:</span>
+                                        <span className="fw-bold ms-2">${selectedSession?.hourly_rate}/hr</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                <Button variant="danger" className="w-100" onClick={handleCloseSession}>
-                                    Close Session & Print Bill
+                        <div className="d-flex flex-wrap gap-2 mb-3">
+                            {selectedSession?.status === 'active' && (
+                                <Button
+                                    variant="warning"
+                                    onClick={() => pauseSession(selectedSession.id)}
+                                >
+                                    <RiPauseLine className="me-2" /> Pause Session
                                 </Button>
-                            </>
-                        ) : (
-                            <>
-                                <h5 className="mb-3">
-                                    {selectedTable?.type === 'restaurant' ? 'Start New Order' : 'Start New Session'}
-                                </h5>
-
-                                {renderMemberSelect()}
-                                {selectedTable?.type === 'restaurant' && renderMenuItems()}
-
-                                {/* Time/Money Inputs */}
-                                {selectedTable?.type !== 'restaurant' && (
-                                    <div className="mb-3">
-                                        <label className="form-label">Set Time Limit (minutes)</label>
-                                        <input
-                                            type="number"
-                                            className="form-control"
-                                            value={timeLimit}
-                                            onChange={(e) => {
-                                                const minutes = Number(e.target.value);
-                                                setTimeLimit(minutes);
-                                                const rate = selectedTable?.hourlyRate || hourlyRate;
-                                                setAmount((minutes / 60) * rate); // auto update money
-                                            }}
-                                            placeholder="Enter minutes"
-                                        />
-
-                                        <label className="form-label mt-3">Or Set by Amount ($)</label>
-                                        <input
-                                            type="number"
-                                            className="form-control"
-                                            value={amount}
-                                            onChange={(e) => {
-                                                const money = Number(e.target.value);
-                                                setAmount(money);
-                                                const rate = selectedTable?.hourlyRate || hourlyRate;
-                                                setTimeLimit((money / rate) * 60); // auto update minutes
-                                            }}
-                                            placeholder="Enter amount"
-                                        />
-
-                                        {/* Preview */}
-                                        <div className="mt-2">
-                                            <small>
-                                                {timeLimit} minutes = ${amount?.toFixed(2)}
-                                            </small>
-                                        </div>
-                                    </div>
-                                )}
-
+                            )}
+                            {selectedSession?.status === 'paused' && (
                                 <Button
                                     variant="success"
-                                    className="w-100 mt-3"
-                                    onClick={startNewSession}
+                                    onClick={() => resumeSession(selectedSession.id)}
                                 >
-                                    {selectedTable?.type === 'restaurant' ? 'Start Order' : 'Start Session'}
+                                    <RiPlayCircleLine className="me-2" /> Resume Session
                                 </Button>
-                            </>
+                            )}
+                            <Button variant="info" className="mb-2">
+                                Transfer
+                            </Button>
+                            <Button variant="light" className="mb-2">
+                                Show Time & Bill
+                            </Button>
+                        </div>
 
+                        <Button variant="danger" className="w-100" onClick={handleCloseSession}>
+                            Close Session & Print Bill
+                        </Button>
+                    </Modal.Body>
+                </Modal>
+
+                {/* Start Session Modal */}
+                <Modal show={showStartSessionModal} onHide={() => setShowStartSessionModal(false)} size="lg">
+                    <Modal.Header closeButton>
+                        <Modal.Title>Start New Session</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Select Table</Form.Label>
+                            <Form.Select
+                                value={selectedTableForStart?.id || ''}
+                                onChange={(e) => {
+                                    const tableId = e.target.value;
+                                    const table = availableTables.find(t => t.id.toString() === tableId);
+                                    setSelectedTableForStart(table);
+                                }}
+                            >
+                                <option value="">Select a table</option>
+                                {availableTables.map(table => (
+                                    <option key={table.id} value={table.id}>
+                                        {table.table_name} ({table.table_type}) - ${table.hourly_rate}/hr
+                                    </option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+
+                        {renderMemberSelect()}
+
+                        {selectedTableForStart?.table_type === 'restaurant' && renderMenuItems()}
+
+                        {/* Time/Money Inputs */}
+                        {selectedTableForStart?.table_type !== 'restaurant' && (
+                            <div className="mb-3">
+                                <label className="form-label">Set Time Limit (minutes)</label>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    value={timeLimit}
+                                    onChange={(e) => {
+                                        const minutes = Number(e.target.value);
+                                        setTimeLimit(minutes);
+                                        const rate = selectedTableForStart?.hourly_rate || hourlyRate;
+                                        setAmount((minutes / 60) * rate);
+                                    }}
+                                    placeholder="Enter minutes"
+                                />
+
+                                <label className="form-label mt-3">Or Set by Amount ($)</label>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    value={amount}
+                                    onChange={(e) => {
+                                        const money = Number(e.target.value);
+                                        setAmount(money);
+                                        const rate = selectedTableForStart?.hourly_rate || hourlyRate;
+                                        setTimeLimit((money / rate) * 60);
+                                    }}
+                                    placeholder="Enter amount"
+                                />
+
+                                {/* Preview */}
+                                <div className="mt-2">
+                                    <small>
+                                        {timeLimit} minutes = ${amount?.toFixed(2)}
+                                    </small>
+                                </div>
+                            </div>
                         )}
+
+                        <Button
+                            variant="success"
+                            className="w-100 mt-3"
+                            onClick={startNewSession}
+                            disabled={!selectedTableForStart}
+                        >
+                            Start Session
+                        </Button>
                     </Modal.Body>
                 </Modal>
 
@@ -3387,17 +3405,17 @@ const TablesManagement = () => {
                             <div className="d-flex justify-content-between">
                                 <div>
                                     <span className="text-muted">Table:</span>
-                                    <span className="fw-bold ms-2">{selectedTable?.name}</span>
+                                    <span className="fw-bold ms-2">{selectedSession?.table_name}</span>
                                 </div>
                                 <div>
-                                    <span className="text-muted">Total Bill:</span>
-                                    <span className="fw-bold text-primary ms-2">{selectedTable?.currentBill}</span>
+                                    <span className="text-muted">Total Cost:</span>
+                                    <span className="fw-bold text-primary ms-2">${selectedSession?.session_cost}</span>
                                 </div>
                             </div>
-                            {selectedTable?.customer && (
+                            {selectedSession?.customer_name && (
                                 <div className="mt-2">
                                     <span className="text-muted">Customer:</span>
-                                    <span className="fw-bold ms-2">{selectedTable.customer}</span>
+                                    <span className="fw-bold ms-2">{selectedSession.customer_name}</span>
                                 </div>
                             )}
                         </div>
@@ -3408,29 +3426,6 @@ const TablesManagement = () => {
                         </Button>
                         <Button variant="danger" onClick={confirmCloseAndPrint}>
                             Confirm & Print
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
-
-                {/* Toggle confirmation modal */}
-                <Modal show={showToggleConfirm} onHide={() => setShowToggleConfirm(false)}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>
-                            {confirmToggleTable?.status === 'running' ? 'Confirm Stop Session' : 'Confirm Start Session'}
-                        </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        Are you sure you want to {confirmToggleTable?.status === 'running' ? 'stop' : 'start'} the session for <strong>{confirmToggleTable?.name}</strong>?
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowToggleConfirm(false)}>
-                            Cancel
-                        </Button>
-                        <Button variant={confirmToggleTable?.status === 'running' ? 'danger' : 'success'} onClick={() => {
-                            toggleSession(confirmToggleTable.id, new Event('click'));
-                            setShowToggleConfirm(false);
-                        }}>
-                            {confirmToggleTable?.status === 'running' ? 'Stop' : 'Start'}
                         </Button>
                     </Modal.Footer>
                 </Modal>
