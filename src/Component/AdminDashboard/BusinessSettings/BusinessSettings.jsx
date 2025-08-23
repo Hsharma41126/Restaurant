@@ -692,6 +692,7 @@ const BusinessSettings = () => {
     saturday: { start: "10:00", end: "20:00" },
     sunday: { start: "11:00", end: "17:00" }
   });
+  const [tax, setTax] = useState('0.0');
   const [logoFile, setLogoFile] = useState(null);
 
   // Format time from HH:MM:SS to HH:MM
@@ -721,19 +722,23 @@ const BusinessSettings = () => {
           setFooterMessage(data.receipt_footer);
         }
 
+        if (data.tax) {
+          setTax(data.tax);
+        }
+
         // Set business hours with formatted times
         setBusinessHours({
-          weekdays: { 
-            start: formatTime(data.weekdays_start), 
-            end: formatTime(data.weekdays_end) 
+          weekdays: {
+            start: formatTime(data.weekdays_start),
+            end: formatTime(data.weekdays_end)
           },
-          saturday: { 
-            start: formatTime(data.saturday_start), 
-            end: formatTime(data.saturday_end) 
+          saturday: {
+            start: formatTime(data.saturday_start),
+            end: formatTime(data.saturday_end)
           },
-          sunday: { 
-            start: formatTime(data.sunday_start), 
-            end: formatTime(data.sunday_end) 
+          sunday: {
+            start: formatTime(data.sunday_start),
+            end: formatTime(data.sunday_end)
           }
         });
 
@@ -803,7 +808,7 @@ const BusinessSettings = () => {
     const file = e.target.files[0];
     if (file) {
       setLogoFile(file);
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target.result);
@@ -844,17 +849,18 @@ const BusinessSettings = () => {
         saturday_end: businessHours.saturday.end || "20:00",
         sunday_start: businessHours.sunday.start || "11:00",
         sunday_end: businessHours.sunday.end || "17:00",
+        tax: tax || '0.0',
         receipt_footer: footerMessage,
-        system_mode: systemOnline ? "online" : "offline"
+        system_mode: systemOnline ? "online" : "offline",
       };
 
       const formData = new FormData();
-      
+
       // Append all settings data
       Object.entries(settingsData).forEach(([key, value]) => {
         formData.append(key, value);
       });
-      
+
       // Append the logo file if it exists
       if (logoFile) {
         formData.append('receipt_logo', logoFile);
@@ -995,8 +1001,8 @@ const BusinessSettings = () => {
                       style={{
                         width: '20px',
                         height: '20px',
-                       marginTop: '2px',
-                       marginBottom: '2px',
+                        marginTop: '2px',
+                        marginBottom: '2px',
                         left: modes.restaurant ? 'calc(100% - 22px)' : '2px',
                         transition: 'left 0.3s ease'
                       }}
@@ -1026,8 +1032,8 @@ const BusinessSettings = () => {
                       style={{
                         width: '20px',
                         height: '20px',
-                         marginTop: '2px',
-                       marginBottom: '2px',
+                        marginTop: '2px',
+                        marginBottom: '2px',
                         left: modes.gamezone ? 'calc(100% - 22px)' : '2px',
                         transition: 'left 0.3s ease'
                       }}
@@ -1057,8 +1063,8 @@ const BusinessSettings = () => {
                       style={{
                         width: '20px',
                         height: '20px',
-                         marginTop: '2px',
-                       marginBottom: '2px',
+                        marginTop: '2px',
+                        marginBottom: '2px',
                         left: modes.lounge ? 'calc(100% - 22px)' : '2px',
                         transition: 'left 0.3s ease'
                       }}
@@ -1074,7 +1080,7 @@ const BusinessSettings = () => {
                   <h2 className="fs-5 fw-semibold text-dark">Business Hours</h2>
                 </div>
 
-               <div className="d-flex flex-column gap-3">
+                <div className="d-flex flex-column gap-3">
                   {/* Monday - Friday */}
                   <div className="d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center">
@@ -1225,7 +1231,7 @@ const BusinessSettings = () => {
                       </Form.Select>
                     </div>
                   </div>
-                </div> 
+                </div>
               </div>
 
               <div className="mt-4 pt-3 border-top small text-muted">
@@ -1292,6 +1298,18 @@ const BusinessSettings = () => {
                     {footerMessage.length}/200
                   </div>
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="d-block small fw-medium text-dark mb-2">Tax</label>
+                <input
+                  type="text"
+                  className="form-control mb-2"
+                  placeholder="Enter custom Tax"
+                  name='tax'
+                  value={tax}
+                  onChange={(e) => setTax(e.target.value)}
+                ></input>
               </div>
 
               {/* Action Buttons */}

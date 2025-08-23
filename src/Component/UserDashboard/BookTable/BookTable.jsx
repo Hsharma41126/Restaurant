@@ -263,7 +263,7 @@ const BookTable = () => {
 
 
 
-   const [tables, setTables] = useState([]);
+  const [tables, setTables] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(null); // <-- Add this
   const [selectedType, setSelectedType] = useState(null); // Keep for UI highlight
   const [loading, setLoading] = useState(true);
@@ -271,8 +271,9 @@ const BookTable = () => {
   useEffect(() => {
     const fetchTables = async () => {
       try {
+        const today = new Date().toISOString().split("T")[0];
         const response = await axios.get(
-          `${apiUrl}/tables/available?type=restaurant&date=2025-01-20&time=14:00`,
+          `${apiUrl}/tables/available?date=${today}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -380,45 +381,44 @@ const BookTable = () => {
               </p>
             </div>
 
-           <div className="row g-4">
-      {tables.map((table) => (
-        <div key={table.id} className="col-md-6 col-lg-3">
-          <div
-            className={`card h-100 cursor-pointer ${
-              selectedTableId === table.id
-                ? "border-warning bg-warning bg-opacity-10"
-                : ""
-            }`}
-            onClick={() => {
-              setSelectedTableId(table.id);
-              setSelectedType(table.id); // For highlight, optional
-            }}
-          >
-            <div
-              className={`card-body text-center bg-${table.color}-100 rounded-3 p-4 mx-auto my-3`}
-              style={{ width: "64px", height: "64px" }}
-            >
-              {React.cloneElement(table.icon, {
-                className: `text-${table.color} fs-4`,
-              })}
-            </div>
-            <div className="card-body text-center">
-              <h5 className="card-title">{table.name}</h5>
-              <p className="card-text text-muted small">
-                {table.description}
-              </p>
-              <p className="text-warning fw-semibold">{table.price}</p>
-            </div>
-          </div>
-        </div>
-      ))}
+            <div className="row g-4">
+              {tables.map((table) => (
+                <div key={table.id} className="col-md-6 col-lg-3">
+                  <div
+                    className={`card h-100 cursor-pointer ${selectedTableId === table.id
+                      ? "border-warning bg-warning bg-opacity-10"
+                      : ""
+                      }`}
+                    onClick={() => {
+                      setSelectedTableId(table.id);
+                      setSelectedType(table.id); // For highlight, optional
+                    }}
+                  >
+                    <div
+                      className={`card-body text-center bg-${table.color}-100 rounded-3 p-4 mx-auto my-3`}
+                      style={{ width: "64px", height: "64px" }}
+                    >
+                      {React.cloneElement(table.icon, {
+                        className: `text-${table.color} fs-4`,
+                      })}
+                    </div>
+                    <div className="card-body text-center">
+                      <h5 className="card-title">{table.name}</h5>
+                      <p className="card-text text-muted small">
+                        {table.description}
+                      </p>
+                      <p className="text-warning fw-semibold">{table.price}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
 
-      {tables.length === 0 && (
-        <div className="col-12">
-          <p className="text-center text-muted">No tables available.</p>
-        </div>
-      )}
-    </div>
+              {tables.length === 0 && (
+                <div className="col-12">
+                  <p className="text-center text-muted">No tables available.</p>
+                </div>
+              )}
+            </div>
 
             <div className="mt-4 d-flex justify-content-end">
               <button
@@ -576,7 +576,7 @@ const BookTable = () => {
 
                 <div className="mb-3">
                   <label className="form-label">Party Size</label>
-                  <select 
+                  <select
                     className="form-control"
                     value={partySize}
                     onChange={(e) => setPartySize(parseInt(e.target.value))}
@@ -695,7 +695,7 @@ const BookTable = () => {
                   )}
                 </div>
 
-                <div className="pt-3 border-top">
+                {/* <div className="pt-3 border-top">
                   <h4 className="h6 fw-semibold text-dark mb-3">
                     Notification Preferences
                   </h4>
@@ -729,7 +729,7 @@ const BookTable = () => {
                       Send email confirmation
                     </label>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 

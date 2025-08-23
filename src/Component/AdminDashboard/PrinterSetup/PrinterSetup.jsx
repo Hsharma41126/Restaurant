@@ -361,12 +361,17 @@
 
 // export default PrinterSetup;
 
-
 import React, { useState, useEffect } from 'react';
-import { RiPrinterLine, RiRestaurantLine, RiGobletLine, RiArrowDownSLine, RiLoader4Line, RiCheckLine, RiAddLine } from 'react-icons/ri';
+import {
+  RiPrinterLine,
+  RiRestaurantLine,
+  RiGobletLine,
+  RiAddLine,
+} from 'react-icons/ri';
 import { Modal, Button, Form } from 'react-bootstrap';
-import axios from 'axios';
 import axiosInstance from '../../../utils/axiosInstance';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const PrinterSetup = () => {
   const [printers, setPrinters] = useState([]);
@@ -390,7 +395,7 @@ const PrinterSetup = () => {
     name: '',
     type: 'kitchen',
     ip_address: '',
-    port: 9100
+    port: 9100,
   });
 
   // Fetch printers from API
@@ -405,8 +410,12 @@ const PrinterSetup = () => {
       setPrinters(response.data.data.printers);
 
       // Set default mappings if they exist
-      const kitchenPrinters = response.data.data.printers.filter(p => p.type === 'kitchen');
-      const barPrinters = response.data.data.printers.filter(p => p.type === 'bar');
+      const kitchenPrinters = response.data.data.printers.filter(
+        (p) => p.type === 'kitchen'
+      );
+      const barPrinters = response.data.data.printers.filter(
+        (p) => p.type === 'bar'
+      );
 
       if (kitchenPrinters.length > 0) {
         setKitchenPrinter(kitchenPrinters[0].printer_id);
@@ -427,7 +436,9 @@ const PrinterSetup = () => {
 
   // Handle save kitchen mapping
   const handleSaveKitchen = () => {
-    const selectedPrinter = printers.find(p => p.printer_id === kitchenPrinter);
+    const selectedPrinter = printers.find(
+      (p) => p.printer_id === kitchenPrinter
+    );
     if (selectedPrinter) {
       setKitchenMapping(`Food → ${selectedPrinter.name}`);
       setKitchenSaveStatus(true);
@@ -437,7 +448,7 @@ const PrinterSetup = () => {
 
   // Handle save bar mapping
   const handleSaveBar = () => {
-    const selectedPrinter = printers.find(p => p.printer_id === barPrinter);
+    const selectedPrinter = printers.find((p) => p.printer_id === barPrinter);
     if (selectedPrinter) {
       setBarMapping(`Drinks → ${selectedPrinter.name}`);
       setBarSaveStatus(true);
@@ -455,12 +466,25 @@ const PrinterSetup = () => {
         name: '',
         type: 'kitchen',
         ip_address: '',
-        port: 9100
+        port: 9100,
       });
       fetchPrinters(); // Refresh the list
+      toast.success('Printer added successfully!');
     } catch (err) {
       setError('Failed to add printer');
       console.error('Error adding printer:', err);
+      toast.error('Failed to add printer');
+    }
+  };
+
+  // Handle Test Print
+  const handleTestPrint = async (printer) => {
+    try {
+      await axiosInstance.post(`/printers/${printer.printer_id}/test`);
+      toast.success(`Test page sent to ${printer.name}`);
+    } catch (err) {
+      toast.error(`Failed to print on ${printer.name}`);
+      console.error(err);
     }
   };
 
@@ -502,9 +526,14 @@ const PrinterSetup = () => {
                     onChange={(e) => setKitchenPrinter(e.target.value)}
                   >
                     {printers
-                      .filter(p => p.type === 'kitchen')
-                      .map(printer => (
-                        <option key={printer.id} value={printer.printer_id}>{printer.name}</option>
+                      .filter((p) => p.type === 'kitchen')
+                      .map((printer) => (
+                        <option
+                          key={printer.id}
+                          value={printer.printer_id}
+                        >
+                          {printer.name}
+                        </option>
                       ))}
                   </select>
                 </div>
@@ -516,7 +545,8 @@ const PrinterSetup = () => {
               </div>
 
               <button
-                className={`btn w-100 ${kitchenSaveStatus ? 'btn-success' : 'btn-warning'}`}
+                className={`btn w-100 ${kitchenSaveStatus ? 'btn-success' : 'btn-warning'
+                  }`}
                 onClick={handleSaveKitchen}
                 disabled={!kitchenPrinter}
               >
@@ -542,9 +572,14 @@ const PrinterSetup = () => {
                     onChange={(e) => setBarPrinter(e.target.value)}
                   >
                     {printers
-                      .filter(p => p.type === 'bar')
-                      .map(printer => (
-                        <option key={printer.id} value={printer.printer_id}>{printer.name}</option>
+                      .filter((p) => p.type === 'bar')
+                      .map((printer) => (
+                        <option
+                          key={printer.id}
+                          value={printer.printer_id}
+                        >
+                          {printer.name}
+                        </option>
                       ))}
                   </select>
                 </div>
@@ -556,7 +591,8 @@ const PrinterSetup = () => {
               </div>
 
               <button
-                className={`btn w-100 ${barSaveStatus ? 'btn-success' : 'btn-warning'}`}
+                className={`btn w-100 ${barSaveStatus ? 'btn-success' : 'btn-warning'
+                  }`}
                 onClick={handleSaveBar}
                 disabled={!barPrinter}
               >
@@ -581,25 +617,62 @@ const PrinterSetup = () => {
               </div>
 
               <div className="row g-3">
-                {printers.map(printer => (
+                {printers.map((printer) => (
                   <div className="col-12" key={printer.id}>
-                    <div className={`card ${printer.status === 'online' ? 'border-success' : 'border-danger'}`}>
+                    <div
+                      className={`card ${printer.status === 'online'
+                        ? 'border-success'
+                        : 'border-danger'
+                        }`}
+                    >
                       <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-center mb-3">
+                        {/* Test Print Button */}
+                        {printer.status == 'online' && <div className="d-flex justify-content-end mb-2">
+                          <button
+                            className="btn btn-sm btn-outline-warning"
+                            disabled={printer.status !== 'online'}
+                            onClick={() => handleTestPrint(printer)}
+                          >
+                            Test Print
+                          </button>
+                        </div>}
+
+                        <div className="d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center gap-3">
-                            <RiPrinterLine className={`fs-4 ${printer.status === 'online' ? 'text-success' : 'text-danger'}`} />
+                            <RiPrinterLine
+                              className={`fs-4 ${printer.status === 'online'
+                                ? 'text-success'
+                                : 'text-danger'
+                                }`}
+                            />
                             <div>
                               <h3 className="h6 mb-0">{printer.name}</h3>
                               <p className="small text-muted mb-0">
-                                {printer.type.charAt(0).toUpperCase() + printer.type.slice(1)} Printer
-                                {printer.ip_address && ` • ${printer.ip_address}:${printer.port}`}
+                                {printer.type.charAt(0).toUpperCase() +
+                                  printer.type.slice(1)}{' '}
+                                Printer
+                                {printer.ip_address &&
+                                  ` • ${printer.ip_address}:${printer.port}`}
                               </p>
                             </div>
                           </div>
                           <div className="d-flex align-items-center gap-2">
-                            <div className={`rounded-circle ${printer.status === 'online' ? 'bg-success' : 'bg-danger'}`} style={{ width: '12px', height: '12px' }}></div>
-                            <span className={`small fw-medium ${printer.status === 'online' ? 'text-success' : 'text-danger'}`}>
-                              {printer.status === 'online' ? 'Online' : 'Offline'}
+                            <div
+                              className={`rounded-circle ${printer.status === 'online'
+                                ? 'bg-success'
+                                : 'bg-danger'
+                                }`}
+                              style={{ width: '12px', height: '12px' }}
+                            ></div>
+                            <span
+                              className={`small fw-medium ${printer.status === 'online'
+                                ? 'text-success'
+                                : 'text-danger'
+                                }`}
+                            >
+                              {printer.status === 'online'
+                                ? 'Online'
+                                : 'Offline'}
                             </span>
                           </div>
                         </div>
@@ -614,7 +687,10 @@ const PrinterSetup = () => {
       </div>
 
       {/* Add Printer Modal */}
-      <Modal show={showAddPrinterModal} onHide={() => setShowAddPrinterModal(false)}>
+      <Modal
+        show={showAddPrinterModal}
+        onHide={() => setShowAddPrinterModal(false)}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Add New Printer</Modal.Title>
         </Modal.Header>
@@ -626,7 +702,12 @@ const PrinterSetup = () => {
                 type="text"
                 placeholder="e.g. KITCHEN_02"
                 value={newPrinter.printer_id}
-                onChange={(e) => setNewPrinter({ ...newPrinter, printer_id: e.target.value })}
+                onChange={(e) =>
+                  setNewPrinter({
+                    ...newPrinter,
+                    printer_id: e.target.value,
+                  })
+                }
               />
             </Form.Group>
 
@@ -636,7 +717,9 @@ const PrinterSetup = () => {
                 type="text"
                 placeholder="e.g. Kitchen Printer 2"
                 value={newPrinter.name}
-                onChange={(e) => setNewPrinter({ ...newPrinter, name: e.target.value })}
+                onChange={(e) =>
+                  setNewPrinter({ ...newPrinter, name: e.target.value })
+                }
               />
             </Form.Group>
 
@@ -644,7 +727,9 @@ const PrinterSetup = () => {
               <Form.Label>Printer Type</Form.Label>
               <Form.Select
                 value={newPrinter.type}
-                onChange={(e) => setNewPrinter({ ...newPrinter, type: e.target.value })}
+                onChange={(e) =>
+                  setNewPrinter({ ...newPrinter, type: e.target.value })
+                }
               >
                 <option value="kitchen">Kitchen Printer</option>
                 <option value="bar">Bar Printer</option>
@@ -658,7 +743,12 @@ const PrinterSetup = () => {
                 type="text"
                 placeholder="e.g. 192.168.1.102"
                 value={newPrinter.ip_address}
-                onChange={(e) => setNewPrinter({ ...newPrinter, ip_address: e.target.value })}
+                onChange={(e) =>
+                  setNewPrinter({
+                    ...newPrinter,
+                    ip_address: e.target.value,
+                  })
+                }
               />
             </Form.Group>
 
@@ -668,13 +758,21 @@ const PrinterSetup = () => {
                 type="number"
                 placeholder="e.g. 9100"
                 value={newPrinter.port}
-                onChange={(e) => setNewPrinter({ ...newPrinter, port: parseInt(e.target.value) || 9100 })}
+                onChange={(e) =>
+                  setNewPrinter({
+                    ...newPrinter,
+                    port: parseInt(e.target.value) || 9100,
+                  })
+                }
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddPrinterModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowAddPrinterModal(false)}
+          >
             Cancel
           </Button>
           <Button
