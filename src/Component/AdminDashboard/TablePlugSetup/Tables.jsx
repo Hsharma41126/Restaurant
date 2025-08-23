@@ -3821,6 +3821,38 @@ const Tables = () => {
                     }}
                   />
                 </div>
+
+                {/* {Minimum Session Time} */}
+                   <div style={{ marginBottom: "15px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Minimum Session Time (minutes)
+                    {/* <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                      {" "}
+                      Optional
+                    </span> */}
+                  </label>
+                  <input
+                    type="number"
+                    name="minimumSessionTime"
+                    value={groupForm.minimumSessionTime || ''}
+                    onChange={handleGroupFormChange}
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Buttons */}

@@ -2065,6 +2065,9 @@ const StaffManagement = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+const [allStaff, setAllStaff] = useState([]); // All staff members
+const [filteredStaff, setFilteredStaff] = useState([]); // Filtered staff for display
+const [searchQuery, setSearchQuery] = useState("");
   const [resetPassword, setResetPassword] = useState({
     newPassword: '',
     confirmPassword: ''
@@ -2110,10 +2113,91 @@ const StaffManagement = () => {
   }, [page]);
 
   const handlePageChange = (newPage) => {
-    if (newPage > 0 && newPage <= totalPages) {
-      setPage(newPage);
+  if (newPage > 0 && newPage <= totalPages) {
+    setPage(newPage);
+    
+    // Apply current search filter to new page
+    const startIndex = (newPage - 1) * limit;
+    
+    if (searchQuery.trim() === "") {
+      const paginatedData = allStaff.slice(startIndex, startIndex + limit);
+      setFilteredStaff(paginatedData);
+    } else {
+      const filtered = allStaff.filter(staff => 
+        staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (staff.phone && staff.phone.includes(searchQuery))
+      );
+      
+      const paginatedData = filtered.slice(startIndex, startIndex + limit);
+      setFilteredStaff(paginatedData);
+    }
+  }
+};
+
+      // search bar functionlity    if (searchQuery) {
+useEffect(() => {
+  const fetchAllStaff = async () => {
+    try {
+      const res = await axiosInstance.get(`/users?role=staff&limit=1000`);
+      if (res.data.success) {
+        setAllStaff(res.data.data.users);
+        // Initially show all staff with pagination
+        const paginatedData = res.data.data.users.slice(0, limit);
+        setFilteredStaff(paginatedData);
+        setTotalPages(Math.ceil(res.data.data.users.length / limit));
+      }
+    } catch (error) {
+      console.error("Error fetching all staff:", error);
     }
   };
+  
+  fetchAllStaff();
+}, []);
+
+  const handleSearchChange = (e) => {
+  const query = e.target.value;
+  setSearchQuery(query);
+  
+  if (query.trim() === "") {
+    // If search is empty, show all staff with current pagination
+    const startIndex = (page - 1) * limit;
+    const paginatedData = allStaff.slice(startIndex, startIndex + limit);
+    setFilteredStaff(paginatedData);
+    setTotalPages(Math.ceil(allStaff.length / limit));
+  } else {
+    // Filter from all staff data and apply current pagination
+    const filtered = allStaff.filter(staff => 
+      staff.name.toLowerCase().includes(query.toLowerCase()) ||
+      staff.email.toLowerCase().includes(query.toLowerCase()) ||
+      (staff.phone && staff.phone.includes(query))
+    );
+    
+    const startIndex = (page - 1) * limit;
+    const paginatedData = filtered.slice(startIndex, startIndex + limit);
+    setFilteredStaff(paginatedData);
+    setTotalPages(Math.ceil(filtered.length / limit));
+  }
+};
+
+
+
+// access management staff selection drop down all staff members
+useEffect(() => {
+  const fetchAllStaff = async () => {
+    try {
+      const res = await axiosInstance.get(`/users?role=staff&limit=1000`);
+      if (res.data.success) {
+        setAllStaff(res.data.data.users);
+      }
+    } catch (error) {
+      console.error("Error fetching all staff:", error);
+    }
+  };
+  
+  fetchAllStaff();
+}, []);
+
 
   // Load permissions when staff is selected
   useEffect(() => {
@@ -2195,11 +2279,12 @@ const StaffManagement = () => {
 
   const handleSave = async () => {
     try {
-      const staff = staffMembers.find(s => s.id === selectedStaff);
+        const staff = allStaff.find(s => s.id === selectedStaff);
       if (!staff) {
         toast.error("Staff member not found");
         return;
       }
+      
 
       // Convert discount_percentage to number
       const discountPercentage = parseFloat(staff.discount_percentage) || 0;
@@ -2363,8 +2448,12 @@ const StaffManagement = () => {
       </Alert>
     );
 
-    const staff = staffMembers.find(s => s.id === selectedStaff);
+    const staff = allStaff.find(s => s.id === selectedStaff);
     if (!staff) return null;
+
+
+
+
 
     return (
       <Row className="g-4 mb-4">
@@ -2479,6 +2568,51 @@ const StaffManagement = () => {
           </Card>
         </Col>
 
+                {/* Customer Management */}
+<Col xs={12} md={6} lg={4}>
+  <Card className="bg-light">
+    <Card.Body>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h6 className="mb-0">Customer Management</h6>
+        <Form.Check
+          type="switch"
+          checked={permissions.customerManagement?.enabled}
+          // onChange={(e) => handlePermissionChange('customerManagement', 'enabled', e.target.checked)}
+        />
+      </div>
+      <ListGroup variant="flush">
+        <ListGroup.Item className="bg-transparent">
+          <Form.Check
+            type="checkbox"
+            label="Add Customer"
+            checked={permissions.customerManagement?.addCustomer}
+            // onChange={(e) => handlePermissionChange('customerManagement', 'addCustomer', e.target.checked)}
+            //  
+          />
+        </ListGroup.Item>
+        <ListGroup.Item className="bg-transparent">
+          <Form.Check
+            type="checkbox"
+            label="Edit Customer"
+            checked={permissions.customerManagement?.editCustomer}
+            // onChange={(e) => handlePermissionChange('customerManagement', 'editCustomer', e.target.checked)}
+            // disabled={!permissions.customerManagement?.enabled}
+          />
+        </ListGroup.Item>
+        <ListGroup.Item className="bg-transparent">
+          <Form.Check
+            type="checkbox"
+            label="Remove Customer"
+            checked={permissions.customerManagement?.removeCustomer}
+            // onChange={(e) => handlePermissionChange('customerManagement', 'removeCustomer', e.target.checked)}
+            // disabled={!permissions.customerManagement?.enabled}
+          />
+        </ListGroup.Item>
+      </ListGroup>
+    </Card.Body>
+  </Card>
+</Col>
+
         {/* Special Permissions */}
         <Col xs={12} md={6} lg={4}>
           <Card className="bg-light">
@@ -2584,6 +2718,9 @@ const StaffManagement = () => {
             </Card.Body>
           </Card>
         </Col>
+
+
+
       </Row>
     );
   };
@@ -2603,12 +2740,14 @@ const StaffManagement = () => {
             <span className="input-group-text bg-white border-end-0">
               <FaSearch className="text-muted" />
             </span>
-            <input
-              type="text"
-              className="form-control border-start-0"
-              placeholder="Search staff..."
-              style={{ maxWidth: "220px" }}
-            />
+           <input
+  type="text"
+  className="form-control border-start-0"
+  placeholder="Search staff..."
+  style={{ maxWidth: "220px" }}
+  value={searchQuery}
+  onChange={handleSearchChange}
+/>
           </div>
 
           <Button
@@ -2625,7 +2764,7 @@ const StaffManagement = () => {
 
       {/* Staff List */}
       <Row className="g-4 mb-4">
-        {staffMembers.map((staff) => (
+        {filteredStaff.map((staff) => (
           <Col key={staff.id} xs={12} md={6} lg={4}>
             <Card className="h-100 shadow-sm">
               <Card.Body>
@@ -2705,17 +2844,17 @@ const StaffManagement = () => {
 
           <Form.Group className="mb-4">
             <Form.Label>Select Staff Member</Form.Label>
-            <Form.Select
-              onChange={(e) => setSelectedStaff(e.target.value)}
-              value={selectedStaff || ''}
-            >
-              <option value="">Choose a staff member...</option>
-              {staffMembers.map(staff => (
-                <option key={staff.id} value={staff.id}>
-                  {staff.name} ({staff.role})
-                </option>
-              ))}
-            </Form.Select>
+      <Form.Select
+  onChange={(e) => setSelectedStaff(e.target.value)}
+  value={selectedStaff || ''}
+>
+  <option value="">Choose a staff member...</option>
+  {allStaff.map(staff => (
+    <option key={staff.id} value={staff.id}>
+      {staff.name} ({staff.role})
+    </option>
+  ))}
+</Form.Select>
           </Form.Group>
 
           {renderPermissionControls()}

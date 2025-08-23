@@ -1365,29 +1365,7 @@ const OrdersManagement = () => {
                     </span>
                   </button>
 
-                  <div className="dropdown">
-                    <button
-                      className="btn btn-light btn-sm w-100 d-flex align-items-center justify-content-center"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      <span className="small">Course</span>
-                      <i className="fa fa-chevron-down ms-2 small"></i>
-                    </button>
-                    <ul className="dropdown-menu w-100 shadow border">
-                      {['Appetizer', 'Main Course', 'Dessert', 'All at Once'].map((course) => (
-                        <li key={course}>
-                          <button
-                            className="dropdown-item small text-muted"
-                            onClick={() => console.log(`Selected: ${course}`)}
-                          >
-                            {course}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                 <button class="btn btn-success btn-sm flex-grow-1"><i class="fa fa-credit-card me-1 small"></i>Pay</button>
 
                   <button
                     onClick={() => setIsActionsModalOpen(true)}
