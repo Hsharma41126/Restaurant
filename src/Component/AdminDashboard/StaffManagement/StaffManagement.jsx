@@ -12,7 +12,6 @@
 
 // const StaffManagement = () => {
 
-
 //   const [showModal, setShowModal] = useState(false);
 //   const [selectedStaff, setSelectedStaff] = useState(null);
 
@@ -489,13 +488,6 @@
 // };
 
 // export default StaffManagement;
-
-
-
-
-
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import {
@@ -1228,8 +1220,6 @@
 //   const [limit] = useState(6); // show 6 per page
 //   const [totalPages, setTotalPages] = useState(1);
 
-
-
 //   // it fetches staff list
 //   const fetchStaffList = async (pageNumber = 1) => {
 //     try {
@@ -1282,7 +1272,6 @@
 //     setNewStaff((prev) => ({ ...prev, [name]: value }));
 //   };
 
-
 //   const handleResetPasswordChange = (e) => {
 //     const { name, value } = e.target;
 //     setResetPassword(prev => ({ ...prev, [name]: value }));
@@ -1306,8 +1295,6 @@
 //     setStaffMembers(updatedStaff);
 //     setShowModal(false);
 //   };
-
-
 
 //   const handleAddStaff = async () => {
 //     try {
@@ -1342,7 +1329,6 @@
 //     }
 //   };
 
-
 //   // ✅ Delete Staff Handler
 //   const handleDeleteStaff = async (id) => {
 //     try {
@@ -1362,11 +1348,9 @@
 //     }
 //   };
 
-
 //   const togglePasswordVisibility = () => {
 //     setPasswordVisible((prev) => !prev);
 //   };
-
 
 //   const toggleResetPasswordVisibility = () => {
 //     setResetPasswordVisible(!resetPasswordVisible);
@@ -1962,7 +1946,6 @@
 //         </Modal.Footer>
 //       </Modal>
 
-
 //       {/* Reset Password Modal */}
 //       <Modal show={showResetPasswordModal} onHide={() => setShowResetPasswordModal(false)} centered>
 //         <Modal.Header closeButton>
@@ -2017,17 +2000,24 @@
 
 // export default StaffManagement;
 
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import {
-  Container, Row, Col, Card, Button, Form,
-  Modal, Badge, InputGroup, ListGroup, Alert, Pagination
-} from 'react-bootstrap';
-import {
-  Eye, EyeSlash, Trash, Person, Gear
-} from 'react-bootstrap-icons';
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Form,
+  Modal,
+  Badge,
+  InputGroup,
+  ListGroup,
+  Alert,
+  Pagination,
+} from "react-bootstrap";
+import { Eye, EyeSlash, Trash, Person, Gear } from "react-bootstrap-icons";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import axiosInstance from "../../../utils/axiosInstance";
 
@@ -2037,13 +2027,13 @@ const DEFAULT_PERMISSIONS = {
     enabled: false,
     viewTables: false,
     manageReservations: false,
-    tableStatus: false
+    tableStatus: false,
   },
   orderProcessing: {
     enabled: false,
     createOrders: false,
     modifyOrders: false,
-    cancelOrders: false
+    cancelOrders: false,
   },
   specialPermissions: {
     enabled: false,
@@ -2052,11 +2042,11 @@ const DEFAULT_PERMISSIONS = {
       itemDiscount: false,
       billDiscount: false,
       specialOffers: false,
-      maxDiscount: 0
+      maxDiscount: 0,
     },
     addMenuItems: false,
-    changePrices: false
-  }
+    changePrices: false,
+  },
 };
 
 const StaffManagement = () => {
@@ -2065,12 +2055,12 @@ const StaffManagement = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-const [allStaff, setAllStaff] = useState([]); // All staff members
-const [filteredStaff, setFilteredStaff] = useState([]); // Filtered staff for display
-const [searchQuery, setSearchQuery] = useState("");
+  const [allStaff, setAllStaff] = useState([]); // All staff members
+  const [filteredStaff, setFilteredStaff] = useState([]); // Filtered staff for display
+  const [searchQuery, setSearchQuery] = useState("");
   const [resetPassword, setResetPassword] = useState({
-    newPassword: '',
-    confirmPassword: ''
+    newPassword: "",
+    confirmPassword: "",
   });
   const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
   const token = localStorage.getItem("token");
@@ -2082,7 +2072,7 @@ const [searchQuery, setSearchQuery] = useState("");
     phone: "",
     role: "staff",
     discount_percentage: 0,
-    permissions: { ...DEFAULT_PERMISSIONS }
+    permissions: { ...DEFAULT_PERMISSIONS },
   });
 
   const [permissions, setPermissions] = useState({ ...DEFAULT_PERMISSIONS });
@@ -2113,96 +2103,95 @@ const [searchQuery, setSearchQuery] = useState("");
   }, [page]);
 
   const handlePageChange = (newPage) => {
-  if (newPage > 0 && newPage <= totalPages) {
-    setPage(newPage);
-    
-    // Apply current search filter to new page
-    const startIndex = (newPage - 1) * limit;
-    
-    if (searchQuery.trim() === "") {
-      const paginatedData = allStaff.slice(startIndex, startIndex + limit);
-      setFilteredStaff(paginatedData);
-    } else {
-      const filtered = allStaff.filter(staff => 
-        staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (staff.phone && staff.phone.includes(searchQuery))
-      );
-      
-      const paginatedData = filtered.slice(startIndex, startIndex + limit);
-      setFilteredStaff(paginatedData);
-    }
-  }
-};
+    if (newPage > 0 && newPage <= totalPages) {
+      setPage(newPage);
 
-      // search bar functionlity    if (searchQuery) {
-useEffect(() => {
-  const fetchAllStaff = async () => {
-    try {
-      const res = await axiosInstance.get(`/users?role=staff&limit=1000`);
-      if (res.data.success) {
-        setAllStaff(res.data.data.users);
-        // Initially show all staff with pagination
-        const paginatedData = res.data.data.users.slice(0, limit);
+      // Apply current search filter to new page
+      const startIndex = (newPage - 1) * limit;
+
+      if (searchQuery.trim() === "") {
+        const paginatedData = allStaff.slice(startIndex, startIndex + limit);
         setFilteredStaff(paginatedData);
-        setTotalPages(Math.ceil(res.data.data.users.length / limit));
+      } else {
+        const filtered = allStaff.filter(
+          (staff) =>
+            staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (staff.phone && staff.phone.includes(searchQuery))
+        );
+
+        const paginatedData = filtered.slice(startIndex, startIndex + limit);
+        setFilteredStaff(paginatedData);
       }
-    } catch (error) {
-      console.error("Error fetching all staff:", error);
     }
   };
-  
-  fetchAllStaff();
-}, []);
+
+  // search bar functionlity    if (searchQuery) {
+  useEffect(() => {
+    const fetchAllStaff = async () => {
+      try {
+        const res = await axiosInstance.get(`/users?role=staff&limit=1000`);
+        if (res.data.success) {
+          setAllStaff(res.data.data.users);
+          // Initially show all staff with pagination
+          const paginatedData = res.data.data.users.slice(0, limit);
+          setFilteredStaff(paginatedData);
+          setTotalPages(Math.ceil(res.data.data.users.length / limit));
+        }
+      } catch (error) {
+        console.error("Error fetching all staff:", error);
+      }
+    };
+
+    fetchAllStaff();
+  }, []);
 
   const handleSearchChange = (e) => {
-  const query = e.target.value;
-  setSearchQuery(query);
-  
-  if (query.trim() === "") {
-    // If search is empty, show all staff with current pagination
-    const startIndex = (page - 1) * limit;
-    const paginatedData = allStaff.slice(startIndex, startIndex + limit);
-    setFilteredStaff(paginatedData);
-    setTotalPages(Math.ceil(allStaff.length / limit));
-  } else {
-    // Filter from all staff data and apply current pagination
-    const filtered = allStaff.filter(staff => 
-      staff.name.toLowerCase().includes(query.toLowerCase()) ||
-      staff.email.toLowerCase().includes(query.toLowerCase()) ||
-      (staff.phone && staff.phone.includes(query))
-    );
-    
-    const startIndex = (page - 1) * limit;
-    const paginatedData = filtered.slice(startIndex, startIndex + limit);
-    setFilteredStaff(paginatedData);
-    setTotalPages(Math.ceil(filtered.length / limit));
-  }
-};
+    const query = e.target.value;
+    setSearchQuery(query);
 
+    if (query.trim() === "") {
+      // If search is empty, show all staff with current pagination
+      const startIndex = (page - 1) * limit;
+      const paginatedData = allStaff.slice(startIndex, startIndex + limit);
+      setFilteredStaff(paginatedData);
+      setTotalPages(Math.ceil(allStaff.length / limit));
+    } else {
+      // Filter from all staff data and apply current pagination
+      const filtered = allStaff.filter(
+        (staff) =>
+          staff.name.toLowerCase().includes(query.toLowerCase()) ||
+          staff.email.toLowerCase().includes(query.toLowerCase()) ||
+          (staff.phone && staff.phone.includes(query))
+      );
 
-
-// access management staff selection drop down all staff members
-useEffect(() => {
-  const fetchAllStaff = async () => {
-    try {
-      const res = await axiosInstance.get(`/users?role=staff&limit=1000`);
-      if (res.data.success) {
-        setAllStaff(res.data.data.users);
-      }
-    } catch (error) {
-      console.error("Error fetching all staff:", error);
+      const startIndex = (page - 1) * limit;
+      const paginatedData = filtered.slice(startIndex, startIndex + limit);
+      setFilteredStaff(paginatedData);
+      setTotalPages(Math.ceil(filtered.length / limit));
     }
   };
-  
-  fetchAllStaff();
-}, []);
 
+  // access management staff selection drop down all staff members
+  useEffect(() => {
+    const fetchAllStaff = async () => {
+      try {
+        const res = await axiosInstance.get(`/users?role=staff&limit=1000`);
+        if (res.data.success) {
+          setAllStaff(res.data.data.users);
+        }
+      } catch (error) {
+        console.error("Error fetching all staff:", error);
+      }
+    };
+
+    fetchAllStaff();
+  }, []);
 
   // Load permissions when staff is selected
   useEffect(() => {
     if (selectedStaff) {
-      const staff = staffMembers.find(s => s.id === selectedStaff);
+      const staff = staffMembers.find((s) => s.id === selectedStaff);
       if (staff) {
         setPermissions(staff.permissions || { ...DEFAULT_PERMISSIONS });
       }
@@ -2231,11 +2220,11 @@ useEffect(() => {
 
   const handleResetPasswordChange = (e) => {
     const { name, value } = e.target;
-    setResetPassword(prev => ({ ...prev, [name]: value }));
+    setResetPassword((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePermissionChange = (section, field, value, subField = null) => {
-    setPermissions(prev => {
+    setPermissions((prev) => {
       const newPermissions = { ...prev };
 
       if (subField) {
@@ -2279,12 +2268,11 @@ useEffect(() => {
 
   const handleSave = async () => {
     try {
-        const staff = allStaff.find(s => s.id === selectedStaff);
+      const staff = allStaff.find((s) => s.id === selectedStaff);
       if (!staff) {
         toast.error("Staff member not found");
         return;
       }
-      
 
       // Convert discount_percentage to number
       const discountPercentage = parseFloat(staff.discount_percentage) || 0;
@@ -2296,16 +2284,13 @@ useEffect(() => {
         role: "staff",
         status: staff.status || "active", // Include status if required
         discount_percentage: discountPercentage, // Ensure it's a number
-        permissions: permissions
+        permissions: permissions,
       };
 
       // Log the data to check its structure
       console.log("Sending data:", staffData);
 
-      const res = await axiosInstance.put(
-        `/users/${selectedStaff}`,
-        staffData
-      );
+      const res = await axiosInstance.put(`/users/${selectedStaff}`, staffData);
 
       if (res.data.success) {
         toast.success("Permissions updated successfully!");
@@ -2335,7 +2320,7 @@ useEffect(() => {
         phone: newStaff.phone,
         role: "staff",
         discount_percentage: newStaff.discount_percentage,
-        permissions: newStaff.permissions
+        permissions: newStaff.permissions,
       };
 
       const res = await axios.post(
@@ -2358,7 +2343,7 @@ useEffect(() => {
           phone: "",
           role: "staff",
           discount_percentage: 0,
-          permissions: { ...DEFAULT_PERMISSIONS }
+          permissions: { ...DEFAULT_PERMISSIONS },
         });
         fetchStaffList(page); // Refresh the list
       } else {
@@ -2373,11 +2358,15 @@ useEffect(() => {
   // Delete Staff Handler
   const handleDeleteStaff = async (id) => {
     try {
-      const confirmDelete = window.confirm("Are you sure you want to delete this staff member?");
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this staff member?"
+      );
       if (!confirmDelete) return;
 
       await axiosInstance.delete(`/users/${id}`);
-      setStaffMembers((prevStaff) => prevStaff.filter((staff) => staff.id !== id));
+      setStaffMembers((prevStaff) =>
+        prevStaff.filter((staff) => staff.id !== id)
+      );
       toast.success("Staff member deleted successfully!");
     } catch (error) {
       console.error("Error deleting staff:", error);
@@ -2395,10 +2384,14 @@ useEffect(() => {
 
   const getBadgeVariant = (role) => {
     switch (role) {
-      case 'admin': return 'primary';
-      case 'user': return 'info';
-      case 'staff': return 'success';
-      default: return 'secondary';
+      case "admin":
+        return "primary";
+      case "user":
+        return "info";
+      case "staff":
+        return "success";
+      default:
+        return "secondary";
     }
   };
 
@@ -2442,18 +2435,15 @@ useEffect(() => {
   };
 
   const renderPermissionControls = () => {
-    if (!selectedStaff) return (
-      <Alert variant="info" className="mt-3">
-        Please select a staff member to manage their permissions
-      </Alert>
-    );
+    if (!selectedStaff)
+      return (
+        <Alert variant="info" className="mt-3">
+          Please select a staff member to manage their permissions
+        </Alert>
+      );
 
-    const staff = allStaff.find(s => s.id === selectedStaff);
+    const staff = allStaff.find((s) => s.id === selectedStaff);
     if (!staff) return null;
-
-
-
-
 
     return (
       <Row className="g-4 mb-4">
@@ -2463,13 +2453,23 @@ useEffect(() => {
             <h6 className="mb-3">Staff Information</h6>
             <Row>
               <Col md={6}>
-                <p><strong>Name:</strong> {staff.name}</p>
-                <p><strong>Email:</strong> {staff.email}</p>
-                <p><strong>Phone:</strong> {staff.phone}</p>
+                <p>
+                  <strong>Name:</strong> {staff.name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {staff.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {staff.phone}
+                </p>
               </Col>
               <Col md={6}>
-                <p><strong>Role:</strong> {staff.role}</p>
-                <p><strong>Status:</strong> {staff.status || 'active'}</p>
+                <p>
+                  <strong>Role:</strong> {staff.role}
+                </p>
+                <p>
+                  <strong>Status:</strong> {staff.status || "active"}
+                </p>
                 <p>
                   <strong>Discount:</strong> {staff.discount_percentage || "0"}%
                 </p>
@@ -2487,7 +2487,13 @@ useEffect(() => {
                 <Form.Check
                   type="switch"
                   checked={permissions.tablesManagement?.enabled}
-                  onChange={(e) => handlePermissionChange('tablesManagement', 'enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePermissionChange(
+                      "tablesManagement",
+                      "enabled",
+                      e.target.checked
+                    )
+                  }
                 />
               </div>
               <ListGroup variant="flush">
@@ -2496,7 +2502,13 @@ useEffect(() => {
                     type="checkbox"
                     label="View Tables"
                     checked={permissions.tablesManagement?.viewTables}
-                    onChange={(e) => handlePermissionChange('tablesManagement', 'viewTables', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "tablesManagement",
+                        "viewTables",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.tablesManagement?.enabled}
                   />
                 </ListGroup.Item>
@@ -2505,7 +2517,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Manage Reservations"
                     checked={permissions.tablesManagement?.manageReservations}
-                    onChange={(e) => handlePermissionChange('tablesManagement', 'manageReservations', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "tablesManagement",
+                        "manageReservations",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.tablesManagement?.enabled}
                   />
                 </ListGroup.Item>
@@ -2514,7 +2532,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Table Status"
                     checked={permissions.tablesManagement?.tableStatus}
-                    onChange={(e) => handlePermissionChange('tablesManagement', 'tableStatus', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "tablesManagement",
+                        "tableStatus",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.tablesManagement?.enabled}
                   />
                 </ListGroup.Item>
@@ -2532,7 +2556,13 @@ useEffect(() => {
                 <Form.Check
                   type="switch"
                   checked={permissions.orderProcessing?.enabled}
-                  onChange={(e) => handlePermissionChange('orderProcessing', 'enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePermissionChange(
+                      "orderProcessing",
+                      "enabled",
+                      e.target.checked
+                    )
+                  }
                 />
               </div>
               <ListGroup variant="flush">
@@ -2541,7 +2571,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Create Orders"
                     checked={permissions.orderProcessing?.createOrders}
-                    onChange={(e) => handlePermissionChange('orderProcessing', 'createOrders', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "orderProcessing",
+                        "createOrders",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.orderProcessing?.enabled}
                   />
                 </ListGroup.Item>
@@ -2550,7 +2586,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Modify Orders"
                     checked={permissions.orderProcessing?.modifyOrders}
-                    onChange={(e) => handlePermissionChange('orderProcessing', 'modifyOrders', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "orderProcessing",
+                        "modifyOrders",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.orderProcessing?.enabled}
                   />
                 </ListGroup.Item>
@@ -2559,7 +2601,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Cancel Orders"
                     checked={permissions.orderProcessing?.cancelOrders}
-                    onChange={(e) => handlePermissionChange('orderProcessing', 'cancelOrders', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "orderProcessing",
+                        "cancelOrders",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.orderProcessing?.enabled}
                   />
                 </ListGroup.Item>
@@ -2568,50 +2616,50 @@ useEffect(() => {
           </Card>
         </Col>
 
-                {/* Customer Management */}
-<Col xs={12} md={6} lg={4}>
-  <Card className="bg-light">
-    <Card.Body>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="mb-0">Customer Management</h6>
-        <Form.Check
-          type="switch"
-          checked={permissions.customerManagement?.enabled}
-          // onChange={(e) => handlePermissionChange('customerManagement', 'enabled', e.target.checked)}
-        />
-      </div>
-      <ListGroup variant="flush">
-        <ListGroup.Item className="bg-transparent">
-          <Form.Check
-            type="checkbox"
-            label="Add Customer"
-            checked={permissions.customerManagement?.addCustomer}
-            // onChange={(e) => handlePermissionChange('customerManagement', 'addCustomer', e.target.checked)}
-            //  
-          />
-        </ListGroup.Item>
-        <ListGroup.Item className="bg-transparent">
-          <Form.Check
-            type="checkbox"
-            label="Edit Customer"
-            checked={permissions.customerManagement?.editCustomer}
-            // onChange={(e) => handlePermissionChange('customerManagement', 'editCustomer', e.target.checked)}
-            // disabled={!permissions.customerManagement?.enabled}
-          />
-        </ListGroup.Item>
-        <ListGroup.Item className="bg-transparent">
-          <Form.Check
-            type="checkbox"
-            label="Remove Customer"
-            checked={permissions.customerManagement?.removeCustomer}
-            // onChange={(e) => handlePermissionChange('customerManagement', 'removeCustomer', e.target.checked)}
-            // disabled={!permissions.customerManagement?.enabled}
-          />
-        </ListGroup.Item>
-      </ListGroup>
-    </Card.Body>
-  </Card>
-</Col>
+        {/* Customer Management */}
+        <Col xs={12} md={6} lg={4}>
+          <Card className="bg-light">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0">Customer Management</h6>
+                <Form.Check
+                  type="switch"
+                  checked={permissions.customerManagement?.enabled}
+                  // onChange={(e) => handlePermissionChange('customerManagement', 'enabled', e.target.checked)}
+                />
+              </div>
+              <ListGroup variant="flush">
+                <ListGroup.Item className="bg-transparent">
+                  <Form.Check
+                    type="checkbox"
+                    label="Add Customer"
+                    checked={permissions.customerManagement?.addCustomer}
+                    // onChange={(e) => handlePermissionChange('customerManagement', 'addCustomer', e.target.checked)}
+                    //
+                  />
+                </ListGroup.Item>
+                <ListGroup.Item className="bg-transparent">
+                  <Form.Check
+                    type="checkbox"
+                    label="Edit Customer"
+                    checked={permissions.customerManagement?.editCustomer}
+                    // onChange={(e) => handlePermissionChange('customerManagement', 'editCustomer', e.target.checked)}
+                    // disabled={!permissions.customerManagement?.enabled}
+                  />
+                </ListGroup.Item>
+                <ListGroup.Item className="bg-transparent">
+                  <Form.Check
+                    type="checkbox"
+                    label="Remove Customer"
+                    checked={permissions.customerManagement?.removeCustomer}
+                    // onChange={(e) => handlePermissionChange('customerManagement', 'removeCustomer', e.target.checked)}
+                    // disabled={!permissions.customerManagement?.enabled}
+                  />
+                </ListGroup.Item>
+              </ListGroup>
+            </Card.Body>
+          </Card>
+        </Col>
 
         {/* Special Permissions */}
         <Col xs={12} md={6} lg={4}>
@@ -2622,7 +2670,13 @@ useEffect(() => {
                 <Form.Check
                   type="switch"
                   checked={permissions.specialPermissions?.enabled}
-                  onChange={(e) => handlePermissionChange('specialPermissions', 'enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePermissionChange(
+                      "specialPermissions",
+                      "enabled",
+                      e.target.checked
+                    )
+                  }
                 />
               </div>
               <ListGroup variant="flush">
@@ -2631,7 +2685,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Void Items"
                     checked={permissions.specialPermissions?.voidItems}
-                    onChange={(e) => handlePermissionChange('specialPermissions', 'voidItems', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "specialPermissions",
+                        "voidItems",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.specialPermissions?.enabled}
                   />
                 </ListGroup.Item>
@@ -2639,17 +2699,26 @@ useEffect(() => {
                   <Form.Check
                     type="checkbox"
                     label="Apply Discounts"
-                    checked={permissions.specialPermissions?.applyDiscounts?.itemDiscount ||
-                      permissions.specialPermissions?.applyDiscounts?.billDiscount ||
-                      permissions.specialPermissions?.applyDiscounts?.specialOffers}
+                    checked={
+                      permissions.specialPermissions?.applyDiscounts
+                        ?.itemDiscount ||
+                      permissions.specialPermissions?.applyDiscounts
+                        ?.billDiscount ||
+                      permissions.specialPermissions?.applyDiscounts
+                        ?.specialOffers
+                    }
                     onChange={(e) => {
                       const val = e.target.checked;
-                      handlePermissionChange('specialPermissions', 'applyDiscounts', {
-                        ...permissions.specialPermissions.applyDiscounts,
-                        itemDiscount: val,
-                        billDiscount: val,
-                        specialOffers: val
-                      });
+                      handlePermissionChange(
+                        "specialPermissions",
+                        "applyDiscounts",
+                        {
+                          ...permissions.specialPermissions.applyDiscounts,
+                          itemDiscount: val,
+                          billDiscount: val,
+                          specialOffers: val,
+                        }
+                      );
                     }}
                     disabled={!permissions.specialPermissions?.enabled}
                   />
@@ -2658,38 +2727,89 @@ useEffect(() => {
                       <Form.Check
                         type="checkbox"
                         label="Item Discount"
-                        checked={permissions.specialPermissions.applyDiscounts.itemDiscount}
-                        onChange={(e) => handlePermissionChange('specialPermissions', 'applyDiscounts',
-                          { ...permissions.specialPermissions.applyDiscounts, itemDiscount: e.target.checked }, 'itemDiscount')}
+                        checked={
+                          permissions.specialPermissions.applyDiscounts
+                            .itemDiscount
+                        }
+                        onChange={(e) =>
+                          handlePermissionChange(
+                            "specialPermissions",
+                            "applyDiscounts",
+                            {
+                              ...permissions.specialPermissions.applyDiscounts,
+                              itemDiscount: e.target.checked,
+                            },
+                            "itemDiscount"
+                          )
+                        }
                         disabled={!permissions.specialPermissions?.enabled}
                       />
                       <Form.Check
                         type="checkbox"
                         label="Bill Discount"
-                        checked={permissions.specialPermissions.applyDiscounts.billDiscount}
-                        onChange={(e) => handlePermissionChange('specialPermissions', 'applyDiscounts',
-                          { ...permissions.specialPermissions.applyDiscounts, billDiscount: e.target.checked }, 'billDiscount')}
+                        checked={
+                          permissions.specialPermissions.applyDiscounts
+                            .billDiscount
+                        }
+                        onChange={(e) =>
+                          handlePermissionChange(
+                            "specialPermissions",
+                            "applyDiscounts",
+                            {
+                              ...permissions.specialPermissions.applyDiscounts,
+                              billDiscount: e.target.checked,
+                            },
+                            "billDiscount"
+                          )
+                        }
                         disabled={!permissions.specialPermissions?.enabled}
                       />
                       <Form.Check
                         type="checkbox"
                         label="Special Offers"
-                        checked={permissions.specialPermissions.applyDiscounts.specialOffers}
-                        onChange={(e) => handlePermissionChange('specialPermissions', 'applyDiscounts',
-                          { ...permissions.specialPermissions.applyDiscounts, specialOffers: e.target.checked }, 'specialOffers')}
+                        checked={
+                          permissions.specialPermissions.applyDiscounts
+                            .specialOffers
+                        }
+                        onChange={(e) =>
+                          handlePermissionChange(
+                            "specialPermissions",
+                            "applyDiscounts",
+                            {
+                              ...permissions.specialPermissions.applyDiscounts,
+                              specialOffers: e.target.checked,
+                            },
+                            "specialOffers"
+                          )
+                        }
                         disabled={!permissions.specialPermissions?.enabled}
                       />
                       <div className="d-flex align-items-center small mt-2">
                         <span className="me-2">Max Discount:</span>
                         <Form.Select
                           size="sm"
-                          value={permissions.specialPermissions.applyDiscounts.maxDiscount}
-                          onChange={(e) => handlePermissionChange('specialPermissions', 'applyDiscounts',
-                            { ...permissions.specialPermissions.applyDiscounts, maxDiscount: parseInt(e.target.value) }, 'maxDiscount')}
+                          value={
+                            permissions.specialPermissions.applyDiscounts
+                              .maxDiscount
+                          }
+                          onChange={(e) =>
+                            handlePermissionChange(
+                              "specialPermissions",
+                              "applyDiscounts",
+                              {
+                                ...permissions.specialPermissions
+                                  .applyDiscounts,
+                                maxDiscount: parseInt(e.target.value),
+                              },
+                              "maxDiscount"
+                            )
+                          }
                           disabled={!permissions.specialPermissions?.enabled}
                         >
-                          {[0, 5, 10, 15, 20, 25].map(val => (
-                            <option key={val} value={val}>{val}%</option>
+                          {[0, 5, 10, 15, 20, 25].map((val) => (
+                            <option key={val} value={val}>
+                              {val}%
+                            </option>
                           ))}
                         </Form.Select>
                       </div>
@@ -2701,7 +2821,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Add Menu Items"
                     checked={permissions.specialPermissions?.addMenuItems}
-                    onChange={(e) => handlePermissionChange('specialPermissions', 'addMenuItems', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "specialPermissions",
+                        "addMenuItems",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.specialPermissions?.enabled}
                   />
                 </ListGroup.Item>
@@ -2710,7 +2836,13 @@ useEffect(() => {
                     type="checkbox"
                     label="Change Prices"
                     checked={permissions.specialPermissions?.changePrices}
-                    onChange={(e) => handlePermissionChange('specialPermissions', 'changePrices', e.target.checked)}
+                    onChange={(e) =>
+                      handlePermissionChange(
+                        "specialPermissions",
+                        "changePrices",
+                        e.target.checked
+                      )
+                    }
                     disabled={!permissions.specialPermissions?.enabled}
                   />
                 </ListGroup.Item>
@@ -2718,9 +2850,6 @@ useEffect(() => {
             </Card.Body>
           </Card>
         </Col>
-
-
-
       </Row>
     );
   };
@@ -2740,20 +2869,20 @@ useEffect(() => {
             <span className="input-group-text bg-white border-end-0">
               <FaSearch className="text-muted" />
             </span>
-           <input
-  type="text"
-  className="form-control border-start-0"
-  placeholder="Search staff..."
-  style={{ maxWidth: "220px" }}
-  value={searchQuery}
-  onChange={handleSearchChange}
-/>
+            <input
+              type="text"
+              className="form-control border-start-0"
+              placeholder="Search staff..."
+              style={{ maxWidth: "220px" }}
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
           </div>
 
           <Button
             variant="warning"
             className="d-flex align-items-center"
-            style={{ whiteSpace: 'nowrap', gap: '0.5rem' }}
+            style={{ whiteSpace: "nowrap", gap: "0.5rem" }}
             onClick={() => setShowAddModal(true)}
           >
             <FaPlus />
@@ -2838,23 +2967,24 @@ useEffect(() => {
       </div>
 
       {/* Access Management Section */}
-      <Card className="mb-4">
+      
+      {/* <Card className="mb-4">
         <Card.Body>
           <h4 className="mb-4">Access Management</h4>
 
           <Form.Group className="mb-4">
             <Form.Label>Select Staff Member</Form.Label>
-      <Form.Select
-  onChange={(e) => setSelectedStaff(e.target.value)}
-  value={selectedStaff || ''}
->
-  <option value="">Choose a staff member...</option>
-  {allStaff.map(staff => (
-    <option key={staff.id} value={staff.id}>
-      {staff.name} ({staff.role})
-    </option>
-  ))}
-</Form.Select>
+            <Form.Select
+              onChange={(e) => setSelectedStaff(e.target.value)}
+              value={selectedStaff || ""}
+            >
+              <option value="">Choose a staff member...</option>
+              {allStaff.map((staff) => (
+                <option key={staff.id} value={staff.id}>
+                  {staff.name} ({staff.role})
+                </option>
+              ))}
+            </Form.Select>
           </Form.Group>
 
           {renderPermissionControls()}
@@ -2870,10 +3000,15 @@ useEffect(() => {
             </Button>
           </div>
         </Card.Body>
-      </Card>
+      </Card> */}
 
       {/* Add Staff Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered size="lg">
+      <Modal
+        show={showAddModal}
+        onHide={() => setShowAddModal(false)}
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Add New Staff</Modal.Title>
         </Modal.Header>
@@ -2914,7 +3049,10 @@ useEffect(() => {
                   onChange={handleChange}
                   required
                 />
-                <InputGroup.Text onClick={togglePasswordVisibility} style={{ cursor: 'pointer' }}>
+                <InputGroup.Text
+                  onClick={togglePasswordVisibility}
+                  style={{ cursor: "pointer" }}
+                >
                   {passwordVisible ? <EyeSlash /> : <Eye />}
                 </InputGroup.Text>
               </InputGroup>
@@ -2968,15 +3106,19 @@ useEffect(() => {
       </Modal>
 
       {/* Edit Permissions Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>
-            Manage Permissions – {staffMembers.find(s => s.id === selectedStaff)?.name}
+            Manage Permissions –{" "}
+            {staffMembers.find((s) => s.id === selectedStaff)?.name}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          {selectedStaff && renderPermissionControls()}
-        </Modal.Body>
+        <Modal.Body>{selectedStaff && renderPermissionControls()}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
@@ -2988,7 +3130,11 @@ useEffect(() => {
       </Modal>
 
       {/* Reset Password Modal */}
-      <Modal show={showResetPasswordModal} onHide={() => setShowResetPasswordModal(false)} centered>
+      <Modal
+        show={showResetPasswordModal}
+        onHide={() => setShowResetPasswordModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Reset Password</Modal.Title>
         </Modal.Header>
@@ -3006,7 +3152,10 @@ useEffect(() => {
                     onChange={handleResetPasswordChange}
                     required
                   />
-                  <InputGroup.Text onClick={toggleResetPasswordVisibility} style={{ cursor: 'pointer' }}>
+                  <InputGroup.Text
+                    onClick={toggleResetPasswordVisibility}
+                    style={{ cursor: "pointer" }}
+                  >
                     {resetPasswordVisible ? <EyeSlash /> : <Eye />}
                   </InputGroup.Text>
                 </InputGroup>
@@ -3027,7 +3176,10 @@ useEffect(() => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowResetPasswordModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowResetPasswordModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="primary" onClick={submitResetPassword}>
