@@ -2189,6 +2189,9 @@ const TablesManagement = () => {
                     )}
                 </div>
 
+    
+
+
                 {/* Table Modal */}
                 <Modal show={showTableModal} onHide={() => setShowTableModal(false)} size="lg">
                     <Modal.Header closeButton>
