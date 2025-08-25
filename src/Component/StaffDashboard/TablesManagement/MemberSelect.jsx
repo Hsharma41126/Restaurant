@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Button, Modal } from 'react-bootstrap';
 
 const MemberSelect = ({ members, selectedMember, setSelectedMember, setMembers }) => {
@@ -12,17 +12,30 @@ const MemberSelect = ({ members, selectedMember, setSelectedMember, setMembers }
     discount: false
   });
 
+  const [canAddCustomer, setCanAddCustomer] = useState(false);
+
+  useEffect(() => {
+    try {
+      const permissions = JSON.parse(localStorage.getItem("permissions"));
+      if (permissions?.customerManagement?.addCustomer) {
+        setCanAddCustomer(true);
+      }
+    } catch (err) {
+      console.error("Error parsing permissions", err);
+    }
+  }, []);
+
   const handleAddCustomer = () => {
     // Reset errors
     setErrors({ name: false, discount: false });
-    
+
     // Validate inputs
     let isValid = true;
     if (!newCustomer.name.trim()) {
       setErrors(prev => ({ ...prev, name: true }));
       isValid = false;
     }
-    
+
     const discountValue = parseInt(newCustomer.discount);
     if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
       setErrors(prev => ({ ...prev, discount: true }));
@@ -65,12 +78,15 @@ const MemberSelect = ({ members, selectedMember, setSelectedMember, setMembers }
               </option>
             ))}
           </Form.Select>
-          <Button 
-            variant="outline-primary" 
-            onClick={() => setShowModal(true)}
-          >
-            + Add New
-          </Button>
+
+          {canAddCustomer && (
+            <Button
+              variant="outline-primary"
+              onClick={() => setShowModal(true)}
+            >
+              + Add New
+            </Button>
+          )}
         </div>
       </Form.Group>
 
@@ -89,7 +105,7 @@ const MemberSelect = ({ members, selectedMember, setSelectedMember, setMembers }
             <Form.Control
               type="text"
               value={newCustomer.name}
-              onChange={(e) => setNewCustomer({...newCustomer, name: e.target.value})}
+              onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
               placeholder="Enter customer name"
               isInvalid={errors.name}
             />
@@ -102,7 +118,7 @@ const MemberSelect = ({ members, selectedMember, setSelectedMember, setMembers }
               min="0"
               max="100"
               value={newCustomer.discount}
-              onChange={(e) => setNewCustomer({...newCustomer, discount: e.target.value})}
+              onChange={(e) => setNewCustomer({ ...newCustomer, discount: e.target.value })}
               placeholder="Enter discount (0-100)"
               isInvalid={errors.discount}
             />

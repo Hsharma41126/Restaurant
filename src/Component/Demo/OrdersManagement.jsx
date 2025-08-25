@@ -78,7 +78,7 @@ const OrdersManagement = () => {
   // Filter tables based on selected filter
   const filteredTables = tables.filter(table => {
     if (tableFilter === 'all') return true;
-    if (tableFilter === 'available') return table.status === 'available';
+    if (tableFilter === 'available' || tableFilter === 'active') return table.status === 'available';
     if (tableFilter === 'occupied') return table.status === 'occupied';
     if (tableFilter === 'reserved') return table.status === 'reserved';
     if (tableFilter === 'dining') return table.type === 'dining';
@@ -467,7 +467,7 @@ const OrdersManagement = () => {
                   <button
                     key={subKey}
                     className={`btn btn-sm flex-shrink-0 ${expandedCategory === subKey ? 'btn-warning' : 'btn-outline-secondary'}`}
-                    // onClick={() => toggleCategory(subKey)}
+                  // onClick={() => toggleCategory(subKey)}
                   >
                     {menuCategories[activeCategory].subcategories[subKey].name}
                   </button>
@@ -683,7 +683,7 @@ const OrdersManagement = () => {
             </div>
             <div className="flex-grow-1 p-4 overflow-auto">
               {cart.size === 0 ? (
-                <div className="text-center text-muted py-4"  style={{height: '1000px'}}>
+                <div className="text-center text-muted py-4" style={{ height: '1000px' }}>
                   <RiShoppingCartLine size={48} className="mb-3 text-muted" />
                   <p>No items in cart</p>
                   <p className="small">Add items from menu</p>

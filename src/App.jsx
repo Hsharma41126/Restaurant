@@ -29,6 +29,7 @@ import Profile from "./Profile/Profile";
 import Dashboard from "./Component/AdminDashboard/Dashboard/Dashboard";
 import AdminItemManager from "./Component/AdminDashboard/AddItems/AdminItemManager";
 import ResetPassword from "./Auth/ResetPassword";
+import BillingGuestPayment from "./Component/StaffDashboard/BillingPayment/BillingGuestPayment";
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -61,7 +62,7 @@ function App() {
   // Pages that don't need layout (auth pages)
   const hideLayout = location.pathname === "/" ||
     location.pathname === "/signup" ||
-    location.pathname === "/forgot-password"||
+    location.pathname === "/forgot-password" ||
     location.pathname === "/reset-password";
 
   // Protected route component
@@ -146,7 +147,9 @@ function App() {
                       <Route path="ordermanagement" element={<OrdersManagement />} />
                       <Route path="kotqueue" element={<KOTQueue />} />
                       <Route path="reservationsmanagement" element={<ReservationsManagement />} />
+                      {/* <Route path="billingpayment" element={<BillingPayment />} /> */}
                       <Route path="billingpayment/:id" element={<BillingPayment />} />
+                      <Route path="billingguestpayment" element={<BillingGuestPayment />} />
                       <Route path="alertsnotifications" element={<AlertsNotifications />} />
                     </Routes>
                   </ProtectedRoute>

@@ -1,7 +1,773 @@
+// import React, { useEffect, useState } from "react";
+// import axios from "axios";
+// import Calendar from './Calendar'; // ✅ Adjust the path if needed
+
+// import {
+//   RiUserLine,
+//   RiDashboardLine,
+//   RiCalendarLine,
+//   RiHistoryLine,
+//   RiUserSettingsLine,
+//   RiSettingsLine,
+//   RiLogoutBoxLine,
+//   RiNotificationLine,
+//   RiQuestionLine,
+//   RiBilliardsLine,
+//   RiBasketballLine,
+//   RiGamepadLine,
+//   RiRestaurantLine,
+//   RiArrowLeftSLine,
+//   RiArrowRightSLine,
+//   RiCheckLine,
+// } from "react-icons/ri";
+// import { apiUrl } from "../../../utils/config";
+
+// const BookTable = () => {
+//   const [currentStep, setCurrentStep] = useState(1);
+//   const [selectedTime, setSelectedTime] = useState("");
+//   const [selectedDate, setSelectedDate] = useState("January 19, 2025");
+//   const [fullName, setFullName] = useState("");
+//   const [phoneNumber, setPhoneNumber] = useState("");
+//   const [email, setEmail] = useState(""); // Added email field
+//   const [partySize, setPartySize] = useState(1); // Added party size
+//   const [specialRequests, setSpecialRequests] = useState(""); // Added special requests
+//   const [smsNotification, setSmsNotification] = useState(true);
+//   const [emailNotification, setEmailNotification] = useState(true);
+//   const [nameError, setNameError] = useState(false);
+//   const [phoneError, setPhoneError] = useState(false);
+//   const [isLoading, setIsLoading] = useState(false); // Added loading state
+//   const [bookingError, setBookingError] = useState(""); // Added error state
+//   const [reservationData, setReservationData] = useState(null);
+//   const token = localStorage.getItem("token");
+
+//   const tableTypes = [
+//     {
+//       id: "snooker",
+//       name: "Snooker",
+//       description: "Professional snooker tables with premium felt and lighting",
+//       price: "$15/hour",
+//       icon: <RiBilliardsLine />,
+//       color: "success",
+//       tableNumber: "SN01" // Added table number mapping
+//     },
+//     {
+//       id: "pool",
+//       name: "Pool",
+//       description: "Classic 8-ball and 9-ball pool tables for casual gaming",
+//       price: "$12/hour",
+//       icon: <RiBasketballLine />,
+//       color: "primary",
+//       tableNumber: "PL01"
+//     },
+//     {
+//       id: "playstation",
+//       name: "PlayStation",
+//       description: "Latest PS5 consoles with premium gaming setup",
+//       price: "$20/hour",
+//       icon: <RiGamepadLine />,
+//       color: "info",
+//       tableNumber: "PS01"
+//     },
+//     {
+//       id: "dining",
+//       name: "Dining",
+//       description: "Comfortable dining tables with full menu service",
+//       price: "$8/hour",
+//       icon: <RiRestaurantLine />,
+//       color: "warning",
+//       tableNumber: "DT01"
+//     },
+//   ];
+
+//   const timeSlots = [
+//     "9:00 AM",
+//     "10:00 AM",
+//     "11:00 AM",
+//     "12:00 PM",
+//     "1:00 PM",
+//     "2:00 PM",
+//     "3:00 PM",
+//     "4:00 PM",
+//     "5:00 PM",
+//     "6:00 PM",
+//     "7:00 PM",
+//     "8:00 PM",
+//   ];
+//   const bookedSlots = ["2:00 PM", "7:00 PM"];
+
+//   const daysInMonth = [
+//     { day: 29, currentMonth: false },
+//     { day: 30, currentMonth: false },
+//     { day: 31, currentMonth: false },
+//     { day: 1, currentMonth: true },
+//     { day: 2, currentMonth: true },
+//     { day: 3, currentMonth: true },
+//     { day: 4, currentMonth: true },
+//     { day: 5, currentMonth: true },
+//     { day: 6, currentMonth: true },
+//     { day: 7, currentMonth: true },
+//     { day: 8, currentMonth: true },
+//     { day: 9, currentMonth: true },
+//     { day: 10, currentMonth: true },
+//     { day: 11, currentMonth: true },
+//     { day: 12, currentMonth: true },
+//     { day: 13, currentMonth: true },
+//     { day: 14, currentMonth: true },
+//     { day: 15, currentMonth: true },
+//     { day: 16, currentMonth: true },
+//     { day: 17, currentMonth: true },
+//     { day: 18, currentMonth: true },
+//     { day: 19, currentMonth: true },
+//     { day: 20, currentMonth: true },
+//     { day: 21, currentMonth: true },
+//     { day: 22, currentMonth: true },
+//     { day: 23, currentMonth: true },
+//     { day: 24, currentMonth: true },
+//     { day: 25, currentMonth: true },
+//     { day: 26, currentMonth: true },
+//     { day: 27, currentMonth: true },
+//     { day: 28, currentMonth: true },
+//     { day: 29, currentMonth: true },
+//     { day: 30, currentMonth: true },
+//     { day: 31, currentMonth: true },
+//   ];
+
+//   const handleNextStep = () => {
+//     if (currentStep < 4) {
+//       setCurrentStep(currentStep + 1);
+//     }
+//   };
+
+//   const handleBackStep = () => {
+//     if (currentStep > 1) {
+//       setCurrentStep(currentStep - 1);
+//     }
+//   };
+
+//   const validateForm = () => {
+//     const nameValid = fullName.trim() !== "";
+//     const phoneValid = /^[\+]?[1-9][\d]{0,15}$/.test(phoneNumber.trim());
+
+//     setNameError(!nameValid);
+//     setPhoneError(!phoneValid);
+
+//     return nameValid && phoneValid;
+//   };
+
+//   // Use actual available table IDs from your backend for each type
+//   const tableTypeToId = {
+//     snooker: 9,      // ✅ Replace 9 with the ACTUAL available snooker table_id from your backend!
+//     pool: 10,        // Example: 10 for Pool Table 3
+//     playstation: 7,  // Example: 7 for PlayStation 1
+//     dining: 12       // Replace with actual dining table_id
+//   };
+
+//   // Function to convert time format from "9:00 AM" to "18:00"
+//   const convertTimeTo24HourFormat = (timeStr) => {
+//     const [time, modifier] = timeStr.split(' ');
+//     let [hours, minutes] = time.split(':');
+
+//     if (modifier === 'PM' && hours !== '12') {
+//       hours = parseInt(hours, 10) + 12;
+//     } else if (modifier === 'AM' && hours === '12') {
+//       hours = '00';
+//     }
+
+//     // Return in "HH:MM" format (not "HH:MM:00")
+//     return `${String(hours).padStart(2, '0')}:${minutes}`;
+//   };
+
+//   // Function to convert date format from "January 19, 2025" to "2025-01-19"
+//   const convertDateFormat = (dateStr) => {
+//     const date = new Date(dateStr);
+//     const year = date.getFullYear();
+//     const month = String(date.getMonth() + 1).padStart(2, '0');
+//     const day = String(date.getDate()).padStart(2, '0');
+//     return `${year}-${month}-${day}`;
+//   };
+
+//   // Function to handle booking confirmation
+//   const handleConfirm = async () => {
+//     setIsLoading(true);
+//     setBookingError("");
+//     try {
+//       const token = localStorage.getItem('token');
+//       if (!token) {
+//         setBookingError("You are not logged in. Please log in to confirm your booking.");
+//         setIsLoading(false);
+//         return;
+//       }
+//       if (!selectedTableId) {
+//         setBookingError("Please select a table.");
+//         setIsLoading(false);
+//         return;
+//       }
+//       const reservationData = {
+//         table_id: selectedTableId,
+//         customer_name: fullName,
+//         customer_phone: phoneNumber,
+//         customer_email: email,
+//         reservation_date: convertDateFormat(selectedDate),
+//         reservation_time: convertTimeTo24HourFormat(selectedTime),
+//         duration_hours: 2,
+//         party_size: partySize,
+//         special_requests: specialRequests,
+//       };
+
+//       const response = await axios.post(
+//         `${apiUrl}/reservations`,
+//         reservationData,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${token.replace(/^"(.*)"$/, '$1')}`,
+//             'Content-Type': 'application/json',
+//           },
+//         }
+//       );
+
+//       setReservationData(response.data);
+//       alert("Booking confirmed! You will receive a confirmation message shortly.");
+//     } catch (error) {
+//       if (
+//         error.response &&
+//         (error.response.data?.message === "Access denied. No token provided." ||
+//           error.response.data?.message === "Invalid token." ||
+//           error.response.data?.message === "jwt expired" ||
+//           error.response.data?.message === "jwt malformed")
+//       ) {
+//         setBookingError("Session expired or invalid. Please log in again.");
+//       } else if (
+//         error.response &&
+//         error.response.data?.errors &&
+//         Array.isArray(error.response.data.errors)
+//       ) {
+//         setBookingError(error.response.data.errors.map(e => e.msg).join(", "));
+//       } else if (
+//         error.response &&
+//         error.response.data?.message === "Table not found or not available"
+//       ) {
+//         setBookingError("Selected table is not available. Please choose another table or time.");
+//       } else {
+//         setBookingError("Failed to make reservation. Please try again.");
+//       }
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const getTypeInfo = (type) => {
+//     return tableTypes.find((t) => t.id === type) || tableTypes[0];
+//   };
+
+
+
+
+
+//   const [tables, setTables] = useState([]);
+//   const [selectedTableId, setSelectedTableId] = useState(null); // <-- Add this
+//   const [selectedType, setSelectedType] = useState(null); // Keep for UI highlight
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const fetchTables = async () => {
+//       try {
+//         const today = new Date().toISOString().split("T")[0];
+//         const response = await axios.get(
+//           `${apiUrl}/tables/available?date=${today}`,
+//           {
+//             headers: {
+//               Authorization: `Bearer ${token}`,
+//             },
+//           }
+//         );
+
+//         if (response.data.success) {
+//           const mappedData = response.data.data.tables.map((table) => ({
+//             id: table.id,
+//             name: table.table_name,
+//             description: `${table.group_name} • Capacity: ${table.capacity} • ${table.location}`,
+//             price: table.hourly_rate
+//               ? `$${table.hourly_rate}/hour`
+//               : "Rate not set",
+//             icon: <RiRestaurantLine />,
+//             color: "warning",
+//             tableNumber: table.table_number || table.table_name,
+//           }));
+
+//           setTables(mappedData);
+//         }
+//       } catch (error) {
+//         console.error("Error fetching tables:", error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchTables();
+//   }, []);
+
+//   if (loading) {
+//     return <p className="text-center my-5">Loading available tables...</p>;
+//   }
+
+//   return (
+//     <div className="p-3">
+//       {/* Main Content */}
+//       <div className="flex-grow-1 d-flex flex-column overflow-hidden">
+//         {/* Header */}
+//         <header className="">
+//           <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+//             <div>
+//               <h1 className="h2 fw-bold text-dark">Book a Table</h1>
+//               <p className="text-muted mb-0">
+//                 Reserve your preferred gaming table or dining spot
+//               </p>
+//             </div>
+//           </div>
+
+//           {/* Progress Steps */}
+//           <div className="mt-4">
+//             <div
+//               className="d-flex flex-wrap gap-3 justify-content-start justify-content-md-between"
+//               style={{ maxWidth: "100%" }}
+//             >
+//               {/* Step Component */}
+//               {[
+//                 { step: 1, label: "Choose Type" },
+//                 { step: 2, label: "Select Time" },
+//                 { step: 3, label: "Enter Details" },
+//                 { step: 4, label: "Confirm" },
+//               ].map((item, index, arr) => (
+//                 <div
+//                   key={item.step}
+//                   className={`d-flex flex-column flex-lg-row align-items-center ${currentStep > item.step ? "text-dark" : "text-muted"
+//                     }`}
+//                 >
+//                   {/* Step Circle + Label */}
+//                   <div className="d-flex flex-column flex-lg-row align-items-center text-center text-lg-start">
+//                     <div
+//                       className={`rounded-circle d-flex align-items-center justify-content-center mx-auto mx-lg-0 ${currentStep >= item.step ? "bg-warning text-dark" : "bg-light text-muted"
+//                         }`}
+//                       style={{ width: "32px", height: "32px" }}
+//                     >
+//                       {item.step}
+//                     </div>
+//                     <span className="mt-1 mt-lg-0 ms-lg-2 small fw-medium">{item.label}</span>
+//                   </div>
+
+//                   {/* Line (only visible on large screens and up) */}
+//                   {index !== arr.length - 1 && (
+//                     <div
+//                       className={`d-none d-lg-block mx-lg-2 ${currentStep > item.step ? "bg-warning" : "bg-dark"
+//                         }`}
+//                       style={{ height: "2px", width: "245px" }}
+//                     ></div>
+//                   )}
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+
+//         </header>
+
+//         {/* Content Area */}
+//         <div className="flex-grow-1 overflow-auto p-4">
+//           {/* Step 1: Choose Type */}
+//           <div className={currentStep === 1 ? "" : "d-none"}>
+//             <div className="mb-4">
+//               <h2 className="h5 fw-semibold text-dark">Choose Table Type</h2>
+//               <p className="text-muted">
+//                 Select the type of table you'd like to book
+//               </p>
+//             </div>
+
+//             <div className="row g-4">
+//               {tables.map((table) => (
+//                 <div key={table.id} className="col-md-6 col-lg-3">
+//                   <div
+//                     className={`card h-100 cursor-pointer ${selectedTableId === table.id
+//                       ? "border-warning bg-warning bg-opacity-10"
+//                       : ""
+//                       }`}
+//                     onClick={() => {
+//                       setSelectedTableId(table.id);
+//                       setSelectedType(table.id); // For highlight, optional
+//                     }}
+//                   >
+//                     <div
+//                       className={`card-body text-center bg-${table.color}-100 rounded-3 p-4 mx-auto my-3`}
+//                       style={{ width: "64px", height: "64px" }}
+//                     >
+//                       {React.cloneElement(table.icon, {
+//                         className: `text-${table.color} fs-4`,
+//                       })}
+//                     </div>
+//                     <div className="card-body text-center">
+//                       <h5 className="card-title">{table.name}</h5>
+//                       <p className="card-text text-muted small">
+//                         {table.description}
+//                       </p>
+//                       <p className="text-warning fw-semibold">{table.price}</p>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))}
+
+//               {tables.length === 0 && (
+//                 <div className="col-12">
+//                   <p className="text-center text-muted">No tables available.</p>
+//                 </div>
+//               )}
+//             </div>
+
+//             <div className="mt-4 d-flex justify-content-end">
+//               <button
+//                 className="btn btn-warning text-dark px-4 py-2 fw-semibold"
+//                 onClick={handleNextStep}
+//                 disabled={!selectedTableId}
+//               >
+//                 Continue to Time Selection
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Step 2: Select Time */}
+//           <div className={currentStep === 2 ? "" : "d-none"}>
+//             <div className="mb-4">
+//               <h2 className="h5 fw-semibold text-dark">Select Date & Time</h2>
+//               <p className="text-muted">
+//                 Choose your preferred date and time slot
+//               </p>
+//             </div>
+
+//             <div className="row g-4">
+//               {/* Calendar */}
+//               <div className="col-lg-6">
+//                 <div className="card">
+//                   <Calendar />
+//                 </div>
+//               </div>
+
+//               {/* Time Slots */}
+//               <div className="col-lg-6">
+//                 <div className="card h-100">
+//                   <div className="card-body">
+//                     <h3 className="h6 fw-semibold text-dark mb-3">
+//                       Available Time Slots
+//                     </h3>
+//                     <div className="row row-cols-3 g-2">
+//                       {timeSlots.map((slot) => {
+//                         const isBooked = bookedSlots.includes(slot);
+//                         const isSelected = selectedTime === slot;
+//                         return (
+//                           <div key={slot} className="col">
+//                             <button
+//                               className={`btn w-100 btn-sm ${isSelected
+//                                 ? "btn-warning"
+//                                 : isBooked
+//                                   ? "btn-light text-muted disabled"
+//                                   : "btn-outline-secondary"
+//                                 }`}
+//                               disabled={isBooked}
+//                               onClick={() => setSelectedTime(slot)}
+//                             >
+//                               {slot}
+//                             </button>
+//                           </div>
+//                         );
+//                       })}
+//                     </div>
+
+//                     <div className="mt-3 d-flex gap-3 small">
+//                       <div className="d-flex align-items-center gap-2">
+//                         <div
+//                           className="border rounded"
+//                           style={{ width: "16px", height: "16px" }}
+//                         ></div>
+//                         <span className="text-muted">Available</span>
+//                       </div>
+//                       <div className="d-flex align-items-center gap-2">
+//                         <div
+//                           className="bg-light rounded"
+//                           style={{ width: "16px", height: "16px" }}
+//                         ></div>
+//                         <span className="text-muted">Booked</span>
+//                       </div>
+//                       <div className="d-flex align-items-center gap-2">
+//                         <div
+//                           className="bg-warning rounded"
+//                           style={{ width: "16px", height: "16px" }}
+//                         ></div>
+//                         <span className="text-muted">Selected</span>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             <div className="mt-4 d-flex justify-content-between">
+//               <button
+//                 className="btn btn-light text-dark px-4 py-2 fw-semibold"
+//                 onClick={handleBackStep}
+//               >
+//                 Back to Table Selection
+//               </button>
+//               <button
+//                 className="btn btn-warning text-dark px-4 py-2 fw-semibold"
+//                 onClick={handleNextStep}
+//                 disabled={!selectedTime}
+//               >
+//                 Continue to Details
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Step 3: Enter Details */}
+//           <div className={currentStep === 3 ? "" : "d-none"}>
+//             <div className="mb-4">
+//               <h2 className="h5 fw-semibold text-dark">Personal Details</h2>
+//               <p className="text-muted">
+//                 Please provide your contact information
+//               </p>
+//             </div>
+
+//             <div className="card" style={{ maxWidth: "500px" }}>
+//               <div className="card-body">
+//                 <div className="mb-3">
+//                   <label className="form-label">Full Name</label>
+//                   <input
+//                     type="text"
+//                     className={`form-control ${nameError ? "is-invalid" : ""}`}
+//                     value={fullName}
+//                     onChange={(e) => setFullName(e.target.value)}
+//                   />
+//                   {nameError && (
+//                     <div className="invalid-feedback">
+//                       Please enter your full name
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 <div className="mb-3">
+//                   <label className="form-label">Phone Number</label>
+//                   <input
+//                     type="tel"
+//                     className={`form-control ${phoneError ? "is-invalid" : ""}`}
+//                     value={phoneNumber}
+//                     onChange={(e) => setPhoneNumber(e.target.value)}
+//                   />
+//                   {phoneError && (
+//                     <div className="invalid-feedback">
+//                       Please enter a valid phone number
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 <div className="mb-3">
+//                   <label className="form-label">Email Address</label>
+//                   <input
+//                     type="email"
+//                     className="form-control"
+//                     value={email}
+//                     onChange={(e) => setEmail(e.target.value)}
+//                   />
+//                 </div>
+
+//                 <div className="mb-3">
+//                   <label className="form-label">Party Size</label>
+//                   <select
+//                     className="form-control"
+//                     value={partySize}
+//                     onChange={(e) => setPartySize(parseInt(e.target.value))}
+//                   >
+//                     {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+//                       <option key={num} value={num}>{num} {num === 1 ? 'person' : 'people'}</option>
+//                     ))}
+//                   </select>
+//                 </div>
+
+//                 <div className="mb-3">
+//                   <label className="form-label">Special Requests (Optional)</label>
+//                   <textarea
+//                     className="form-control"
+//                     rows="3"
+//                     value={specialRequests}
+//                     onChange={(e) => setSpecialRequests(e.target.value)}
+//                   />
+//                 </div>
+//               </div>
+//             </div>
+
+//             <div className="mt-4 d-flex justify-content-between">
+//               <button
+//                 className="btn btn-light text-dark px-4 py-2 fw-semibold"
+//                 onClick={handleBackStep}
+//               >
+//                 Back to Time Selection
+//               </button>
+//               <button
+//                 className="btn btn-warning text-dark px-4 py-2 fw-semibold"
+//                 onClick={() => {
+//                   if (validateForm()) {
+//                     handleNextStep();
+//                   }
+//                 }}
+//               >
+//                 Review Booking
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Step 4: Confirm Booking */}
+//           <div className={currentStep === 4 ? "" : "d-none"}>
+//             <div className="mb-4">
+//               <h2 className="h5 fw-semibold text-dark">Confirm Your Booking</h2>
+//               <p className="text-muted">
+//                 Please review your booking details before confirming
+//               </p>
+//             </div>
+
+//             {bookingError && (
+//               <div className="alert alert-danger" role="alert">
+//                 {bookingError}
+//               </div>
+//             )}
+
+//             <div className="card" style={{ maxWidth: "600px" }}>
+//               <div className="card-body">
+//                 <h3 className="h6 fw-semibold text-dark mb-3">
+//                   Booking Summary
+//                 </h3>
+
+//                 <div className="mb-4">
+//                   <div className="d-flex align-items-center p-3 bg-light rounded">
+//                     <div
+//                       className={`bg-${getTypeInfo(selectedType).color
+//                         }-100 rounded p-3 me-3`}
+//                     >
+//                       {React.cloneElement(getTypeInfo(selectedType).icon, {
+//                         className: `text-${getTypeInfo(selectedType).color
+//                           } fs-4`,
+//                       })}
+//                     </div>
+//                     <div>
+//                       <h5 className="fw-semibold mb-1">
+//                         {getTypeInfo(selectedType).name}
+//                       </h5>
+//                       <p className="text-muted small mb-0">
+//                         {getTypeInfo(selectedType).price}
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 <div className="mb-4">
+//                   <div className="d-flex justify-content-between mb-2">
+//                     <span className="text-muted">Date:</span>
+//                     <span className="fw-medium">{selectedDate}</span>
+//                   </div>
+//                   <div className="d-flex justify-content-between mb-2">
+//                     <span className="text-muted">Time:</span>
+//                     <span className="fw-medium">{selectedTime}</span>
+//                   </div>
+//                   <div className="d-flex justify-content-between mb-2">
+//                     <span className="text-muted">Name:</span>
+//                     <span className="fw-medium">{fullName}</span>
+//                   </div>
+//                   <div className="d-flex justify-content-between mb-2">
+//                     <span className="text-muted">Phone:</span>
+//                     <span className="fw-medium">{phoneNumber}</span>
+//                   </div>
+//                   <div className="d-flex justify-content-between mb-2">
+//                     <span className="text-muted">Email:</span>
+//                     <span className="fw-medium">{email}</span>
+//                   </div>
+//                   <div className="d-flex justify-content-between mb-2">
+//                     <span className="text-muted">Party Size:</span>
+//                     <span className="fw-medium">{partySize} {partySize === 1 ? 'person' : 'people'}</span>
+//                   </div>
+//                   {specialRequests && (
+//                     <div className="d-flex justify-content-between mb-2">
+//                       <span className="text-muted">Special Requests:</span>
+//                       <span className="fw-medium">{specialRequests}</span>
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* <div className="pt-3 border-top">
+//                   <h4 className="h6 fw-semibold text-dark mb-3">
+//                     Notification Preferences
+//                   </h4>
+//                   <div className="form-check mb-2">
+//                     <input
+//                       className="form-check-input"
+//                       type="checkbox"
+//                       id="smsNotification"
+//                       checked={smsNotification}
+//                       onChange={() => setSmsNotification(!smsNotification)}
+//                     />
+//                     <label
+//                       className="form-check-label"
+//                       htmlFor="smsNotification"
+//                     >
+//                       Send SMS confirmation
+//                     </label>
+//                   </div>
+//                   <div className="form-check">
+//                     <input
+//                       className="form-check-input"
+//                       type="checkbox"
+//                       id="emailNotification"
+//                       checked={emailNotification}
+//                       onChange={() => setEmailNotification(!emailNotification)}
+//                     />
+//                     <label
+//                       className="form-check-label"
+//                       htmlFor="emailNotification"
+//                     >
+//                       Send email confirmation
+//                     </label>
+//                   </div>
+//                 </div> */}
+//               </div>
+//             </div>
+
+//             <div className="mt-4 d-flex justify-content-between">
+//               <button
+//                 className="btn btn-light text-dark px-4 py-2 fw-semibold"
+//                 onClick={handleBackStep}
+//                 disabled={isLoading}
+//               >
+//                 Back to Details
+//               </button>
+//               <button
+//                 className="btn btn-success text-white px-4 py-2 fw-semibold"
+//                 onClick={handleConfirm}
+//                 disabled={isLoading}
+//               >
+//                 {isLoading ? (
+//                   <>
+//                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+//                     Processing...
+//                   </>
+//                 ) : (
+//                   "Confirm Booking"
+//                 )}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default BookTable;
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Calendar from './Calendar'; // ✅ Adjust the path if needed
-
 import {
   RiUserLine,
   RiDashboardLine,
@@ -38,6 +804,7 @@ const BookTable = () => {
   const [isLoading, setIsLoading] = useState(false); // Added loading state
   const [bookingError, setBookingError] = useState(""); // Added error state
   const [reservationData, setReservationData] = useState(null);
+  const [duration, setDuration] = useState(2); // Added duration state
   const token = localStorage.getItem("token");
 
   const tableTypes = [
@@ -93,6 +860,7 @@ const BookTable = () => {
     "7:00 PM",
     "8:00 PM",
   ];
+
   const bookedSlots = ["2:00 PM", "7:00 PM"];
 
   const daysInMonth = [
@@ -147,10 +915,8 @@ const BookTable = () => {
   const validateForm = () => {
     const nameValid = fullName.trim() !== "";
     const phoneValid = /^[\+]?[1-9][\d]{0,15}$/.test(phoneNumber.trim());
-
     setNameError(!nameValid);
     setPhoneError(!phoneValid);
-
     return nameValid && phoneValid;
   };
 
@@ -166,13 +932,11 @@ const BookTable = () => {
   const convertTimeTo24HourFormat = (timeStr) => {
     const [time, modifier] = timeStr.split(' ');
     let [hours, minutes] = time.split(':');
-
     if (modifier === 'PM' && hours !== '12') {
       hours = parseInt(hours, 10) + 12;
     } else if (modifier === 'AM' && hours === '12') {
       hours = '00';
     }
-
     // Return in "HH:MM" format (not "HH:MM:00")
     return `${String(hours).padStart(2, '0')}:${minutes}`;
   };
@@ -209,11 +973,10 @@ const BookTable = () => {
         customer_email: email,
         reservation_date: convertDateFormat(selectedDate),
         reservation_time: convertTimeTo24HourFormat(selectedTime),
-        duration_hours: 2,
+        duration_hours: duration, // Using the duration state instead of hardcoded value
         party_size: partySize,
         special_requests: specialRequests,
       };
-
       const response = await axios.post(
         `${apiUrl}/reservations`,
         reservationData,
@@ -224,7 +987,6 @@ const BookTable = () => {
           },
         }
       );
-
       setReservationData(response.data);
       alert("Booking confirmed! You will receive a confirmation message shortly.");
     } catch (error) {
@@ -259,10 +1021,6 @@ const BookTable = () => {
     return tableTypes.find((t) => t.id === type) || tableTypes[0];
   };
 
-
-
-
-
   const [tables, setTables] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(null); // <-- Add this
   const [selectedType, setSelectedType] = useState(null); // Keep for UI highlight
@@ -280,7 +1038,6 @@ const BookTable = () => {
             },
           }
         );
-
         if (response.data.success) {
           const mappedData = response.data.data.tables.map((table) => ({
             id: table.id,
@@ -293,7 +1050,6 @@ const BookTable = () => {
             color: "warning",
             tableNumber: table.table_number || table.table_name,
           }));
-
           setTables(mappedData);
         }
       } catch (error) {
@@ -302,7 +1058,6 @@ const BookTable = () => {
         setLoading(false);
       }
     };
-
     fetchTables();
   }, []);
 
@@ -324,7 +1079,6 @@ const BookTable = () => {
               </p>
             </div>
           </div>
-
           {/* Progress Steps */}
           <div className="mt-4">
             <div
@@ -354,7 +1108,6 @@ const BookTable = () => {
                     </div>
                     <span className="mt-1 mt-lg-0 ms-lg-2 small fw-medium">{item.label}</span>
                   </div>
-
                   {/* Line (only visible on large screens and up) */}
                   {index !== arr.length - 1 && (
                     <div
@@ -367,9 +1120,7 @@ const BookTable = () => {
               ))}
             </div>
           </div>
-
         </header>
-
         {/* Content Area */}
         <div className="flex-grow-1 overflow-auto p-4">
           {/* Step 1: Choose Type */}
@@ -380,7 +1131,6 @@ const BookTable = () => {
                 Select the type of table you'd like to book
               </p>
             </div>
-
             <div className="row g-4">
               {tables.map((table) => (
                 <div key={table.id} className="col-md-6 col-lg-3">
@@ -412,14 +1162,12 @@ const BookTable = () => {
                   </div>
                 </div>
               ))}
-
               {tables.length === 0 && (
                 <div className="col-12">
                   <p className="text-center text-muted">No tables available.</p>
                 </div>
               )}
             </div>
-
             <div className="mt-4 d-flex justify-content-end">
               <button
                 className="btn btn-warning text-dark px-4 py-2 fw-semibold"
@@ -430,7 +1178,6 @@ const BookTable = () => {
               </button>
             </div>
           </div>
-
           {/* Step 2: Select Time */}
           <div className={currentStep === 2 ? "" : "d-none"}>
             <div className="mb-4">
@@ -439,7 +1186,6 @@ const BookTable = () => {
                 Choose your preferred date and time slot
               </p>
             </div>
-
             <div className="row g-4">
               {/* Calendar */}
               <div className="col-lg-6">
@@ -447,7 +1193,6 @@ const BookTable = () => {
                   <Calendar />
                 </div>
               </div>
-
               {/* Time Slots */}
               <div className="col-lg-6">
                 <div className="card h-100">
@@ -477,7 +1222,6 @@ const BookTable = () => {
                         );
                       })}
                     </div>
-
                     <div className="mt-3 d-flex gap-3 small">
                       <div className="d-flex align-items-center gap-2">
                         <div
@@ -505,7 +1249,6 @@ const BookTable = () => {
                 </div>
               </div>
             </div>
-
             <div className="mt-4 d-flex justify-content-between">
               <button
                 className="btn btn-light text-dark px-4 py-2 fw-semibold"
@@ -522,7 +1265,6 @@ const BookTable = () => {
               </button>
             </div>
           </div>
-
           {/* Step 3: Enter Details */}
           <div className={currentStep === 3 ? "" : "d-none"}>
             <div className="mb-4">
@@ -531,7 +1273,6 @@ const BookTable = () => {
                 Please provide your contact information
               </p>
             </div>
-
             <div className="card" style={{ maxWidth: "500px" }}>
               <div className="card-body">
                 <div className="mb-3">
@@ -548,7 +1289,6 @@ const BookTable = () => {
                     </div>
                   )}
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Phone Number</label>
                   <input
@@ -563,7 +1303,6 @@ const BookTable = () => {
                     </div>
                   )}
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Email Address</label>
                   <input
@@ -573,7 +1312,6 @@ const BookTable = () => {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Party Size</label>
                   <select
@@ -586,7 +1324,19 @@ const BookTable = () => {
                     ))}
                   </select>
                 </div>
-
+                {/* Duration Selection */}
+                <div className="mb-3">
+                  <label className="form-label">Duration (hours)</label>
+                  <select
+                    className="form-control"
+                    value={duration}
+                    onChange={(e) => setDuration(parseInt(e.target.value))}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                      <option key={num} value={num}>{num} hour{num !== 1 ? 's' : ''}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="mb-3">
                   <label className="form-label">Special Requests (Optional)</label>
                   <textarea
@@ -598,7 +1348,6 @@ const BookTable = () => {
                 </div>
               </div>
             </div>
-
             <div className="mt-4 d-flex justify-content-between">
               <button
                 className="btn btn-light text-dark px-4 py-2 fw-semibold"
@@ -618,7 +1367,6 @@ const BookTable = () => {
               </button>
             </div>
           </div>
-
           {/* Step 4: Confirm Booking */}
           <div className={currentStep === 4 ? "" : "d-none"}>
             <div className="mb-4">
@@ -627,19 +1375,16 @@ const BookTable = () => {
                 Please review your booking details before confirming
               </p>
             </div>
-
             {bookingError && (
               <div className="alert alert-danger" role="alert">
                 {bookingError}
               </div>
             )}
-
             <div className="card" style={{ maxWidth: "600px" }}>
               <div className="card-body">
                 <h3 className="h6 fw-semibold text-dark mb-3">
                   Booking Summary
                 </h3>
-
                 <div className="mb-4">
                   <div className="d-flex align-items-center p-3 bg-light rounded">
                     <div
@@ -661,7 +1406,6 @@ const BookTable = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="mb-4">
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Date:</span>
@@ -670,6 +1414,10 @@ const BookTable = () => {
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Time:</span>
                     <span className="fw-medium">{selectedTime}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Duration:</span>
+                    <span className="fw-medium">{duration} hour{duration !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Name:</span>
@@ -694,45 +1442,8 @@ const BookTable = () => {
                     </div>
                   )}
                 </div>
-
-                {/* <div className="pt-3 border-top">
-                  <h4 className="h6 fw-semibold text-dark mb-3">
-                    Notification Preferences
-                  </h4>
-                  <div className="form-check mb-2">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="smsNotification"
-                      checked={smsNotification}
-                      onChange={() => setSmsNotification(!smsNotification)}
-                    />
-                    <label
-                      className="form-check-label"
-                      htmlFor="smsNotification"
-                    >
-                      Send SMS confirmation
-                    </label>
-                  </div>
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="emailNotification"
-                      checked={emailNotification}
-                      onChange={() => setEmailNotification(!emailNotification)}
-                    />
-                    <label
-                      className="form-check-label"
-                      htmlFor="emailNotification"
-                    >
-                      Send email confirmation
-                    </label>
-                  </div>
-                </div> */}
               </div>
             </div>
-
             <div className="mt-4 d-flex justify-content-between">
               <button
                 className="btn btn-light text-dark px-4 py-2 fw-semibold"

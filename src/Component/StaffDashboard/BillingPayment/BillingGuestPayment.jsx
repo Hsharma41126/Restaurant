@@ -11,7 +11,7 @@ import {
 } from 'react-icons/ri';
 import axiosInstance from '../../../utils/axiosInstance';
 
-const BillingPayment = () => {
+const BillingGuestPayment = () => {
     const { id } = useParams();
     const location = useLocation();
     const [orderData, setOrderData] = useState(null);
@@ -23,19 +23,19 @@ const BillingPayment = () => {
     const [customDiscount, setCustomDiscount] = useState('');
     const [businessSettings, setBusinessSettings] = useState(null);
     const [loadingSettings, setLoadingSettings] = useState(true);
-    const [loadingOrder, setLoadingOrder] = useState(true);
 
     // Fetch business settings to get tax information
     useEffect(() => {
         const fetchBusinessSettings = async () => {
             try {
                 const response = await axiosInstance.get('/business_settings');
-                const data = response.data.data;
+                const data = response.data.data; // Access the data property from response
                 setBusinessSettings(data);
             } catch (error) {
                 console.error('Error fetching business settings:', error);
+                // Set default tax rate if API fails
                 setBusinessSettings({
-                    tax: "5",
+                    tax: "5", // Default tax percentage as string
                     receipt_footer: "Thank you for your visit!",
                     system_mode: "online"
                 });
@@ -47,34 +47,27 @@ const BillingPayment = () => {
     }, []);
 
     useEffect(() => {
-        // Check if order data is passed in location state
-        if (location.state && location.state.orderData) {
-            setOrderData(location.state.orderData);
-            setLoadingOrder(false);
-            return;
-        }
-
         // If we have an order ID in the URL, fetch the order
         if (id) {
             const fetchOrder = async () => {
                 try {
                     const res = await axiosInstance.get(`/orders/${id}`);
                     if (res.data.success) {
-                        // The order is nested in res.data.data.order
-                        const order = res.data.data.order;
-                        setOrderData(order);
+                        setOrderData(res.data.data.order);
                     } else {
                         console.error("Failed to fetch order:", res.data.message);
                     }
                 } catch (err) {
                     console.error("Error fetching order:", err);
-                } finally {
-                    setLoadingOrder(false);
                 }
             };
             fetchOrder();
         }
-    }, [id, location.state]);
+        // If we don't have an order ID, check for state passed from navigation
+        else if (location.state && location.state.orderData) {
+            setOrderData(location.state.orderData);
+        }
+    }, [id, location]);
 
     useEffect(() => {
         if (!orderData) return;
@@ -98,18 +91,70 @@ const BillingPayment = () => {
         return () => clearInterval(interval);
     }, [orderData]);
 
+    // Calculate tax based on business settings
+    const calculateTax = (subtotal) => {
+        if (!businessSettings || !businessSettings.tax) return 0;
+        const taxRate = parseFloat(businessSettings.tax); // Convert string to number
+        return (subtotal * taxRate) / 100;
+    };
+
+    // Calculate total with tax
+    const calculateTotal = (subtotal, discount = 0) => {
+        const taxableAmount = subtotal - discount;
+        const tax = calculateTax(taxableAmount);
+        return taxableAmount + tax;
+    };
+
     const handlePayment = async () => {
         if (!paymentMethod) {
             alert("Please select a payment method");
             return;
         }
+
         setIsProcessing(true);
+
         try {
-            // Process payment
-            setTimeout(() => {
-                alert("Payment successful! Session closed and table is now available.");
-                setIsProcessing(false);
-            }, 2000);
+            // If this is a temporary order (not in backend), create it first
+            if (orderData.id.toString().startsWith('temp-')) {
+                const newOrderData = {
+                    session_id: 1,
+                    table_id: orderData.table_number ? parseInt(orderData.table_number) : null,
+                    customer_name: orderData.customer_name,
+                    order_type: orderData.order_type,
+                    special_instructions: orderData.special_instructions,
+                    items: orderData.items.map(item => ({
+                        menu_item_id: item.id,
+                        quantity: item.quantity,
+                        special_instructions: item.special_instructions
+                    }))
+                };
+
+                const response = await axiosInstance.post('/orders', newOrderData);
+
+                if (response.data.success) {
+                    // Update orderData with the real order ID from backend
+                    setOrderData({
+                        ...orderData,
+                        id: response.data.data.order.id,
+                        order_number: response.data.data.order.order_number
+                    });
+
+                    // Process payment with real order ID
+                    setTimeout(() => {
+                        alert("Payment successful! Order created and table is now available.");
+                        setIsProcessing(false);
+                    }, 2000);
+                } else {
+                    alert('Failed to create order: ' + (response.data.message || 'Unknown error'));
+                    setIsProcessing(false);
+                }
+            } else {
+                // Order already exists in backend, just process payment
+                setTimeout(() => {
+                    alert("Payment successful! Session closed and table is now available.");
+                    setIsProcessing(false);
+                }, 2000);
+            }
         } catch (error) {
             console.error('Error processing payment:', error);
             alert('Error processing payment: ' + (error.response?.data?.message || error.message));
@@ -132,23 +177,16 @@ const BillingPayment = () => {
         setDiscountMenuOpen(false);
     };
 
-    if (loadingOrder || loadingSettings) {
+    if (!orderData || loadingSettings) {
         return <div className="p-3 text-center">Loading order details...</div>;
     }
 
-    if (!orderData) {
-        return <div className="p-3 text-center">Order not found</div>;
-    }
-
-    // Calculate values using order data
-    const subtotal = parseFloat(orderData.subtotal) || 0;
+    // Calculate values using business settings
+    const subtotal = parseFloat(orderData.subtotal);
     const discount = parseFloat(orderData.discount_amount) || 0;
-    const taxAmount = parseFloat(orderData.tax_amount) || 0;
-    const totalAmount = parseFloat(orderData.total_amount) || 0;
-
-    // Calculate tax percentage
-    const taxableAmount = subtotal - discount;
-    const taxPercentage = taxableAmount > 0 ? (taxAmount / taxableAmount) * 100 : 0;
+    const taxPercentage = businessSettings ? parseFloat(businessSettings.tax) : 5; // Default to 5% if not available
+    const taxAmount = calculateTax(subtotal - discount);
+    const totalAmount = calculateTotal(subtotal, discount);
 
     return (
         <div className="p-3">
@@ -184,37 +222,15 @@ const BillingPayment = () => {
                             <div>
                                 <h3 className="fs-5 fw-semibold text-dark">Items</h3>
                                 <div className="food-items-list">
-                                    {orderData.items && orderData.items.length > 0 ? (
-                                        orderData.items.map((item, idx) => (
-                                            <div key={item.id} className={`d-flex justify-content-between align-items-center p-3 rounded mb-2 ${idx % 2 === 0 ? "bg-light" : ""}`}>
-                                                <div className="flex-grow-1">
-                                                    <div className="d-flex justify-content-between align-items-start">
-                                                        <div>
-                                                            <span className="text-dark fw-medium">{item.item_name}</span>
-                                                            <div className="text-muted small">{item.item_description}</div>
-                                                            {item.special_instructions && (
-                                                                <div className="small text-info mt-1">
-                                                                    Note: {item.special_instructions}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-end">
-                                                            <div className="fw-semibold">
-                                                                ${parseFloat(item.total_with_tax || 0).toFixed(2)}
-                                                            </div>
-                                                            <div className="small text-muted">
-                                                                ${parseFloat(item.unit_price || 0).toFixed(2)} × {item.quantity}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    {orderData.items.map((item, idx) => (
+                                        <div key={idx} className={`d-flex justify-content-between align-items-center p-3 rounded mb-2 ${idx % 2 === 0 ? "bg-light" : ""}`}>
+                                            <div>
+                                                <span className="text-dark">{item.item_name}</span>
+                                                <span className="text-muted small ms-2">× {item.quantity}</span>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-3 text-muted">
-                                            No items found for this order
+                                            <span className="fw-semibold">${item.total_price}</span>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
                             <div className="mt-3">
@@ -229,7 +245,7 @@ const BillingPayment = () => {
                                     </div>
                                 )}
                                 <div className="d-flex justify-content-between mb-1">
-                                    <span className="text-muted">Tax ({taxPercentage.toFixed(2)}%)</span>
+                                    <span className="text-muted">Tax ({taxPercentage}%)</span>
                                     <span>${taxAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="border-top pt-2 mt-2">
@@ -392,4 +408,4 @@ const BillingPayment = () => {
     );
 };
 
-export default BillingPayment;
+export default BillingGuestPayment;

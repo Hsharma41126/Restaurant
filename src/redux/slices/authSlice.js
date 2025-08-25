@@ -34,6 +34,7 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
+      localStorage.setItem("permissions", JSON.stringify(user.permissions));
 
       return { user, token };
     } catch (err) {
@@ -84,7 +85,7 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get('/users/me');
-      
+
       if (response.data.success) {
         return response.data.data;
       } else {
@@ -110,13 +111,13 @@ export const logoutUser = createAsyncThunk(
     try {
       // Optional: Call backend logout endpoint
       // await axiosInstance.post('/auth/logout');
-      
+
       // Clear localStorage
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       // localStorage.removeItem('rememberedEmail'); // Clear remembered email too
-      
+
       return true;
     } catch (err) {
       // Even if backend call fails, clear local storage
@@ -124,7 +125,7 @@ export const logoutUser = createAsyncThunk(
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('rememberedEmail');
-      
+
       return rejectWithValue(err.response?.data?.message || 'Logout failed');
     }
   }
